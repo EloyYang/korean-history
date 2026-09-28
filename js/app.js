@@ -162,7 +162,8 @@
   function popupHtml(m) {
     return `<div class="pop-title">${esc(m.name)}${m.tag ? `<span class="pop-tag">${esc(m.tag)}</span>` : ''}</div>` +
       (m.year ? `<div class="pop-year">${esc(m.year)}</div>` : '') +
-      (m.desc ? `<div>${esc(m.desc)}</div>` : '');
+      (m.desc ? `<div>${esc(m.desc)}</div>` : '') +
+      (ARTIFACTS[m.name] ? `<img class="pop-img" src="${esc(ARTIFACTS[m.name].src)}" alt="${esc(m.name)} 사진" data-art="${esc(m.name)}" onerror="this.remove()">` : '');
   }
 
   function bearing(a, b) {
@@ -711,7 +712,7 @@
   L.DomEvent.disableScrollPropagation(legendEl);
 
   document.addEventListener('click', (e) => {
-    const a = e.target.closest('a.artifact');
+    const a = e.target.closest('a.artifact, img.pop-img');
     if (!a) return;
     e.stopPropagation();
     const art = ARTIFACTS[a.dataset.art];
