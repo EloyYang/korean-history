@@ -31,7 +31,7 @@
 
       <div class="map-tools">
         <button id="btn-layer" class="chip" title="배경 지도 전환">지형</button>
-        <label class="chip toggle"><input id="tg-labels" type="checkbox"> 모든 이름</label>
+        <label class="chip toggle"><input id="tg-labels" type="checkbox"> 이름 표시</label>
         <label class="chip toggle"><input id="tg-rivers" type="checkbox" checked> 강·지명</label>
       </div>
 
@@ -61,7 +61,7 @@
     </aside>
   </main>
 
-  <div id="lightbox" class="lightbox" hidden><img alt="원본 판서"></div>
+  <div id="lightbox" class="lightbox" hidden><figure><img alt=""><p class="lb-missing">사진 파일이 아직 없어요</p><figcaption></figcaption></figure></div>
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@turf/turf@6.5.0/turf.min.js"></script>

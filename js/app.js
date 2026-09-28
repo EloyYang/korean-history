@@ -4,6 +4,47 @@
   const ERAS = window.ERAS;
   const NOTES = window.NOTES || [];
   const RULERS = window.RULERS || {};
+  const ARTIFACTS = window.ARTIFACTS || {};
+  const ART_RE = Object.keys(ARTIFACTS).length
+    ? new RegExp('(' + Object.keys(ARTIFACTS).sort((a, b) => b.length - a.length).map((k) => k.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|') + ')', 'g')
+    : null;
+
+  // 본문 글씨 중 유물 이름을 찾아 사진 링크로 감싼다
+  function linkArtifacts(root) {
+    if (!ART_RE || !root) return;
+    const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
+      acceptNode: (n) => (n.parentElement.closest('a, button, .stepper') ? NodeFilter.FILTER_REJECT : NodeFilter.FILTER_ACCEPT),
+    });
+    const nodes = [];
+    while (walker.nextNode()) nodes.push(walker.currentNode);
+    nodes.forEach((node) => {
+      ART_RE.lastIndex = 0;
+      if (!ART_RE.test(node.nodeValue)) return;
+      const frag = document.createDocumentFragment();
+      node.nodeValue.split(ART_RE).forEach((part, i) => {
+        if (i % 2 === 0) { if (part) frag.appendChild(document.createTextNode(part)); return; }
+        const a = document.createElement('a');
+        a.className = 'artifact';
+        a.dataset.art = part;
+        a.title = part + ' 사진 보기';
+        a.textContent = part;
+        frag.appendChild(a);
+      });
+      node.parentNode.replaceChild(frag, node);
+    });
+  }
+
+  function openLightbox(src, caption) {
+    const lb = document.getElementById('lightbox');
+    const img = lb.querySelector('img');
+    const cap = lb.querySelector('figcaption');
+    lb.classList.remove('missing');
+    img.onerror = () => lb.classList.add('missing');
+    img.src = src;
+    img.alt = caption || '';
+    cap.textContent = caption || '';
+    lb.hidden = false;
+  }
   const COLORS = window.POLITY_COLORS || {};
   // 모든 시대의 왕·대통령을 순서대로 이어 붙인 목록 (이전/다음으로 차례대로 넘겨 보기)
   const RULER_SEQ = [];
@@ -38,7 +79,7 @@
   const state = {
     era: 0,
     tab: store.get('tab', 'info'),
-    allLabels: store.get('allLabels', false),
+    allLabels: store.get('labelsOn', true),
     geoLabels: store.get('geoLabels', true),
     base: store.get('base', 'terrain'),
     rulerPos: 0,
@@ -172,16 +213,63 @@
         icon: L.divIcon({ className: '', html: markerHtml(m.type), iconSize: size, iconAnchor: [size[0] / 2, size[1] / 2] }),
       }).addTo(gMarkers);
       mk.bindPopup(popupHtml(m), { maxWidth: 280 });
-      const permanent = state.allLabels || m.type === 'capital';
-      mk.bindTooltip(m.year && !permanent ? `${m.name} (${m.year})` : m.name, {
-        permanent, direction: 'right', offset: [size[0] / 2 + 2, 0], className: 'mk-label',
-      });
-      markerByName.set(m.name, { marker: mk, data: m });
+      const entry = { marker: mk, data: m, size, prio: m.major ? 3 : (m.type === 'capital' || m.type === 'battle') ? 2 : 1 };
+      bindLabel(entry, 'right');
+      mk.on('mouseover', () => { const el = labelEl(entry); if (el) el.classList.add('lbl-peek'); });
+      mk.on('mouseout', () => { const el = labelEl(entry); if (el) el.classList.remove('lbl-peek'); });
+      markerByName.set(m.name, entry);
     });
 
     renderLegend(era);
+    requestAnimationFrame(declutter);
     if (fit) map.fitBounds(era.view, { padding: [20, 20], animate: false });
   }
+
+  // ── 마커 이름표: 기본으로 모두 표시하되 겹치면 왼쪽으로 옮기고, 그래도 겹치면 숨김(마우스를 올리면 보임) ──
+  function labelText(e) {
+    const m = e.data;
+    return state.allLabels || m.type === 'capital' ? m.name : (m.year ? `${m.name} (${m.year})` : m.name);
+  }
+  function labelEl(e) { const t = e.marker.getTooltip(); return t && t.getElement(); }
+  function bindLabel(e, dir) {
+    const permanent = state.allLabels || e.data.type === 'capital';
+    const dx = e.size[0] / 2 + 3;
+    const dy = e.size[1] / 2 + 3;
+    const offset = { left: [-dx, 0], right: [dx, 0], top: [0, -dy], bottom: [0, dy] }[dir];
+    e.marker.unbindTooltip();
+    e.marker.bindTooltip(labelText(e), {
+      permanent, direction: dir, offset,
+      className: 'mk-label' + (e.prio >= 3 ? ' major' : '') + (e.data.type === 'battle' ? ' battle' : ''),
+    });
+    e.dir = dir;
+  }
+  function overlaps(a, list) {
+    return list.some((b) => a.left < b.right - 1 && a.right > b.left + 1 && a.top < b.bottom - 1 && a.bottom > b.top + 1);
+  }
+  function declutter() {
+    if (!state.allLabels) return;
+    const entries = [...markerByName.values()];
+    const kept = entries.map((e) => e.marker.getElement()).filter(Boolean).map((el) => el.getBoundingClientRect());
+    entries
+      .sort((a, b) => b.prio - a.prio)
+      .forEach((e) => {
+        if (e.dir !== 'right') bindLabel(e, 'right');
+        let el = labelEl(e);
+        if (!el) return;
+        el.classList.remove('lbl-hidden');
+        let r = el.getBoundingClientRect();
+        const tries = e.prio >= 3 ? ['left', 'top', 'bottom'] : ['left'];
+        for (const dir of tries) {
+          if (!overlaps(r, kept)) break;
+          bindLabel(e, dir);
+          el = labelEl(e);
+          r = el.getBoundingClientRect();
+        }
+        if (overlaps(r, kept) && e.prio < 3) { el.classList.add('lbl-hidden'); return; }
+        kept.push(r);
+      });
+  }
+  map.on('zoomend', () => requestAnimationFrame(declutter));
 
   function renderLegend(era) {
     const rows = [];
@@ -242,6 +330,7 @@
     $('#tab-notes').innerHTML = notes.length
       ? notes.map(renderNote).join('')
       : `<div class="empty-notes"><strong>아직 이 시대의 판서 노트가 없어요</strong>판서 사진을 Claude에게 보내면 표로 정리해서 여기에 추가해 드립니다.</div>`;
+    ['#tab-info', '#tab-notes'].forEach((id) => linkArtifacts($(id)));
   }
 
   function formatCell(src) {
@@ -314,6 +403,7 @@
         <button data-act="rquiz" aria-pressed="${state.rulerQuiz}">정책 가리기</button>
       </div>
       <ol class="ruler-list${state.rulerQuiz ? ' quiz' : ''}">${items}</ol>`;
+    linkArtifacts(box);
   }
 
   function scrollToCurrentRuler() {
@@ -484,7 +574,7 @@
     const td = e.target.closest('.chalk.quiz td');
     if (td) { td.classList.toggle('revealed'); return; }
     const img = e.target.closest('.note-img img');
-    if (img) { const lb = $('#lightbox'); $('img', lb).src = img.src; lb.hidden = false; }
+    if (img) openLightbox(img.src, '');
   });
   const legendEl = $('#legend');
   if (store.get('legendCollapsed', window.matchMedia('(max-width: 900px)').matches)) legendEl.classList.add('collapsed');
@@ -497,12 +587,20 @@
   L.DomEvent.disableClickPropagation(legendEl);
   L.DomEvent.disableScrollPropagation(legendEl);
 
+  document.addEventListener('click', (e) => {
+    const a = e.target.closest('a.artifact');
+    if (!a) return;
+    e.stopPropagation();
+    const art = ARTIFACTS[a.dataset.art];
+    if (art) openLightbox(art.src, art.caption || a.dataset.art);
+  }, true);
+
   $('#lightbox').addEventListener('click', () => { $('#lightbox').hidden = true; });
 
   $('#btn-layer').addEventListener('click', () => setBase(state.base === 'terrain' ? 'light' : 'terrain'));
   const tgLabels = $('#tg-labels');
   tgLabels.checked = state.allLabels;
-  tgLabels.addEventListener('change', () => { state.allLabels = tgLabels.checked; store.set('allLabels', state.allLabels); drawEra(false); });
+  tgLabels.addEventListener('change', () => { state.allLabels = tgLabels.checked; store.set('labelsOn', state.allLabels); drawEra(false); });
   const tgGeo = $('#tg-rivers');
   tgGeo.checked = state.geoLabels;
   const syncGeo = () => { state.geoLabels = tgGeo.checked; store.set('geoLabels', state.geoLabels); tgGeo.checked ? gGeo.addTo(map) : map.removeLayer(gGeo); };

@@ -53,3 +53,12 @@ window.NOTES = [
     ],
   },
 ];
+
+/*
+ * 유물 사진
+ * 여기에 등록된 이름은 판서 노트 · 왕·대통령 · 지도 해설 본문에서 자동으로 클릭 가능한 글씨가 되고,
+ * 누르면 사진이 크게 열린다. (사진 파일은 notes/img/artifacts/ 에 저장)
+ */
+window.ARTIFACTS = {
+  '뗀석기': { src: 'notes/img/artifacts/tteonseokgi.jpg', caption: '뗀석기 — 돌을 깨뜨리거나 떼어 내어 만든 구석기 시대의 도구' },
+};
