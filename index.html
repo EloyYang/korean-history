@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>한국사 지도 노트</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <span class="brand-mark">史</span>
+      <div>
+        <h1>한국사 지도 노트</h1>
+        <p class="brand-sub">한국사능력검정시험 · 시대별 영토와 판서 정리</p>
+      </div>
+    </div>
+    <div class="search">
+      <input id="search" type="search" placeholder="사건 · 지명 · 노트 검색 (예: 살수, 전곡리)" autocomplete="off">
+      <ul id="search-results" class="search-results" hidden></ul>
+    </div>
+  </header>
+
+  <main class="layout">
+    <section class="map-wrap">
+      <div id="map"></div>
+
+      <div class="map-tools">
+        <button id="btn-layer" class="chip" title="배경 지도 전환">지형</button>
+        <label class="chip toggle"><input id="tg-labels" type="checkbox"> 모든 이름</label>
+        <label class="chip toggle"><input id="tg-rivers" type="checkbox" checked> 강·지명</label>
+      </div>
+
+      <div class="legend" id="legend"></div>
+
+      <nav class="timeline" aria-label="시대 선택">
+        <button id="prev" class="nav-btn" aria-label="이전 시대">‹</button>
+        <ol id="timeline"></ol>
+        <button id="next" class="nav-btn" aria-label="다음 시대">›</button>
+      </nav>
+    </section>
+
+    <aside class="panel">
+      <div class="era-head">
+        <p class="era-period" id="era-period"></p>
+        <h2 id="era-name"></h2>
+      </div>
+      <div class="tabs" role="tablist">
+        <button role="tab" data-tab="info" class="tab active">지도 해설</button>
+        <button role="tab" data-tab="rulers" class="tab">왕·대통령 <span id="ruler-count" class="badge"></span></button>
+        <button role="tab" data-tab="notes" class="tab">판서 노트 <span id="note-count" class="badge"></span></button>
+      </div>
+
+      <div class="tab-body" id="tab-info"></div>
+      <div class="tab-body" id="tab-rulers" hidden></div>
+      <div class="tab-body" id="tab-notes" hidden></div>
+    </aside>
+  </main>
+
+  <div id="lightbox" class="lightbox" hidden><img alt="원본 판서"></div>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@turf/turf@6.5.0/turf.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/topojson-client@3.1.0/dist/topojson-client.min.js"></script>
+  <script src="js/eras.js"></script>
+  <script src="js/notes.js"></script>
+  <script src="js/rulers.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
