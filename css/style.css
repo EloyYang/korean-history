@@ -216,7 +216,7 @@ button { font: inherit; color: inherit; cursor: pointer; }
   width: 64px; text-align: center; vertical-align: middle;
   font-size: 14px; font-weight: 700; background: rgba(0, 0, 0, .12);
 }
-.chalk th.row-label span { white-space: nowrap; display: inline-block; border: 1.5px solid var(--chalk-text); padding: 0 6px; border-radius: 3px; }
+.chalk th.row-label span { white-space: nowrap; }
 .chalk td .ln { display: block; }
 .chalk td .ln + .ln { margin-top: 4px; }
 .chalk u { text-decoration: none; border-bottom: 3px solid var(--chalk-blue); }
