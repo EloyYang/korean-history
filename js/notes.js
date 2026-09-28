@@ -25,14 +25,14 @@ window.NOTES = [
     id: 'prehistoric-life',
     era: 'prehistoric',
     title: '선사 시대의 생활',
-    images: ['notes/img/prehistoric-01-paleolithic.webp'],
+    images: ['notes/img/prehistoric-01-paleolithic.webp', 'notes/img/prehistoric-02-neolithic.png'],
     head: [
-      { label: '사회', cells: ['무리 사회'] },
-      { label: '도구', cells: ['구석기'] },
+      { label: '사회', cells: ['무리 사회', '씨족(부족) 사회|<small class="memo">↑ 농경 ⇒ 혁명 (신석기 혁명)</small>'] },
+      { label: '도구', cells: ['구석기', '신석기'] },
     ],
     rows: [
-      { label: '식', cells: ['채집 · 수렵'] },
-      { label: '의', cells: ['가죽옷 <small class="memo">↖ 수렵으로 가죽을 얻음</small>'] },
+      { label: '식', cells: ['채집 · 수렵', '+ <u>농사</u>(밭) <small class="memo">채집·수렵에 농경이 더해짐</small>'] },
+      { label: '의', cells: ['가죽옷 <small class="memo">↖ 수렵으로 가죽을 얻음</small>', '<u>가락바퀴</u>, 뼈바늘'] },
       {
         label: '주',
         cells: [
@@ -40,6 +40,9 @@ window.NOTES = [
           '|⇒ {{연천 전곡리}}, {{공주 석장리}}, {{단양 수양개|<u>단양</u> 수양개}}, {{단양 금굴|<u>단양</u> 금굴}}, {{청원 두루봉 동굴}}(<i>흥수아이</i>)' +
           '|<small class="memo">공주 = 웅진(백제) · 명학소(망이·망소이의 난) · 우금치(동학 농민 운동)</small>' +
           '|<small class="memo">연천 전곡리 ↓ 주먹도끼 발견</small>',
+          '<u>정착</u> → 움집' +
+          '|<small class="memo">움집: 바닥을 파고 지은 반지하 집, 둥근 바닥 가운데 화덕 · 강가·바닷가 → 패총(조개더미)</small>' +
+          '|⇒ {{서울 암사동}}, {{부산 동삼동}}(패총)',
         ],
       },
       {
@@ -47,9 +50,11 @@ window.NOTES = [
         cells: [
           '<em>뗀석기</em> (<u>주먹도끼</u> → 슴베찌르개)' +
           '|<small class="memo">└ 기후↑, 작고 날랜 짐승 多 → 슴베찌르개(창)</small>',
+          '<em>간석기</em>(갈돌 · 갈판)' +
+          '|이른 민무늬 토기, <u>빗살무늬 토기</u>',
         ],
       },
-      { label: '사회', cells: ['<b>평등</b>'] },
+      { label: '사회', cells: ['<b>평등</b>', '○ <em>애니미즘</em>(태양), 토테미즘, 샤머니즘|<small class="memo">평등 사회 유지 · 원시 신앙 등장</small>'] },
     ],
   },
 ];
