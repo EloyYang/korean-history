@@ -175,6 +175,7 @@
   function drawEra(fit) {
     const era = ERAS[state.era];
     gTerr.clearLayers(); gLines.clearLayers(); gMarkers.clearLayers();
+    clearCallouts();
     markerByName = new Map();
 
     era.territories.forEach((t) => {
@@ -214,62 +215,184 @@
       }).addTo(gMarkers);
       mk.bindPopup(popupHtml(m), { maxWidth: 280 });
       const entry = { marker: mk, data: m, size, prio: m.major ? 3 : (m.type === 'capital' || m.type === 'battle') ? 2 : 1 };
-      bindLabel(entry, 'right');
-      mk.on('mouseover', () => { const el = labelEl(entry); if (el) el.classList.add('lbl-peek'); });
-      mk.on('mouseout', () => { const el = labelEl(entry); if (el) el.classList.remove('lbl-peek'); });
+      mk.on('mouseover', () => { if (entry.callout) entry.callout.classList.add('hover'); });
+      mk.on('mouseout', () => { if (entry.callout) entry.callout.classList.remove('hover'); });
       markerByName.set(m.name, entry);
     });
 
     renderLegend(era);
-    requestAnimationFrame(declutter);
+    requestAnimationFrame(layoutCallouts);
     if (fit) map.fitBounds(era.view, { padding: [20, 20], animate: false });
   }
 
-  // ── 마커 이름표: 기본으로 모두 표시하되 겹치면 왼쪽으로 옮기고, 그래도 겹치면 숨김(마우스를 올리면 보임) ──
-  function labelText(e) {
-    const m = e.data;
-    return state.allLabels || m.type === 'capital' ? m.name : (m.year ? `${m.name} (${m.year})` : m.name);
-  }
-  function labelEl(e) { const t = e.marker.getTooltip(); return t && t.getElement(); }
-  function bindLabel(e, dir) {
-    const permanent = state.allLabels || e.data.type === 'capital';
-    const dx = e.size[0] / 2 + 3;
-    const dy = e.size[1] / 2 + 3;
-    const offset = { left: [-dx, 0], right: [dx, 0], top: [0, -dy], bottom: [0, dy] }[dir];
-    e.marker.unbindTooltip();
-    e.marker.bindTooltip(labelText(e), {
-      permanent, direction: dir, offset,
-      className: 'mk-label' + (e.prio >= 3 ? ' major' : '') + (e.data.type === 'battle' ? ' battle' : ''),
-    });
-    e.dir = dir;
-  }
-  function overlaps(a, list) {
-    return list.some((b) => a.left < b.right - 1 && a.right > b.left + 1 && a.top < b.bottom - 1 && a.bottom > b.top + 1);
-  }
-  function declutter() {
-    if (!state.allLabels) return;
-    const entries = [...markerByName.values()];
-    const kept = entries.map((e) => e.marker.getElement()).filter(Boolean).map((el) => el.getBoundingClientRect());
-    entries
-      .sort((a, b) => b.prio - a.prio)
-      .forEach((e) => {
-        if (e.dir !== 'right') bindLabel(e, 'right');
-        let el = labelEl(e);
-        if (!el) return;
-        el.classList.remove('lbl-hidden');
-        let r = el.getBoundingClientRect();
-        const tries = e.prio >= 3 ? ['left', 'top', 'bottom'] : ['left'];
-        for (const dir of tries) {
-          if (!overlaps(r, kept)) break;
-          bindLabel(e, dir);
-          el = labelEl(e);
-          r = el.getBoundingClientRect();
-        }
-        if (overlaps(r, kept) && e.prio < 3) { el.classList.add('lbl-hidden'); return; }
-        kept.push(r);
+  // ── 마커 이름표(콜아웃) ─────────────────────────────
+  // 이름표를 육지(지도 내용) 밖 — 바다나 빈 곳 — 에 우선 배치하고, 선으로 실제 위치와 연결한다.
+  // 자리가 없으면 숨기고 마우스를 올렸을 때 툴팁으로 보여 준다.
+  const overlay = L.DomUtil.create('div', 'callouts', map.getContainer());
+  overlay.innerHTML = '<svg class="callout-lines"></svg>';
+  const svgLines = overlay.firstChild;
+  let landMask = null;
+  let landLite = null;
+  let placed = [];
+
+  function buildLandMask(w, h) {
+    if (!landLite) return null;
+    const cv = document.createElement('canvas');
+    cv.width = w; cv.height = h;
+    const ctx = cv.getContext('2d');
+    const b = map.getBounds();
+    ctx.beginPath();
+    landLite.forEach(({ poly, bbox }) => {
+      if (bbox[2] < b.getWest() - 1 || bbox[0] > b.getEast() + 1 || bbox[3] < b.getSouth() - 1 || bbox[1] > b.getNorth() + 1) return;
+      poly.forEach((ring) => {
+        ring.forEach(([lng, lat], i) => {
+          const pt = map.latLngToContainerPoint([lat, lng]);
+          i ? ctx.lineTo(pt.x, pt.y) : ctx.moveTo(pt.x, pt.y);
+        });
+        ctx.closePath();
       });
+    });
+    ctx.fill('evenodd');
+    const data = ctx.getImageData(0, 0, w, h).data;
+    return (x, y) => {
+      x = Math.round(x); y = Math.round(y);
+      if (x < 0 || y < 0 || x >= w || y >= h) return false;
+      return data[(y * w + x) * 4 + 3] > 0;
+    };
   }
-  map.on('zoomend', () => requestAnimationFrame(declutter));
+
+  function relRect(el, base) {
+    const r = el.getBoundingClientRect();
+    return { left: r.left - base.left, top: r.top - base.top, right: r.right - base.left, bottom: r.bottom - base.top };
+  }
+  function hit(a, list, pad) {
+    pad = pad || 0;
+    return list.some((b) => a.left < b.right + pad && a.right > b.left - pad && a.top < b.bottom + pad && a.bottom > b.top - pad);
+  }
+
+  function segCross(a, b) {
+    const d = (p, q, r) => (q[0] - p[0]) * (r[1] - p[1]) - (q[1] - p[1]) * (r[0] - p[0]);
+    const [p1, p2] = a, [p3, p4] = b;
+    return d(p1, p2, p3) * d(p1, p2, p4) < 0 && d(p3, p4, p1) * d(p3, p4, p2) < 0;
+  }
+  function segHitsRect(a, r) {
+    // 선분을 몇 점으로 나눠 사각형 안을 지나는지 검사
+    for (let t = 0.15; t < 0.9; t += 0.15) {
+      const x = a[0][0] + (a[1][0] - a[0][0]) * t, y = a[0][1] + (a[1][1] - a[0][1]) * t;
+      if (x > r.left && x < r.right && y > r.top && y < r.bottom) return true;
+    }
+    return false;
+  }
+
+  function clearCallouts() {
+    placed.forEach((e) => { if (e.callout) e.callout.remove(); e.callout = null; });
+    placed = [];
+    svgLines.innerHTML = '';
+    markerByName.forEach((e) => { if (e.callout) { e.callout.remove(); e.callout = null; } });
+  }
+
+  function layoutCallouts() {
+    if (map._animatingZoom) return;
+    overlay.classList.remove('zooming');
+    clearCallouts();
+    const entries = [...markerByName.values()];
+    entries.forEach((e) => {
+      e.marker.unbindTooltip();
+      e.marker.bindTooltip(e.data.year ? `${e.data.name} (${e.data.year})` : e.data.name, { direction: 'top', offset: [0, -8], className: 'mk-label' });
+    });
+    if (!state.allLabels) return;
+
+    const box = map.getContainer();
+    const base = box.getBoundingClientRect();
+    const W = box.clientWidth, H = box.clientHeight;
+    landMask = buildLandMask(W, H);
+
+    // 피해야 할 영역: 지도 위 UI, 마커, 나라 이름
+    const blocked = [];
+    document.querySelectorAll('.map-tools, .legend, .timeline, .leaflet-control-zoom, .leaflet-control-attribution').forEach((el) => {
+      if (el.offsetParent) blocked.push(relRect(el, base));
+    });
+    const uiRects = blocked.slice();
+    const labels = [];
+    const segs = [];
+    entries.forEach((e) => { const el = e.marker.getElement(); if (el) blocked.push(relRect(el, base)); });
+    document.querySelectorAll('.terr-label').forEach((el) => blocked.push(relRect(el, base)));
+
+    const ANG = [];
+    for (let a = 0; a < 16; a++) ANG.push((a / 16) * Math.PI * 2);
+    const DIST = [22, 45, 75, 110, 150, 200];
+
+    entries.sort((a, b) => b.prio - a.prio).forEach((e) => {
+      const p = map.latLngToContainerPoint(e.marker.getLatLng());
+      if (p.x < 0 || p.y < 0 || p.x > W || p.y > H) return;
+      if (uiRects.some((r) => p.x > r.left && p.x < r.right && p.y > r.top && p.y < r.bottom)) return;
+      const el = document.createElement('div');
+      el.className = 'callout' + (e.prio >= 3 ? ' major' : '') + (e.data.type === 'battle' ? ' battle' : '') + (e.data.type === 'capital' ? ' capital' : '');
+      el.textContent = e.data.name;
+      overlay.appendChild(el);
+      const w = el.offsetWidth, h = el.offsetHeight;
+
+      let best = null;
+      DIST.forEach((d) => ANG.forEach((a) => {
+        const cx = p.x + Math.cos(a) * (d + w / 2), cy = p.y + Math.sin(a) * (d + h / 2);
+        const r = { left: cx - w / 2, top: cy - h / 2, right: cx + w / 2, bottom: cy + h / 2 };
+        if (r.left < 4 || r.top < 4 || r.right > W - 4 || r.bottom > H - 4) return;
+        if (hit(r, blocked, 2)) return;
+        if (segs.some((sg) => segHitsRect(sg, r))) return;
+        let land = 0;
+        if (landMask) {
+          for (let i = 0; i <= 2; i++) for (let j = 0; j <= 2; j++) if (landMask(r.left + (w * i) / 2, r.top + (h * j) / 2)) land++;
+        }
+        const tx = Math.max(r.left, Math.min(p.x, r.right)), ty = Math.max(r.top, Math.min(p.y, r.bottom));
+        const seg = [[p.x, p.y], [tx, ty]];
+        if (labels.some((lr) => segHitsRect(seg, lr))) return;
+        const crosses = segs.filter((sg) => segCross(seg, sg)).length;
+        // 육지를 덮을수록, 멀수록, 다른 선과 교차할수록 감점
+        const score = land * 14 + d * 0.45 + crosses * 40 + (Math.abs(Math.sin(a)) > 0.92 ? 3 : 0);
+        if (!best || score < best.score) best = { score, r, seg };
+      }));
+      if (!best) { el.remove(); return; }
+
+      el.style.left = best.r.left + 'px';
+      el.style.top = best.r.top + 'px';
+      blocked.push(best.r);
+      labels.push(best.r);
+      segs.push(best.seg);
+      e.callout = el;
+      e.offset = [best.r.left - p.x, best.r.top - p.y, w, h];
+      e.marker.unbindTooltip();
+      el.addEventListener('click', (ev) => { ev.stopPropagation(); e.marker.openPopup(); });
+      el.addEventListener('mouseenter', () => el.classList.add('hover'));
+      el.addEventListener('mouseleave', () => el.classList.remove('hover'));
+      L.DomEvent.disableClickPropagation(el);
+      placed.push(e);
+    });
+    drawLines();
+  }
+
+  function drawLines() {
+    const out = [];
+    placed.forEach((e) => {
+      const p = map.latLngToContainerPoint(e.marker.getLatLng());
+      const [ox, oy, w, h] = e.offset;
+      const x = p.x + ox, y = p.y + oy;
+      e.callout.style.left = x + 'px';
+      e.callout.style.top = y + 'px';
+      // 이름표 테두리에서 마커에 가장 가까운 점까지 선을 긋는다
+      const tx = Math.max(x, Math.min(p.x, x + w)), ty = Math.max(y, Math.min(p.y, y + h));
+      if (Math.hypot(tx - p.x, ty - p.y) < 9) return;
+      const cls = e.prio >= 3 || e.data.type === 'battle' ? 'strong' : '';
+      out.push(`<line class="${cls}" x1="${p.x}" y1="${p.y}" x2="${tx}" y2="${ty}"/>`);
+    });
+    svgLines.setAttribute('width', map.getContainer().clientWidth);
+    svgLines.setAttribute('height', map.getContainer().clientHeight);
+    svgLines.innerHTML = out.join('');
+  }
+
+  map.on('zoomstart', () => overlay.classList.add('zooming'));
+  map.on('move', () => { if (!overlay.classList.contains('zooming')) drawLines(); });
+  map.on('moveend', () => { overlay.classList.remove('zooming'); requestAnimationFrame(layoutCallouts); });
+  map.on('resize', () => requestAnimationFrame(layoutCallouts));
 
   function renderLegend(era) {
     const rows = [];
@@ -660,6 +783,7 @@
         return !(b[2] < B[0] || b[0] > B[2] || b[3] < B[1] || b[1] > B[3]);
       });
       land = turf.multiPolygon(polys);
+      landLite = turf.simplify(land, { tolerance: 0.03 }).geometry.coordinates.map((poly) => ({ poly, bbox: turf.bbox(turf.polygon(poly)) }));
       drawEra(false);
     })
     .catch((err) => console.warn('육지 데이터를 불러오지 못해 영토를 해안선에 맞추지 않고 표시합니다.', err));
