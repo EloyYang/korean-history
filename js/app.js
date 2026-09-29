@@ -423,8 +423,21 @@
   }
 
   // ── 패널 ─────────────────────────────
+  // 기출 분석 시험 포인트 (70~79회)
+  function gichulHtml(era) {
+    const g = (window.GICHUL || {})[era.id];
+    if (!g) return '';
+    const star = (n) => (n >= 3 ? '★★★' : n === 2 ? '★★' : '★');
+    return `
+      <div class="section-title">기출 시험 포인트 <small>(한능검 심화 70~79회 · 이 시대 ${g.n}문항)</small></div>
+      <p class="gichul-top">자주 나온 주제: ${esc(g.top)}</p>
+      <ul class="points gichul">${g.pts.map(([n, t]) => `<li class="f${Math.min(n, 3)}"><span class="freq">${star(n)}</span>${t}</li>`).join('')}</ul>
+      <p class="gichul-legend">★★★ 3회 이상 · ★★ 2회 · ★ 1회(정답) 출제</p>`;
+  }
+
   function renderPanel() {
     const era = ERAS[state.era];
+    const G = (window.GICHUL || {})[era.id];
     $('#era-name').textContent = era.name;
     $('#era-period').textContent = era.period;
 
@@ -437,8 +450,9 @@
 
     $('#tab-info').innerHTML = `
       <p class="summary">${esc(era.summary)}</p>
-      <div class="section-title">시험 포인트</div>
-      <ul class="points">${era.points.map((p) => `<li>${esc(p)}</li>`).join('')}</ul>
+      ${gichulHtml(era)}
+      <details class="old-points"${G ? '' : ' open'}><summary class="section-title">기본 시험 포인트</summary>
+      <ul class="points">${era.points.map((p) => `<li>${esc(p)}</li>`).join('')}</ul></details>
       ${evs ? `<div class="section-title">지도 위 사건·장소 <small>(누르면 지도 이동)</small></div><ul class="event-list">${evs}</ul>` : ''}
     `;
 
@@ -710,7 +724,7 @@
   // ── 검색 ─────────────────────────────
   const index = [];
   ERAS.forEach((e, ei) => {
-    index.push({ kind: 'era', ei, title: e.name, sub: e.period, text: e.name + ' ' + e.summary + ' ' + e.points.join(' ') });
+    index.push({ kind: 'era', ei, title: e.name, sub: e.period, text: e.name + ' ' + e.summary + ' ' + e.points.join(' ') + ' ' + (((window.GICHUL || {})[e.id] || {}).pts || []).map((p) => stripTags(p[1])).join(' ') });
     e.markers.forEach((m) => index.push({ kind: 'marker', ei, title: m.name + (m.year ? ` (${m.year})` : ''), name: m.name, sub: e.name, text: [m.name, m.year, m.desc, m.tag].join(' ') }));
   });
   RULER_SEQ.forEach(({ ei, r }, pos) => {
