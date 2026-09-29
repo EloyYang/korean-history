@@ -25,6 +25,12 @@
     </div>
   </header>
 
+  <nav class="timeline" aria-label="시대 선택">
+    <button id="prev" class="nav-btn" aria-label="이전 시대">‹</button>
+    <ol id="timeline"></ol>
+    <button id="next" class="nav-btn" aria-label="다음 시대">›</button>
+  </nav>
+
   <main class="layout">
     <section class="map-wrap">
       <div id="map"></div>
@@ -35,12 +41,6 @@
       </div>
 
       <div class="legend" id="legend"></div>
-
-      <nav class="timeline" aria-label="시대 선택">
-        <button id="prev" class="nav-btn" aria-label="이전 시대">‹</button>
-        <ol id="timeline"></ol>
-        <button id="next" class="nav-btn" aria-label="다음 시대">›</button>
-      </nav>
     </section>
 
     <aside class="panel">
@@ -48,10 +48,6 @@
         <div class="era-title">
           <p class="era-period" id="era-period"></p>
           <h2 id="era-name"></h2>
-        </div>
-        <div class="era-nav">
-          <button id="era-prev" class="nav-btn" aria-label="이전 시대" title="이전 시대">‹</button>
-          <button id="era-next" class="nav-btn" aria-label="다음 시대" title="다음 시대">›</button>
         </div>
       </div>
       <div class="tabs" role="tablist">

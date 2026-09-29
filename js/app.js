@@ -750,8 +750,6 @@
   $('#timeline').addEventListener('click', (e) => { const b = e.target.closest('button'); if (b) goEra(+b.dataset.i); });
   $('#prev').addEventListener('click', () => goEra(state.era - 1));
   $('#next').addEventListener('click', () => goEra(state.era + 1));
-  $('#era-prev').addEventListener('click', () => goEra(state.era - 1));
-  $('#era-next').addEventListener('click', () => goEra(state.era + 1));
   document.querySelectorAll('.tab').forEach((b) => b.addEventListener('click', () => setTab(b.dataset.tab)));
 
   $('#tab-info').addEventListener('click', (e) => {

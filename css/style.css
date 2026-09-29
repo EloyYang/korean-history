@@ -77,8 +77,6 @@ body[data-layout="panel"] .chalk { font-size: 15.5px; }
 
 .era-head { display: flex; align-items: center; gap: 12px; }
 .era-title { flex: 1; min-width: 0; }
-.era-nav { display: none; gap: 6px; }
-body[data-layout="panel"] .era-nav { display: flex; }
 body[data-layout="panel"] .era-head { padding-left: max(20px, calc((100% - 1100px) / 2)); padding-right: max(20px, calc((100% - 1100px) / 2)); }
 .layout-switch { margin-left: auto; align-self: center; display: flex; gap: 2px; padding: 2px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface-2); }
 .layout-switch button { border: 0; background: transparent; width: 30px; height: 26px; border-radius: 6px; display: grid; place-items: center; color: var(--muted); }
@@ -107,7 +105,7 @@ body[data-layout="panel"] .era-head { padding-left: max(20px, calc((100% - 1100p
 .chip input { accent-color: var(--accent); margin: 0; }
 
 .legend {
-  position: absolute; left: 12px; bottom: 86px; z-index: 900;
+  position: absolute; left: 12px; bottom: 24px; z-index: 900;
   background: color-mix(in srgb, var(--surface) 92%, transparent); border: 1px solid var(--line);
   border-radius: var(--radius); padding: 8px 10px; font-size: 12.5px; box-shadow: var(--shadow);
   max-width: 220px;
@@ -124,10 +122,10 @@ body[data-layout="panel"] .era-head { padding-left: max(20px, calc((100% - 1100p
 
 /* ── 타임라인 ─────────────────────────── */
 .timeline {
-  position: absolute; left: 12px; right: 12px; bottom: 14px; z-index: 900;
+  position: relative; z-index: 1000; flex: none;
   display: flex; align-items: center; gap: 6px;
-  background: color-mix(in srgb, var(--surface) 94%, transparent); border: 1px solid var(--line);
-  border-radius: 14px; padding: 6px; box-shadow: var(--shadow);
+  background: var(--surface); border-bottom: 1px solid var(--line);
+  padding: 6px 12px;
 }
 .timeline ol {
   flex: 1; display: flex; gap: 4px; margin: 0; padding: 2px; list-style: none;
@@ -319,7 +317,8 @@ a.artifact:hover { color: var(--chalk-yellow); }
   .topbar { flex-wrap: wrap; padding: 10px 16px; }
   .search { width: 100%; }
   .brand-sub { display: none; }
-  .legend { bottom: 78px; font-size: 11.5px; padding: 6px 8px; }
+  .legend { bottom: 20px; font-size: 11.5px; padding: 6px 8px; }
+  .timeline { position: sticky; top: 0; padding: 6px 8px; }
   .era-head, .tabs, .tab-body { padding-left: 16px; padding-right: 16px; }
   .chalk { font-size: 13.5px; }
   .chalk th, .chalk td { padding: 7px 8px; }
