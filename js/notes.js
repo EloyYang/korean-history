@@ -1649,6 +1649,50 @@ window.NOTES = [
     ],
   },
   {
+    id: 'liberation',
+    era: 'modern',
+    title: '광복과 분단 (1945 ~ 1947)',
+    images: ['notes/img/modern-244.webp'],
+    head: [{ label: '', cells: ['外', '內'] }],
+    rows: [
+      { label: '1945 광복', cells: [
+        '· 카이로: 독립 약속|· 얄타: 소련 참전|→ 광복 = <i>분단</i>: 38° 북(소) · 남(미)',
+        '· 조선 건국 동맹(여운형) → <i>건준</i>(치안, <em>좌우 합작</em>) → 조선 인민 공화국 → (미군정 부정)|· 대한민국 임시 정부 → 개인 자격 귀국(X)',
+      ] },
+      { label: '모스크바 3상', cells: [
+        '미 · 소 · 영|· 임시 정부 수립|· <em>신탁 통치</em>(+ 중국)|· <i>미 · 소 공위</i>',
+        '좌 ↔ 우|· 좌: 지지 → 박헌영|· 우: 반대 → 이승만, 김구',
+      ] },
+      { label: '1차 미 · 소 공위(46)', cells: ['미 ↔ 소: 참가 자격 → <b>휴회</b>', '<em>이승만 정읍 발언</em>: 남한 단독 정부 O|↓|여운형 · 김규식 → <u>좌우 합작 운동</u> — 초기 미국 O|&nbsp;&nbsp;└ 7원칙(미 · 소 공위 O, 친일파 X, 임정)'] },
+      { label: '2차 미 · 소 공위(47)', cells: ['← <em>트루먼 독트린</em>(냉전)|미 ↔ 소: 참가 자격 → <b>결렬</b>', '→ UN 이관'] },
+    ],
+  },
+  {
+    id: 'rok-founding',
+    era: 'modern',
+    title: '대한민국 정부 수립 (1948)',
+    images: ['notes/img/modern-245.webp'],
+    head: [{ label: '', cells: ['내용'] }],
+    rows: [
+      { label: 'UN 총회', cells: ['인구 비례 총선거 → 한국 임시 위원단 → <b>소련 거부</b>'] },
+      { label: 'UN 소총회(48)', cells: ['가능 지역 총선거'] },
+      { label: '반대·저항', cells: ['① 김구 \'삼천만 동포에게 읍고\'|② <u>{{제주 4·3 사건}}</u>(특별법, 총선 일부 X)|③ <em>남북 협상</em>: 김구, 김규식 + 김일성, 남북 제 정당 · 사회단체 대표'] },
+      { label: '5 · 10 총선거', cells: ['<em>최초 보통 선거</em> → <b>제헌 헌법</b>: 대통령 <i>간선</i>(국회)'] },
+      { label: '정부 수립', cells: ['<em>대한민국 정부 수립</em> ↔ 북: 조선 민주주의 인민 공화국|· <u>반민특위 X</u> ┬ 국회 프락치 사건|&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;└ 공소 시효 축소|· <em>농지 개혁 O</em>'] },
+    ],
+  },
+  {
+    id: 'korean-war',
+    era: 'modern',
+    title: '6 · 25 전쟁',
+    images: ['notes/img/modern-246.webp'],
+    head: [{ label: '', cells: ['흐름'] }],
+    rows: [
+      { label: '배경', cells: ['· 소 · 중 지원|· <em>애치슨 선언</em>'] },
+      { label: '전개', cells: ['낙동강 방어선(수도 → 부산)|↓|<em>{{인천 상륙 작전}}</em>(장사리 – 학도병)|↓|<b>중국군 개입</b>|↓|{{흥남 철수}}, <u>{{1·4 후퇴}}</u>|↓|소련 휴전 제의|↓|정전 회담(자유 vs 자동 송환)|↓|<em>반공 포로 석방</em>|↓|<b>{{판문점|정전 협정}}</b>(53, DMZ)|⇣|한 · 미 상호 방위 조약'] },
+    ],
+  },
+  {
     id: 'gojoseon-timeline',
     era: 'gojoseon',
     title: '고조선 (최초의 국가)',
