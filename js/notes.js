@@ -1217,6 +1217,37 @@ window.NOTES = [
     ],
   },
   {
+    id: 'joseon-silhak',
+    era: 'gaehang',
+    title: '양명학 · 실학',
+    images: ['notes/img/joseon-silhak-185.webp', 'notes/img/joseon-silhak-186.webp', 'notes/img/joseon-silhak-187.webp'],
+    head: [
+      { label: '', cells: [{ html: '〈양명학〉 실천, 지행합일 — <u>정제두</u> ⇒ 강화 학파|〈실학〉 실사구시, 민족 · 자주적 ⇒ <b>국학</b>', span: 2 }] },
+      { label: '구분', cells: ['<em>중농학파</em>(경세치용 학파)', '<em>중상학파</em>(이용후생 학파, <b>북</b>학파 → 청)'] },
+    ],
+    rows: [
+      { label: '주장', cells: ['토지 분배 → 자영농 육성', '토지 생산력↑, 상공업↑, 청 문물 수용'] },
+      { label: '인물', cells: [
+        '· 유형원 〈반계수록〉 → <u>균전론</u>(신분 차이 O)|· 이익 〈성호사설〉 → <u>한전론</u>(영업전 매매 X)|&nbsp;&nbsp;→ 6좀: 양반, 과거, 노비, 승려, 미신, 게으름|· <i>정약용</i> 〈경세유표〉, 〈흠흠신서〉, 〈목민심서〉|&nbsp;&nbsp;→ <u>여전론</u>: 공동 소유 · 공동 경작 → 노동량에 따라 분배|&nbsp;&nbsp;→ <u>정전제</u>: 9등분 중 가운데 1구역 공동 경작',
+        '· 유수원 〈우서〉 → 사농공상 X ⇝ 직업적 평등|· 홍대용 〈임하경륜〉, 〈의산문답〉|&nbsp;&nbsp;→ 문벌제도 X, 혼천의, <em>지전설, 무한 우주론</em>|· <i>박지원 〈열하일기〉</i> → 수레, 선박, 화폐 O|· <i>박제가 〈북학의〉</i> → 수레, 선박, <u><b>소비론</b></u>',
+      ] },
+    ],
+  },
+  {
+    id: 'joseon-gukhak',
+    era: 'gaehang',
+    title: '국학의 발달',
+    images: ['notes/img/joseon-silhak-188.webp', 'notes/img/joseon-silhak-189.webp'],
+    head: [{ label: '구분', cells: ['내용'] }],
+    rows: [
+      { label: '역사', cells: ['· 안정복 〈동사강목〉: 정통성 ┐|· 한치윤 〈해동역사〉: <em>외국 문헌 인용</em> ┘ 고조선 ~ 고려|· 김정희 〈금석과안록〉: 북한산비 → <em>진흥왕 순수비</em>, <i>추사체</i>, 세한도(제주)|· 이종휘 〈동사〉: 고구려 ┐|· 유득공 <em>〈발해고〉</em>: 남북국 ┘ <em>만주로 시야 확대</em>|· 이긍익 〈연려실기술〉: 조선사'] },
+      { label: '지리서', cells: ['· 역사: 한백겸 〈동국지리지〉, 정약용 〈아방강역고〉|· 인문: <u>이중환 〈택리지〉</u> <small class="memo">(상업적 활용)</small>'] },
+      { label: '지도', cells: ['· 정상기 〈동국지도〉: <em>최초로 100리 척 사용</em>|· 김정호 <u>〈대동여지도〉</u>: 목판, 지도첩'] },
+      { label: '백과사전', cells: ['· 이수광 〈지봉유설〉, 이익 〈성호사설〉, 서유구 〈임원경제지〉|· <em>〈동국문헌비고〉</em>: 영조 ~ 정조'] },
+      { label: '한글', cells: ['신경준 〈훈민정음운해〉'] },
+    ],
+  },
+  {
     id: 'gojoseon-timeline',
     era: 'gojoseon',
     title: '고조선 (최초의 국가)',
