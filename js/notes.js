@@ -507,6 +507,71 @@ window.NOTES = [
     ],
   },
   {
+    id: 'goryeo-periods',
+    era: ['goryeo1', 'goryeo2'],
+    title: '고려의 시기 구분과 지배층 변화',
+    images: ['notes/img/goryeo-01-periods.png'],
+    head: [
+      { label: '', cells: [{ html: '전기', span: 2 }, { html: '후기', span: 2 }] },
+      { label: '', cells: ['초기', '중기', { html: '<em>무신 정변</em>(1170) ↓', span: 1 }, '몽골 → 원 간섭기'] },
+      { label: '', cells: ['918 ~', '~ 1170', '1170 ~', '~ 1392'] },
+    ],
+    rows: [
+      { label: '중앙', cells: [{ html: '호족 + 6두품 → <i>문벌</i>', span: 2 }, '→ <i>무신</i>', '→ <i>권문세족</i>'] },
+      { label: '지방', cells: [{ html: '호족 + 6두품 → <u>향리</u>', span: 3 }, '→ <b>신진 사대부</b>(성리학) ⇑ 권문세족과 대립 → 1392 조선 건국'] },
+    ],
+  },
+  {
+    id: 'goryeo-early-curve',
+    era: 'goryeo1',
+    type: 'curve',
+    title: '고려 초기 왕들의 정책 (그래프)',
+    images: ['notes/img/goryeo-02-kings-a.webp', 'notes/img/goryeo-03-kings-b.webp'],
+    curve: {
+      range: [915, 1000], height: 700, base: 650, scale: 5.6,
+      points: [[918, 0], [930, 20], [943, 40], [950, 42], [955, 42], [965, 55], [976, 76], [985, 90], [997, 96]],
+      tickMarks: [918],
+      ticks: [{ at: 918, label: '918' }],
+      capitals: [],
+    },
+    annos: [
+      { at: 925, box: [70, 8, 560, 182], title: '태조(왕↓)', body: '· 민생 안정: 감세(1/10), <em>흑창</em>(→ 의창)|· 호족 정책 ┬ O: <em>결혼, 사성, 역분전</em>|&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;└ X: <em>사심관</em>(연대 책임, 김부), <em>기인</em>|· 북진 정책 ┬ 발해 유민 수용|&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;└ <u>서경 중시</u>(청천강 ~ 영흥)|· 〈정계〉, 〈계백료서〉, <em>훈요 10조</em>' },
+      { text: '공산 전투|↓|고창 전투|↓|일리천 전투', pos: [150, 250], anchor: 'middle', color: 'small' },
+      { text: '왕규의 난', pos: [420, 330], anchor: 'middle', color: 'green', arrow: [[420, 338], [420, 395]] },
+      { at: 965, box: [370, 470, 330, 130], title: '광종(왕↑)', body: '· <u>노비안검법</u>|· <u>과거제</u>, 호족 X, 공복 제정|· <b>칭제건원</b>(광덕, 준풍)' },
+      { at: 976, box: [720, 360, 170, 70], title: '경종', body: '시정 전시과' },
+      { at: 990, box: [640, 20, 350, 250], title: '성종', body: '<i>최승로 시무 28조</i>|&nbsp;&nbsp;└ 6두품, 유학|· 지방: <b>12목</b> → <u>지방관</u>|· 중앙: 2성 6부|· 연등회↓, 팔관회(도교) X|→ <em>문벌 사회 토대 마련</em>' },
+    ],
+  },
+  {
+    id: 'goryeo-central',
+    era: 'goryeo1',
+    title: '고려의 중앙 정치 조직 — 2성 6부',
+    images: ['notes/img/goryeo-04-central.webp'],
+    head: [{ label: '', cells: ['기관', '역할', '비고'] }],
+    rows: [
+      { label: '당', cells: ['<i>중서문하성</i>|&nbsp;&nbsp;┬ <b>재</b>신(2品↑)|&nbsp;&nbsp;└ 낭사(3品↓)', '심의 · 정책 결정|언론(간쟁·봉박)', '장관: <em>문하시중</em>'] },
+      { label: '', cells: ['상서성 — <i>6부</i>(이·병·호·형·예·공)', '정책 집행', '—'] },
+      { label: '송', cells: ['중추원|&nbsp;&nbsp;┬ <b>추</b>밀(2品↑)|&nbsp;&nbsp;└ 승선(3品)', '군국기무|왕명 출납(비서)', '—'] },
+      { label: '', cells: ['어사대', '감찰', '낭사 + 어사대 = <b>대간</b>(대성): 서경 · 간쟁 · 봉박 ⇒ <u>언론 기능</u>'] },
+      { label: '', cells: ['삼사', '회계 O, <u>언론 X</u>', '<small class="memo">← 이름은 같아도 조선 삼사(언론)와 다름</small>'] },
+      { label: '고려 독자', cells: [{ html: '<em>재추 회의</em>(문관: 재신 + 추밀) · 중방(무관)|· <em>도병마사</em> → 도평의사사(도당): 임시 → 상설|· <em>식목도감</em>|&nbsp;&nbsp;└ <b>고려 독자성</b> <small class="memo">(구조도: 2성 6부 사진)</small>', span: 3 }] },
+    ],
+  },
+  {
+    id: 'goryeo-local',
+    era: 'goryeo1',
+    title: '고려의 지방 행정 · 군사 조직',
+    images: ['notes/img/goryeo-05-local.webp'],
+    head: [{ label: '', cells: [{ html: '지방: 성종 12목 → <b>5도</b>(행정) · <b>양계</b>(군사)', span: 2 }] }],
+    rows: [
+      { label: '양계', cells: ['<em>병마사</em> → 북계 · 동계 <small class="memo">(거란·여진 대비, 천리장성)</small>', '<b>주진군</b>: 군적 X, 상비군'] },
+      { label: '5도', cells: ['<em>안찰사</em>(상설 X) → 5도|수령 → 4도호부 · 8목 — 주 · 군 · 현', '—'] },
+      { label: '속현', cells: ['수령 파견 X → <i>향리</i>가 <b>실질적 지배 세력</b>|→ 속군 · 속현, 향 · 부곡 · 소', '<b>주현군</b>: 군적 X, 예비군'] },
+      { label: '중앙군', cells: [{ html: '<i>2군 6위</i>: 군적 O, 직업 군인, <em>군인전</em>', span: 2 }] },
+    ],
+  },
+  {
     id: 'gojoseon-timeline',
     era: 'gojoseon',
     title: '고조선 (최초의 국가)',
@@ -565,6 +630,7 @@ window.NOTES = [
  * 이름이 지도 마커 이름과 같으면 지도 팝업에도 사진이 함께 나온다.
  */
 window.ARTIFACTS = {
+  '2성 6부': { src: 'notes/img/artifacts/goryeo-2seong6bu.png', caption: '고려의 2성 6부 제도 — 중서문하성 · 상서성(6부) · 중추원 · 어사대 · 삼사 + 도병마사 · 식목도감' },
   '각저총': { src: 'notes/img/artifacts/gakjeochong.webp', caption: '각저총 서역인 — 고구려 고분 벽화 속 서역인(씨름하는 인물), 서역과의 교류' },
   '원성왕릉': { src: 'notes/img/artifacts/wonseong-tomb-statue.webp', caption: '원성왕릉(괘릉) 무인상 — 서역인 모습, 통일 신라와 서역(아라비아)의 교류' },
   '왕궁리': { src: 'notes/img/artifacts/wanggungri.webp', caption: '익산 왕궁리 유적 — 백제 무왕 때 궁궐 터 (왕궁리 5층 석탑)' },
