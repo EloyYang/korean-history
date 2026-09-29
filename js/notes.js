@@ -703,6 +703,47 @@ window.NOTES = [
     ],
   },
   {
+    id: 'goryeo-economy',
+    era: ['goryeo1', 'goryeo2'],
+    title: '고려의 경제',
+    images: ['notes/img/goryeo-econ-1.webp', 'notes/img/goryeo-econ-2.webp'],
+    head: [
+      { label: '〈경제〉', cells: ['<em>역분전</em>(태조)', '<em>시정 전시과</em>(경종)', '<em>개정 전시과</em>(목종)', '<em>경정 전시과</em>(문종)'] },
+    ],
+    rows: [
+      { label: '수조권', cells: [
+        '└ 논공행상',
+        '<small class="memo">↓ 광종(공복)</small>|├ 전 · 현직|└ <b>인품</b>',
+        '├ 전 · 현직|└ 인품 X',
+        '└ <em>현직</em>|<small class="memo">전(토지) + 시(임야) · 토지 부족</small>',
+      ] },
+      { label: '소유', cells: [{ html: '<b>민전</b>(→ 조선)', span: 4 }] },
+      { label: '수취 제도', cells: [{ html: '<i>양안</i> ⇒ 조세(토지세), 공납(특산물) · <i>호적</i> ⇒ 역(정남 → 요역, 군역)', span: 4 }] },
+      { label: '농업(후기)', cells: [{ html: '· 논: <em>이앙법</em>(남부 일부 시행), <em>〈농상집요〉</em>(from 원, 이암)|· 밭: <em>윤작법</em>(2년 3작), 목화(from 원, 문익점)', span: 4 }] },
+      { label: '상업', cells: [{ html: '· 무역: <u>{{벽란도}}</u>(국제 무역항, 예성강, 이규보 – COREA by 아라비아 상인), 〈노걸대〉|· 화폐: <u>활구(은병)</u>, 건원중보(성종, 철전) – 해동통보(숙종) ⇒ 주전도감 ⇝ 유통 X, 현물 O|· 관영 상점(서적점, 다점), 시전 ⇝ <em>경시서</em>(상행위 관리·감독), <em>상평창</em>(물가 조절 기구)', span: 4 }] },
+      { label: '수공업', cells: [{ html: '관영 수공업, 소 수공업 ⟶ 민영 수공업, 사원 수공업', span: 4 }] },
+    ],
+  },
+  {
+    id: 'goryeo-society',
+    era: ['goryeo1', 'goryeo2'],
+    title: '고려의 사회',
+    images: ['notes/img/goryeo-soc-1.webp', 'notes/img/goryeo-soc-2.png'],
+    head: [{ label: '〈사회〉', cells: ['양반 문벌', '중간 계층', '양민', '천민'] }],
+    rows: [
+      { label: '신분제', cells: [
+        '호족 → <b>양반 문벌</b>|↓ 무신|↓ 권문세족',
+        '├ 하급 관리|└ 잡류, 남반, <em>군반, 향리</em>|<small class="memo">양반 + 중간 계층 = 지배층</small>',
+        '<small class="memo">세금 O</small>|├ <i>백정</i>(일반 농민): 인구 多|└ <u>향 · 부곡(농업) · 소(수공업)</u>|&nbsp;&nbsp;&nbsp;&nbsp;<u><em>차별 – 세금↑, 거주 이주 X</em></u>',
+        '├ <i>노비 多</i>|│ (매매 · 상속 · 증여)|└ 일천즉천',
+      ] },
+      { label: '농민 조직', cells: [{ html: '<b>향도</b>: 전기 — 불교 신앙 조직(매향) ⇝ 후기 — 마을 공동 조직(상장제례) → 조선', span: 4 }] },
+      { label: '사회 제도', cells: [{ html: '· 구휼: <em>흑창</em>(태조) → <em>의창</em>, 제위<b>보</b>|· 기구: 동 · 서 대비원, 혜민국, 구제도감, 구급도감', span: 4 }] },
+      { label: '법률', cells: [{ html: '당률 &lt; 관습법, 태 · 장 · 도 · 유 · 사', span: 4 }] },
+      { label: '가족 제도', cells: [{ html: '<u>가정 內 여성 지위↑</u>|└ 균분 상속, 윤행봉사(딸 제사 O), 외가 음서 O, 호적 나이순 기재', span: 4 }] },
+    ],
+  },
+  {
     id: 'gojoseon-timeline',
     era: 'gojoseon',
     title: '고조선 (최초의 국가)',
