@@ -443,6 +443,21 @@ window.NOTES = [
     ],
   },
   {
+    id: 'ancient-culture-3',
+    era: ['c6', 'c7', 'nambuk'],
+    title: '고대의 문화 ③ 과학',
+    images: ['notes/img/ancient-culture-10.webp', 'notes/img/ancient-culture-11.webp'],
+    head: [{ label: '', cells: ['과학'] }],
+    rows: [
+      { label: '고구려', cells: ['<i>천문도</i> → 천상열차분야지도(조선 태조)|&nbsp;&nbsp;└ 왕↑, 농업'] },
+      { label: '백제', cells: ['칠지도(왜, 근초고왕)'] },
+      { label: '신라', cells: ['· 금관|· <em>첨성대</em>(<i>선덕 여왕</i>)|&nbsp;&nbsp;└ 분황사, 황룡사 9층 목탑'] },
+      { label: '가야', cells: ['<em>덩이쇠</em>(철판 갑옷, 금동관)|⇒ {{김해 대성동 고분군|대성동 고분}}(금관가야), {{고령 지산동 고분군|지산동 고분}}(대가야)'] },
+      { label: '통일 신라', cells: ['· 상원사 동종(성덕왕): <em>현존 최고(最古) 동종</em>|· 성덕 대왕 신종(<i>경덕왕</i> ~ 혜공왕): <em>에밀레종</em>|&nbsp;&nbsp;<small class="memo">경덕왕 ─ 녹읍 O, 불국사</small>|· <u>무구정광대다라니경</u>(<em>현존 세계 최고 목판 인쇄물</em>) ⇒'] },
+      { label: '발해', cells: ['—'] },
+    ],
+  },
+  {
     id: 'gojoseon-timeline',
     era: 'gojoseon',
     title: '고조선 (최초의 국가)',
@@ -501,6 +516,14 @@ window.NOTES = [
  * 이름이 지도 마커 이름과 같으면 지도 팝업에도 사진이 함께 나온다.
  */
 window.ARTIFACTS = {
+  '천상열차분야지도': { src: 'notes/img/artifacts/cheonsang-yeolcha.webp', caption: '천상열차분야지도 — 조선 태조 때 고구려 천문도를 바탕으로 돌에 새긴 천문도' },
+  '칠지도': { src: 'notes/img/artifacts/chiljido.png', caption: '칠지도 — 백제 근초고왕 때 왜왕에게 보낸 칼 (일본 이소노카미 신궁 소장)' },
+  '금관': { src: 'notes/img/artifacts/geumgwan.webp', caption: '신라 금관 — 나뭇가지·사슴뿔 모양 세움 장식' },
+  '첨성대': { src: 'notes/img/artifacts/cheomseongdae.png', caption: '첨성대 — 신라 선덕 여왕 때 세운 천문 관측대' },
+  '덩이쇠': { src: 'notes/img/artifacts/deongisoe.png', caption: '덩이쇠 — 가야의 철 생산 · 화폐처럼 쓰이고 낙랑 · 왜에 수출' },
+  '상원사 동종': { src: 'notes/img/artifacts/sangwonsa-bell.webp', caption: '상원사 동종 — 성덕왕, 현존 최고(最古)의 동종' },
+  '성덕 대왕 신종': { src: 'notes/img/artifacts/seongdeok-bell.webp', caption: '성덕 대왕 신종(에밀레종) — 경덕왕 때 시작, 혜공왕 때 완성' },
+  '분황사': { src: 'notes/img/artifacts/bunhwangsa-tap.webp', caption: '경주 분황사 모전 석탑 — 신라 선덕 여왕' },
   '사택지적비': { src: 'notes/img/artifacts/sataek-jijeokbi.webp', caption: '사택지적비 — 백제 귀족 사택지적이 인생의 무상함을 새긴 비 (부여, 도교·불교 영향)' },
   '사신도': { src: 'notes/img/artifacts/sasindo.webp', caption: '사신도 — 현무·청룡·백호·주작 (고구려 고분 벽화, 도교의 방위신)' },
   '산수무늬 벽돌': { src: 'notes/img/artifacts/sansu-byeokdol.webp', caption: '산수무늬 벽돌 — 백제, 도교의 이상 세계(신선 사상) 표현' },

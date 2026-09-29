@@ -6,7 +6,7 @@
   const RULERS = window.RULERS || {};
   const ARTIFACTS = window.ARTIFACTS || {};
   const ART_RE = Object.keys(ARTIFACTS).length
-    ? new RegExp('(' + Object.keys(ARTIFACTS).sort((a, b) => b.length - a.length).map((k) => k.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|') + ')', 'g')
+    ? new RegExp('(' + Object.keys(ARTIFACTS).sort((a, b) => b.length - a.length).map((k) => k.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|') + ')(?![가-힣])', 'g')
     : null;
 
   // 본문 글씨 중 유물 이름을 찾아 사진 링크로 감싼다
