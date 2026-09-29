@@ -1455,6 +1455,39 @@ window.NOTES = [
     ],
   },
   {
+    id: 'modern-culture',
+    era: ['gaehang', 'colonial'],
+    title: '근대 문물의 수용 — 신문 · 기술',
+    images: ['notes/img/gaehang-223.webp', 'notes/img/gaehang-224.webp', 'notes/img/gaehang-225.webp', 'notes/img/gaehang-226.webp'],
+    head: [{ label: '', cells: ['〈개화기〉 ~ 1884', '〈동도서기〉 ~ 1894', '〈광무개혁〉 ~ 1904', '〈애국 계몽〉 1904 ~'] }],
+    rows: [
+      { label: '신문', cells: [
+        '<u>한성순보</u> └ 최초, 순 한문, <em>관보</em>(개화파)|↑ 박문국|<small class="memo">갑신정변으로 X</small>',
+        '<i>한성주보</i> └ <em>최초 상업 광고 게재</em>',
+        '<u>독립신문</u> └ 최초 민간, 영자|<i>제국신문</i> └ 순 한글, 서민|<i>황성신문</i> ┬ 유생|&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;└ <em>시일야방성대곡</em>(장지연, 을사늑약)',
+        '<u>대한매일신보</u> ← 신문지법|├ 양기탁, <u>베델</u>|└ 일제 비판, 의병 호의, 독자↑, 국채 보상 운동',
+      ] },
+      { label: '기술', cells: [
+        '(83) 박문국 · <i>전환국</i>(백동화) · <i>기기창</i>(영선사)|우정총국 <small class="memo">(갑신정변으로 X)</small>, 광혜원 ⇝ 제중원|┌ 최초 근대 학교 = 학문 + 무술 (원산 학사)',
+        '전신(85), <em>전등</em>(87, 경복궁)',
+        '전화, 한성 전기 회사(98) – <u>전차</u>, <u>경인선</u>(99) └ 최초',
+        '러 · 일 전쟁 → <em>경부선(05), 경의선(06)</em>|┌ 이승훈(오산 학교) ┌ 안창호(대성 학교)',
+      ] },
+    ],
+  },
+  {
+    id: 'aeguk-culture',
+    era: ['gaehang', 'colonial'],
+    title: '애국 계몽기의 국학 · 문학 · 종교',
+    images: ['notes/img/gaehang-227.webp'],
+    head: [{ label: '', cells: ['〈애국 계몽〉'] }],
+    rows: [
+      { label: '국어', cells: ['· <b>국문 연구소</b>: 학부, 주시경, 지석영(종두법)|· 신소설: 은세계(→ 원각사), 금수회의록|· 신체시: 해에게서 소년에게(최남선)'] },
+      { label: '史', cells: ['· 위인전, 각국 흥망사|· <u>신채호 〈독사신론〉</u>: <em>민족주의 사학 방향</em>'] },
+      { label: '종교', cells: ['· 천도교(← 동학): <em>만세보</em>|· <u>대종교</u>: 나철, <b>단군</b>|· 유교: 박은식, 〈유교 구신론〉 ⇒ 양명학|· 불교: 한용운, 〈불교 유신론〉|· 천주교: 조 · 프 조약(86) 체결 이후 포교'] },
+    ],
+  },
+  {
     id: 'gojoseon-timeline',
     era: 'gojoseon',
     title: '고조선 (최초의 국가)',
