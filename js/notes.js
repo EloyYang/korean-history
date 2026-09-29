@@ -744,6 +744,39 @@ window.NOTES = [
     ],
   },
   {
+    id: 'goryeo-culture',
+    era: ['goryeo1', 'goryeo2'],
+    title: '고려의 문화 (유학 · 역사 · 불교 · 풍수지리설)',
+    images: ['notes/img/goryeo-culture-112.webp', 'notes/img/goryeo-culture-113.webp', 'notes/img/goryeo-culture-114.webp', 'notes/img/goryeo-culture-115.webp', 'notes/img/goryeo-culture-116.png', 'notes/img/goryeo-culture-117.webp', 'notes/img/goryeo-culture-118.webp', 'notes/img/goryeo-culture-119.png'],
+    head: [{ label: '', cells: ['호족', '문벌', '무신', '원↑ ⋯ 권문세족 ← <b>신진 사대부</b>'] }],
+    rows: [
+      { label: '유학(훈고학)', cells: [
+        '<b>성종</b> ← 최승로|├ 중앙: <u>국자감</u>|│&nbsp;&nbsp;├ 유학부 → 명경과, 제술과|│&nbsp;&nbsp;└ 기술학부 → 잡과|│&nbsp;&nbsp;<small class="memo">〈과거: 쌍기〉 승과 O, <em>무과 X</em></small>|└ 지방: <em>향교</em>',
+        '<em>사학 12도</em>(최충의 9재 학당 = 문헌공도)|&nbsp;&nbsp;└ 최충 = 해동공자|→ 관학 진흥책: 양현고, 전문 7재',
+        '유학↓',
+        '안향: <u>성리학</u>(from 원) 소개|&nbsp;&nbsp;└→ <u>신진 사대부</u>|<i>이제현</i> – 이색 – 정몽주 · 정도전|&nbsp;&nbsp;└ 만권당, 〈역옹패설〉',
+      ] },
+      { label: '역사', cells: [
+        '실록 · 〈구삼국사〉 → X <small class="memo">(전하지 않음)</small>',
+        '<b>〈삼국사기〉</b>|├ 김부식, 신라 (계승)|├ <em>현존 우리나라 최고(最古) 역사서</em>|└ <i>기전체</i>: 본<b>기</b> + (세가) + 지 + 표 + 열<b>전</b>',
+        '· 〈해동고승전〉: 각훈|· <i>〈동명왕편〉</i>: 이규보 ⇒ 고구려|&nbsp;&nbsp;└ 고주몽',
+        '· 〈삼국유사〉: 일연, <em>민간 설화</em>, 군위|· 〈제왕운기〉: 이승휴|&nbsp;&nbsp;⇒ 두 책 모두 <b>단군</b> 수록|· 〈사략〉: 이제현 <small class="memo">(성리학적 사관)</small>',
+      ] },
+      { label: '불교', cells: [
+        '· <i>균여</i>: 〈보현십원가〉 – 향가, 광종|· 태조: 훈요 10조 → 연등회, <i>팔관회</i>↑(도교·민간 신앙)|&nbsp;&nbsp;↓|· 성종: 최승로 → 연등회 ↓, 팔관회 X',
+        '<u>의천</u>(왕자)|├ <u>천태종</u>(국청사)|├ <b>교</b> · 선 통합: 교관겸수|└ 〈교장〉 편찬, 화폐 유통 주장',
+        '· <u>지눌</u> ┬ <u>조계종</u>|&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;├ <b>선</b> · 교 통합: 정혜쌍수, 돈오점수|&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;└ <em>결사</em>(수선사 → 송광사)|&nbsp;&nbsp;⇣|· 혜심: <em>유 · 불 일치설</em>|· 요세: <em>법화 신앙, 백련 결사</em>',
+        '—',
+      ] },
+      { label: '풍수지리설', cells: [
+        '<em>서경 길지설</em> → 훈요 10조, 북진 정책,|3경(개경, 서경, 동경 → 남경)',
+        '⇝ <em>{{묘청의 난|묘청의 서경 천도 운동}}</em>',
+        '—',
+        '→ <em>한양 천도(조선)</em>',
+      ] },
+    ],
+  },
+  {
     id: 'gojoseon-timeline',
     era: 'gojoseon',
     title: '고조선 (최초의 국가)',
