@@ -349,9 +349,10 @@
         const crosses = segs.filter((sg) => segCross(seg, sg)).length;
         // 육지를 덮을수록, 멀수록, 다른 선과 교차할수록 감점
         const score = land * 14 + d * 0.45 + crosses * 40 + (Math.abs(Math.sin(a)) > 0.92 ? 3 : 0);
-        if (!best || score < best.score) best = { score, r, seg };
+        if (!best || score < best.score) best = { score, r, seg, d };
       }));
-      if (!best) { el.remove(); return; }
+      // 너무 멀리 밀려나는 덜 중요한 이름표는 숨긴다 (확대하거나 마우스를 올리면 보임)
+      if (!best || (best.d > 110 && e.prio < 2)) { el.remove(); return; }
 
       el.style.left = best.r.left + 'px';
       el.style.top = best.r.top + 'px';
