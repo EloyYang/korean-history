@@ -1346,6 +1346,55 @@ window.NOTES = [
     ],
   },
   {
+    id: 'after-gapsin',
+    era: 'gaehang',
+    title: '갑신정변 이후의 정세 (1884 ~ 1894)',
+    images: ['notes/img/gaehang-201.webp'],
+    head: [{ label: '', cells: ['갑신정변↓ 이후'] }],
+    rows: [
+      { label: '外', cells: ['· 영국: <u>{{거문도 사건|거문도 불법 점령}}</u> └ <b>중립론</b> ┬ 유길준 〈서유견문〉|&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;└ 부들러(독)|· 청: 내정 간섭↑|· 일: <i>미면 교환</i> ⇣ → <b>反외세</b>'] },
+      { label: '內', cells: ['· 쌀값 폭등|· <i>조세 부담↑</i> ┬ 전신(85), 전등(87) – 경복궁|&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;├ 육영 공원(86)|&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;├ 광혜원 → 제중원(85)|&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;└ 박문국 → 한성순보(83)|→ <b>反봉건</b>'] },
+      { label: '결과', cells: ['反외세 + 反봉건 + 포접제 → <b>동학 농민 운동(1894)</b>'] },
+    ],
+  },
+  {
+    id: 'donghak-1894',
+    era: 'gaehang',
+    title: '동학 농민 운동(1894)',
+    images: ['notes/img/gaehang-202.webp', 'notes/img/gaehang-203.webp'],
+    head: [{ label: '', cells: ['〈1차〉: 반외세 &lt; <b>반봉건</b>', '〈2차〉: <b>반외세</b> &gt; 반봉건'] }],
+    rows: [
+      { label: '전개', cells: [
+        '<i>교조 신원 운동</i> (복합 상소)|↓|{{고부 봉기}}: 조병갑(만석보), 전봉준|↓|<i>백산 봉기</i>: 이용태|↓|{{황토현 전투|황토현}} · 황룡촌 전투|↓|{{전주성 · 전주 화약|전주성 점령}}|&nbsp;&nbsp;→ 청 출병 – 톈진 조약(갑신정변) – 일 파병|↓|<em>전주 화약</em> └ <u>폐정 개혁(집강소)</u> – 교정청(정부)|&nbsp;&nbsp;&nbsp;&nbsp;– 신분제 X|&nbsp;&nbsp;&nbsp;&nbsp;– 토지 균분, 과부 재가',
+        '<b>경복궁 점령</b>(일) → 청 · 일 전쟁 → 갑오개혁|↓|남 · 북접 연합|↓|<u>{{우금치 전투}}(공주)</u>|&nbsp;&nbsp;↑ 군국기무처 진압',
+      ] },
+    ],
+  },
+  {
+    id: 'gabo-eulmi',
+    era: 'gaehang',
+    title: '갑오개혁(1894) · 을미개혁(1895)',
+    images: ['notes/img/gaehang-204.webp', 'notes/img/gaehang-205.png'],
+    head: [{ label: '', cells: ['내용'] }],
+    rows: [
+      { label: '1차 갑오', cells: ['· <u>군국기무처</u>, 김홍집 + 흥선 대원군|· 정: 의정부 <i>8아문</i>, 궁내부, <em>개국 기원</em>|· 경: 도량형 통일, <em>재정 일원화(탁지아문)</em>, 조세 금납화, <em>은(금 X) 본위제</em>|· 사: <u>신분제 X</u>, <u>과부 재가 O</u>, <em>과거제 X</em>'] },
+      { label: '2차 갑오', cells: ['· <em>독립 서고문, 홍범 14조</em>(종묘), <b>박영효</b> + 김홍집|· 정: 중앙 내각 7부, 지방 8도 → 23부, <u>재판소</u>(지방관↓)|· 사: <i>교육 입국 조서</i>(근대 학제) — 소학교 ⋯ 중학교, 사범 학교, 외국어 학교'] },
+      { label: '배경', cells: ['청 · <b>일</b> 전쟁 → <u>시모노세키 조약</u>(조선 독립, <i>요동 반도 O</i>)|→ 삼국 간섭(러 · 프 · 독) → <em>을미사변</em>: 명성 황후 X'] },
+      { label: '을미개혁', cells: ['· 연호: 건양|· <u>단발령</u>|· 태양력|· 종두법'] },
+    ],
+  },
+  {
+    id: 'dongnip-daehan',
+    era: 'gaehang',
+    title: '독립 협회와 대한 제국',
+    images: ['notes/img/gaehang-206.webp', 'notes/img/gaehang-207.webp'],
+    head: [{ label: '', cells: ['아관 파천(96) → 대한 <b>제국</b>(97) — 환구단(황궁우)'] }],
+    rows: [
+      { label: '독립 협회', cells: ['① <i>독립신문</i> → ② <em>독립 협회</em> → ③ 독립문 (by 서재필)|<em>만민 공동회</em>: <i>러시아 절영도 조차 X</i>, 한 · 러 은행 X|↓|<em>관민 공동회</em>: <i>박정양(관) + 윤치호(민)</i>|&nbsp;&nbsp;<u>헌의 6조</u> ┬ 입헌 군주제 지향|&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;├ <em>재정 일원화(탁지부)</em>|&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;└ 피고 인권 O|↓ 중추원 관제(의회)|<b>해산</b> ← 황국 협회(보부상)'] },
+      { label: '광무개혁', cells: ['· <b>구본(동도)</b>: <i>황제↑</i> ┬ <u>대한국 국제(99)</u>|&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;└ 원수부|· <b>신참(서기)</b>: <i>양전 사업</i> → <u>지계 발급</u>(근대 토지 소유권), 상공업↑, 기술 학교 O, 전차, <em>경인선(최초)</em>'] },
+    ],
+  },
+  {
     id: 'gojoseon-timeline',
     era: 'gojoseon',
     title: '고조선 (최초의 국가)',
