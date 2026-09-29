@@ -1411,6 +1411,19 @@ window.NOTES = [
     ],
   },
   {
+    id: 'aeguk-gyemong',
+    era: ['gaehang', 'colonial'],
+    title: '애국 계몽 운동',
+    images: ['notes/img/gaehang-211.webp', 'notes/img/gaehang-212.webp'],
+    head: [{ label: '', cells: ['<b>애국 계몽 운동</b> → 사회 진화론(실력↑ – 교육, 언론, 식산흥업)', '관련 사건'] }],
+    rows: [
+      { label: '1. 보안회', cells: ['<em>日 황무지 개간권 X</em> └ 농광 회사 with', '러 · 일 전쟁(04) 무렵'] },
+      { label: '2. 헌정 연구회', cells: ['· 입헌 군주제|· 일진회 비판|· 을사늑약 반대', '을사늑약(05)'] },
+      { label: '3. 대한 자강회(06)', cells: ['← 헌정 연구회 계승, 전국 <b>지회</b>, <b>월보</b>|· <i>고종 퇴위 반대</i> ← <b>보안법</b>으로 해산', '헤이그 특사 → 고종 X(07)'] },
+      { label: '4. 신민회(07)', cells: ['· 안창호, 양기탁 → <b>비밀 결사</b> → 105人 사건으로 X(11)|· 대성 · 오산 학교 / 자기 회사, 태극 서관|· <u>공화정</u>, <u>국외 독립운동 기지</u>({{삼원보|서간도 삼원보}})', '→ 실력 양성'] },
+    ],
+  },
+  {
     id: 'gojoseon-timeline',
     era: 'gojoseon',
     title: '고조선 (최초의 국가)',
