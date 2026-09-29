@@ -326,6 +326,47 @@ window.NOTES = [
     ],
   },
   {
+    id: 'ancient-society',
+    era: ['c6', 'c7', 'nambuk'],
+    title: '고대의 사회',
+    images: ['notes/img/ancient-society-01.webp', 'notes/img/ancient-society-02.png', 'notes/img/ancient-society-03.png', 'notes/img/ancient-society-04.png'],
+    head: [{ label: '', cells: [{ html: '〈사회〉 — <b>씨족 사회 전통</b> → 화랑도 · 귀족 회의', span: 4 }] }],
+    rows: [
+      {
+        label: '화랑도',
+        cells: [{
+          html: '화(랑) = 귀족 · 도 = 귀족 + 일반 → <b>계급 갈등 완화</b>' +
+            '|· 진흥왕: 국가 조직으로 개편' +
+            '|· 신채호: <em>낭가</em>',
+          span: 4,
+        }],
+      },
+      { label: '귀족 회의', cells: ['<b>신라</b>', '<b>고구려</b>', '<b>백제</b>', '<b>발해</b>'] },
+      { label: '', cells: ['<u>화백 회의</u>', '제가 회의', '정사암', '정당성'] },
+      { label: '', cells: ['김씨, <b>만장일치</b>', '고씨', '부여씨 + 8성', '대씨'] },
+      {
+        label: '골품제',
+        cells: [{
+          html: '폐쇄적, 삶 모습 규정' +
+            '|· <b>골</b> ┬ 성골: ~ 진덕 여왕' +
+            '|&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;└ 진골: 태종 무열왕(김춘추)' +
+            '|· <b>품</b> ─ 6두품: <em>"아찬"까지</em> <small class="memo">(관등 승진 제한)</small>' +
+            '|&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;└ 설계두 <small class="memo">(신분 제약 → 당으로 건너감)</small>',
+          span: 4,
+        }],
+      },
+      {
+        label: '6두품',
+        cells: [{
+          html: '설계두 → <i>설총</i>(원효 子, 신문왕) → <i>최치원</i>' +
+            '|&nbsp;&nbsp;&nbsp;&nbsp;┌ <em>빈공과</em>, <em>토황소격문</em>' +
+            '|&nbsp;&nbsp;&nbsp;&nbsp;└ 시무 10여 조 X, 〈계원필경〉',
+          span: 4,
+        }],
+      },
+    ],
+  },
+  {
     id: 'gojoseon-timeline',
     era: 'gojoseon',
     title: '고조선 (최초의 국가)',
