@@ -1276,6 +1276,38 @@ window.NOTES = [
     ],
   },
   {
+    id: 'daewongun-internal',
+    era: 'gaehang',
+    title: '흥선 대원군의 대내 정책',
+    images: ['notes/img/daewongun-193.webp', 'notes/img/daewongun-194.webp'],
+    head: [{ label: '', cells: ['19C 문제', '흥선 대원군(고종 父)의 대응'] }],
+    rows: [
+      { label: '왕권 강화', cells: [
+        '<b>정치</b>: 세도 정치',
+        '· <u>비변사 X</u> = 의정부(행정) + 삼군부(군사)|· 〈대전회통〉, 〈육전조례〉|· <u>경복궁 중건</u> ⇐ <em>원납전, 당백전, 묘지림</em> 벌목|· <u>서원↓</u>(47개소), 만동묘 X',
+      ] },
+      { label: '민생 안정', cells: [
+        '<b>경제</b>: <i>삼정 문란</i>|&nbsp;&nbsp;└ 삼정이정청 X (by 박규수)',
+        '· 전정: 양전 사업 ⇝ 재정↑|· 군정: <u>호포제</u> → 양반 O|· 환곡(공무원): <em>사창제</em>(민간)',
+      ] },
+      { label: '반발', cells: [{ html: '경복궁 중건 · 서원 철폐 · 호포제 → 양반 반발 → <em>최익현 탄핵 상소</em> → 고종 친정(1873)|&nbsp;&nbsp;└ 최익현: 이후 개항 X(왜양일체론), 을사의병', span: 2 }] },
+    ],
+  },
+  {
+    id: 'daewongun-external',
+    era: 'gaehang',
+    title: '흥선 대원군의 대외 정책 — 통상 수교 거부',
+    images: ['notes/img/daewongun-195.webp', 'notes/img/daewongun-196.webp'],
+    head: [{ label: '', cells: ['19C 서세동점, 이양선 多 → 통상 수교 <b>거부</b> (순서 ①~⑤)'] }],
+    rows: [
+      { label: '① 병인박해(66)', cells: ['프랑스 천주교 선교사 X'] },
+      { label: '② 제너럴 셔먼호 사건(66)', cells: ['{{제너럴셔먼호 사건|평양}}, 미국 — 박규수'] },
+      { label: '③ 병인양요(66)', cells: ['강화도(프) ← ①|<u>양헌수({{정족산성}})</u>, 한성근({{문수산성}}, 김포)|<em>외규장각 도서 약탈</em>(→ 박병선)'] },
+      { label: '④ 오페르트 도굴(68)', cells: ['{{오페르트 도굴 사건|남연군 묘}}(흥선 대원군 父) 도굴 시도 — 독일, 충청도 덕산'] },
+      { label: '⑤ 신미양요(71)', cells: ['강화도(미) ← ②|<u>어재연({{광성보}})</u>|<em>수자기 약탈</em>|→ <b>척화비 건립</b>'] },
+    ],
+  },
+  {
     id: 'gojoseon-timeline',
     era: 'gojoseon',
     title: '고조선 (최초의 국가)',
