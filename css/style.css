@@ -473,13 +473,15 @@ mark.hl.hl-first { animation: hl-pulse 1.1s ease-out 3; }
 .sync-read em { font-style: normal; color: #c62828; font-weight: 700; }
 .sync-x { border: 0; background: none; color: var(--muted); font-size: 13px; }
 .sync-body { position: relative; }
-.sync-lane { display: flex; align-items: center; height: 22px; }
+.sync-lane { display: flex; align-items: stretch; height: 22px; }
+.sync-lane .sync-name { align-self: center; }
+.sync-lane.ev { height: 44px; }
 .sync-lane + .sync-lane { margin-top: 3px; }
-.sync-name { width: 44px; flex: none; font-weight: 900; font-size: 11.5px; }
+.sync-name { width: 52px; flex: none; font-weight: 900; font-size: 11px; line-height: 1.2; word-break: keep-all; }
 .sync-track { position: relative; flex: 1; height: 100%; border-radius: 4px; background: var(--surface-2); }
 .sync-lane.axis .sync-track { background: none; height: 14px; }
 .sync-king {
-  position: absolute; top: 2px; bottom: 2px; border: 0; border-radius: 4px; padding: 0 4px; overflow: hidden;
+  position: absolute; border: 0; border-radius: 4px; padding: 0 4px; overflow: hidden;
   background: color-mix(in srgb, var(--c) 30%, var(--surface)); border-left: 2px solid var(--c);
   font-size: 10.5px; font-weight: 700; color: var(--text); text-align: left; white-space: nowrap; cursor: pointer;
 }
@@ -494,3 +496,13 @@ mark.hl.hl-first { animation: hl-pulse 1.1s ease-out 3; }
 .sync-cursor { position: absolute; top: 0; bottom: 14px; width: 0; border-left: 1.5px dashed var(--accent); pointer-events: none; }
 body:has(.sync:not([hidden])) .legend { bottom: calc(24px + var(--sync-h, 0px)); }
 @media (max-width: 900px) { .sync-name { width: 36px; font-size: 10.5px; } .sync-read { white-space: normal; } }
+
+.sync-evl {
+  position: absolute; top: 17px; transform: translateX(-50%); font-size: 10px; font-weight: 700; white-space: nowrap;
+  color: var(--text); background: color-mix(in srgb, var(--surface) 85%, transparent); padding: 0 3px; border-radius: 3px; cursor: pointer; line-height: 13px;
+}
+.sync-evl.r1 { top: 30px; }
+.sync-evl.battle { color: #c62828; }
+.sync-evl.hide { display: none; }
+.sync-ev:hover + .sync-evl, .sync-evl:hover { z-index: 3; }
+.sync-body { max-height: 46vh; overflow-y: auto; }

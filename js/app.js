@@ -241,13 +241,25 @@
   function syncData(era) {
     const list = RULERS[era.id] || [];
     const states = [...new Set(list.map((r) => r.state))];
-    if (states.length < 2) return null;
+    if (!states.length) return null;
+    const NOW = new Date().getFullYear();
     const lanes = states.map((st) => {
       const rs = list.filter((r) => r.state === st).map((r) => ({ r, span: parseReign(r.reign) }))
         .filter((x) => x.span[0] != null).sort((a, b) => a.span[0] - b.span[0]);
-      rs.forEach((x, i) => { if (x.span[1] == null) x.span[1] = rs[i + 1] ? rs[i + 1].span[0] : x.span[0] + 25; });
-      return { st, rs };
-    });
+      rs.forEach((x, i) => {
+        if (x.span[1] == null) x.span[1] = rs[i + 1] ? rs[i + 1].span[0] : Math.min(x.span[0] + 25, Math.max(NOW, x.span[0] + 1));
+        if (x.span[1] <= x.span[0]) x.span[1] = x.span[0] + 1;
+      });
+      // 재위가 겹치는 인물(섭정·무신 집권자 등)은 아래 줄로 쌓는다
+      const rowEnd = [];
+      rs.forEach((x) => {
+        let row = rowEnd.findIndex((end) => end <= x.span[0]);
+        if (row < 0) { row = rowEnd.length; rowEnd.push(0); }
+        rowEnd[row] = x.span[1]; x.row = row;
+      });
+      return { st, rs, rows: Math.max(1, rowEnd.length) };
+    }).filter((l) => l.rs.length);
+    if (!lanes.length) return null;
     const events = era.markers.map((m) => ({ m, y: parseYear(m.year) })).filter((x) => x.y != null);
     const all = lanes.flatMap((l) => l.rs.flatMap((x) => x.span));
     const lo0 = Math.min(...all), hi0 = Math.max(...all);
@@ -267,21 +279,39 @@
     const ticks = [];
     for (let y = Math.ceil(d.lo / step) * step; y <= d.hi; y += step) ticks.push(y);
     const lanesHtml = d.lanes.map((l) => `
-      <div class="sync-lane">
+      <div class="sync-lane" style="height:${l.rows * 22}px">
         <div class="sync-name" style="color:${stateColor(l.st)}">${esc(l.st)}</div>
-        <div class="sync-track">${l.rs.map((x) => `<button class="sync-king" data-state="${esc(l.st)}" data-name="${esc(x.r.name)}" style="left:${X(x.span[0])}%;width:${Math.max(0.8, X(x.span[1]) - X(x.span[0]))}%;--c:${stateColor(l.st)}" title="${esc(x.r.name)} (${esc(x.r.reign)}) — ${esc(x.r.key || '')}"><span>${esc(x.r.name)}</span></button>`).join('')}</div>
+        <div class="sync-track">${l.rs.map((x) => `<button class="sync-king" data-state="${esc(l.st)}" data-name="${esc(x.r.name)}" style="left:${X(x.span[0])}%;width:${Math.max(0.8, X(x.span[1]) - X(x.span[0]))}%;top:${x.row * 22 + 2}px;height:18px;--c:${stateColor(l.st)}" title="${esc(x.r.name)} (${esc(x.r.reign)}) — ${esc(x.r.key || '')}"><span>${esc(x.r.name)}</span></button>`).join('')}</div>
       </div>`).join('');
-    const evHtml = d.events.map((e) => `<button class="sync-ev ${e.m.type}" data-marker="${esc(e.m.name)}" style="left:${X(e.y)}%" title="${esc(e.m.name)} (${esc(e.m.year)})"></button>`).join('');
+    const evs = d.events.slice().sort((a, b) => a.y - b.y);
+    const evHtml = evs.map((e) => `<button class="sync-ev ${e.m.type}" data-marker="${esc(e.m.name)}" style="left:${X(e.y)}%" title="${esc(e.m.name)} (${esc(e.m.year)})"></button>`).join('')
+      + evs.map((e) => `<span class="sync-evl ${e.m.type}" data-marker="${esc(e.m.name)}" style="left:${X(e.y)}%">${esc(e.m.name)}</span>`).join('');
     box.innerHTML = `
-      <div class="sync-head"><b>동시대 연표</b><span class="sync-read">막대에 마우스를 올리면 그 해의 왕과 사건이 보여요</span><button class="sync-x" title="닫기">✕</button></div>
+      <div class="sync-head"><b>동시대 연표</b><span class="sync-read">막대에 마우스를 올리면 그 해의 인물(왕·대통령)과 사건이 보여요</span><button class="sync-x" title="닫기">✕</button></div>
       <div class="sync-body">
         ${lanesHtml}
-        <div class="sync-lane"><div class="sync-name">사건</div><div class="sync-track ev">${evHtml}</div></div>
+        <div class="sync-lane ev"><div class="sync-name">사건</div><div class="sync-track ev">${evHtml}</div></div>
         <div class="sync-lane axis"><div class="sync-name"></div><div class="sync-track">${ticks.map((t) => `<span class="sync-tick" style="left:${X(t)}%">${fmtYear(t)}</span>`).join('')}</div></div>
         <div class="sync-cursor" hidden></div>
       </div>`;
     box._d = d;
+    layoutEvLabels(box);
     document.body.style.setProperty('--sync-h', box.offsetHeight + 'px');
+  }
+
+  // 사건 이름표: 두 줄에 번갈아 배치하고, 겹치면 숨긴다(점에 마우스를 올리면 보임)
+  function layoutEvLabels(box) {
+    const labels = [...box.querySelectorAll('.sync-evl')];
+    const ends = [-Infinity, -Infinity];
+    labels.forEach((el) => {
+      el.classList.remove('hide', 'r1');
+      const r = el.getBoundingClientRect();
+      const row = ends.findIndex((end) => r.left > end + 4);
+      if (row < 0) { el.classList.add('hide'); return; }
+      if (row === 1) el.classList.add('r1');
+      const r2 = el.getBoundingClientRect();
+      ends[row] = r2.right;
+    });
   }
 
   function syncReadout(year) {
@@ -306,7 +336,7 @@
   });
   $('#sync').addEventListener('click', (e) => {
     if (e.target.closest('.sync-x')) { $('#tg-sync').checked = false; store.set('sync', false); renderSync(ERAS[state.era]); return; }
-    const ev = e.target.closest('.sync-ev'); if (ev) { focusMarker(ev.dataset.marker); return; }
+    const ev = e.target.closest('.sync-ev, .sync-evl'); if (ev) { focusMarker(ev.dataset.marker); return; }
     const k = e.target.closest('.sync-king');
     if (k) {
       const pos = RULER_SEQ.findIndex((x) => x.ei === state.era && x.r.name === k.dataset.name && x.r.state === k.dataset.state);
@@ -487,6 +517,7 @@
   map.on('move', () => { if (!overlay.classList.contains('zooming')) drawLines(); });
   map.on('moveend', () => { overlay.classList.remove('zooming'); requestAnimationFrame(layoutCallouts); });
   map.on('resize', () => requestAnimationFrame(layoutCallouts));
+  window.addEventListener('resize', () => { const b = $('#sync'); if (b && !b.hidden) layoutEvLabels(b); });
 
   function renderLegend(era) {
     const rows = [];
