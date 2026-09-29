@@ -644,6 +644,65 @@ window.NOTES = [
     ],
   },
   {
+    id: 'goryeo-foreign-1',
+    era: 'goryeo1',
+    title: '고려의 대외 관계 ① 거란 · 여진',
+    images: ['notes/img/goryeo-foreign-102.webp', 'notes/img/goryeo-foreign-103.webp'],
+    head: [{ label: '', cells: ['호족 ⇒ 10 ~ 11C <em>거란(요)</em>', '문벌 ⇒ 12C <em>여진(금)</em>'] }],
+    rows: [
+      { label: '침입·대응', cells: [
+        '1차: <u>{{서희의 외교 담판|서희}}</u> vs 소손녕 — <u>{{강동 6주}}</u>|2차: 강조의 변, 양규|3차: 강감찬 — {{귀주 대첩}} (낙성대)',
+        '· 윤관: <u>별무반</u> ⇒ {{윤관 여진 정벌|동북 9성}}|&nbsp;&nbsp;├ 신기군(기병)|&nbsp;&nbsp;├ 신보군(보병)|&nbsp;&nbsp;└ 항마군(승병)|· <i>금 사대 ⇒ O(이자겸, 김부식)</i>|&nbsp;&nbsp;↕ {{묘청의 난|묘청}}의 서경 천도 운동 X',
+      ] },
+      { label: '결과', cells: [
+        '· <em>초조대장경</em>|· 광군(정종)|· <em>천리장성</em> <small class="memo">(압록강 ~ 도련포, 거란·여진 대비)</small>|· <em>나성</em>(개성)',
+        '—',
+      ] },
+    ],
+  },
+  {
+    id: 'goryeo-foreign-2',
+    era: 'goryeo2',
+    title: '고려의 대외 관계 ② 몽골 항쟁',
+    images: ['notes/img/goryeo-foreign-104.webp'],
+    head: [{ label: '', cells: ['무신 ⇒ 13C <em>몽골(원)</em> → <em>초조대장경 X, 황룡사 9층 목탑 X</em>'] }],
+    rows: [
+      { label: '항쟁', cells: [
+        '· 최우: {{강화도}} 천도 ⇝ (1270) 개경 환도|· 김윤후: {{처인성 전투|처인성}}(살리타 X), <em>{{충주성 전투|충주}}(노비)</em> ⇝ <em>다인철소</em>|· 배중손, 김통정: <u>삼별초</u>|&nbsp;&nbsp;└ = 좌 · 우별초 + 신의군|&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;강화도 → {{진도 용장성|진도(용장성)}} → {{제주 항파두리|제주도(항파두리)}}',
+      ] },
+      { label: '결과', cells: ['<em>팔만대장경</em> ({{합천 해인사}})'] },
+    ],
+  },
+  {
+    id: 'goryeo-yuan',
+    era: 'goryeo2',
+    title: '원 간섭기 ↔ 공민왕의 개혁',
+    images: ['notes/img/goryeo-foreign-105.webp', 'notes/img/goryeo-foreign-106.webp'],
+    head: [{ label: '', cells: ['권문세족 ⇒ <b>원 간섭기</b>', '<u>공민왕</u>(노국 대장 공주) + 신진 사대부(성리학)'] }],
+    rows: [
+      { label: '영토', cells: ['영토 축소 ┬ <em>쌍성총관부</em>(철령 이북)|&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;├ 동녕부(서경)|&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;└ 탐라총관부(제주)', '→ X ({{쌍성총관부 수복}})'] },
+      { label: '왕실', cells: ['부마국, 忠○왕', '—'] },
+      { label: '관제', cells: ['2성(→ 첨의부), 6부(→ 4사)|중추원(→ 밀직사)', '<small class="memo">관제 복구</small>'] },
+      { label: '내정', cells: ['내정 간섭: <em>다루가치, 정동행성</em>(개경) <em>이문소</em>', '→ X (정동행성 이문소 폐지)'] },
+      { label: '공녀', cells: ['<em>공녀</em>(→ 조혼)', '—'] },
+      { label: '풍속', cells: ['<em>몽골풍</em>(변발, 호복) ≠ 고려양', '→ X'] },
+      { label: '권문세족', cells: ['권문세족', '→ X 기철(기황후)'] },
+      { label: '', cells: ['· 정치: 도평의사사, 음서, 정방', '→ X <b>정방 폐지</b>'] },
+      { label: '', cells: ['· 경제: <b>대농장</b>', '→ X <u>전민변정도감(신돈)</u>|&nbsp;&nbsp;└ 왕↑, 재정↑'] },
+    ],
+  },
+  {
+    id: 'goryeo-end',
+    era: 'goryeo2',
+    title: '14C 홍건적 · 왜구 → 조선 건국',
+    images: ['notes/img/goryeo-foreign-107.webp'],
+    head: [{ label: '', cells: ['14C {{홍건적 침입|홍건적}}(안동 피신 → 공민왕) · 왜구'] }],
+    rows: [
+      { label: '왜구 격퇴', cells: ['· {{홍산 대첩}}: 최영|· {{진포 대첩}}: 최무선 <em>(화통도감 – 화포)</em>|&nbsp;&nbsp;⇓|· <i>{{황산 대첩|황산 전투}}: 이성계</i>|&nbsp;&nbsp;└→ 신흥 무인 세력↑'] },
+      { label: '조선 건국', cells: ['명, 철령위 설치 통보|↓|최영(우왕) → 요동 정벌 단행|↓|<em>{{위화도 회군}}: 4불가론</em> <small class="memo">(최영 제거)</small>|↓|<em>과전법 시행</em>|⇓|<b>조선(1392)</b>'] },
+    ],
+  },
+  {
     id: 'gojoseon-timeline',
     era: 'gojoseon',
     title: '고조선 (최초의 국가)',
