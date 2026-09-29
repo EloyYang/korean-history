@@ -68,9 +68,9 @@ window.NOTES = [
   },
   {
     id: 'gojoseon-timeline',
-    era: 'states',
+    era: 'gojoseon',
     title: '고조선 (최초의 국가)',
-    images: ['notes/img/states-01-gojoseon-a.png', 'notes/img/states-02-gojoseon-b.png'],
+    images: ['notes/img/gojoseon-01-gojoseon-a.png', 'notes/img/gojoseon-02-gojoseon-b.png'],
     head: [
       { label: '사회', cells: ['군장 국가', { html: '연맹 왕국 → <small class="memo">(B.C. 5C 이후)</small>', span: 3 }] },
       { label: '도구', cells: ['<i>청동기</i> ↓ 고조선 = 최초의 국가', { html: '철기', span: 3 }] },
