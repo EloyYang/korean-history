@@ -464,8 +464,11 @@
   }
 
   function renderNote(n) {
-    const head = n.head.map((r) => `<tr><th class="row-label"><span>${esc(r.label)}</span></th>${r.cells.map((c) => `<td>${formatCell(c)}</td>`).join('')}</tr>`).join('');
-    const body = n.rows.map((r) => `<tr><th class="row-label"><span>${esc(r.label)}</span></th>${r.cells.map((c) => `<td>${formatCell(c)}</td>`).join('')}</tr>`).join('');
+    // 셀은 문자열 또는 { html, span } (span = 가로로 합칠 칸 수)
+    const td = (c) => (typeof c === 'object' ? `<td colspan="${c.span || 1}">${formatCell(c.html)}</td>` : `<td>${formatCell(c)}</td>`);
+    const tr = (r) => `<tr><th class="row-label"><span>${esc(r.label)}</span></th>${r.cells.map(td).join('')}</tr>`;
+    const head = n.head.map(tr).join('');
+    const body = n.rows.map(tr).join('');
     const imgs = (n.images || []).map((src) => `<img src="${esc(src)}" alt="${esc(n.title)} 원본 판서" loading="lazy">`).join('');
     return `
       <article class="note-card" data-note="${esc(n.id)}">
@@ -614,7 +617,7 @@
   });
   NOTES.forEach((n) => {
     const ei = ERAS.findIndex((e) => e.id === n.era);
-    const text = [n.title, ...n.head.flatMap((r) => [r.label, ...r.cells]), ...n.rows.flatMap((r) => [r.label, ...r.cells])].map(stripTags).join(' ');
+    const text = [n.title, ...n.head.flatMap((r) => [r.label, ...r.cells]), ...n.rows.flatMap((r) => [r.label, ...r.cells])].map((c) => stripTags(typeof c === 'object' ? c.html : c)).join(' ');
     index.push({ kind: 'note', ei, title: '📝 ' + n.title, sub: (ERAS[ei] || {}).name + ' · 판서 노트', text, note: n.id });
   });
 

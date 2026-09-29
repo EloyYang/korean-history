@@ -6,6 +6,7 @@
  *
  *   era    : eras.js 의 시대 id
  *   head   : 표 머리글 행들  { label, cells: [열마다 하나] }
+ *            셀을 { html: '…', span: 3 } 으로 쓰면 가로로 여러 칸을 합친다
  *   rows   : 본문 행들       { label, cells: [열마다 하나] }
  *   images : 원본 판서 이미지 경로
  *
@@ -63,6 +64,56 @@ window.NOTES = [
         ],
       },
       { label: '사회', cells: ['<b>평등</b>', '○ <em>애니미즘</em>(태양), 토테미즘, 샤머니즘|<small class="memo">평등 사회 유지 · 원시 신앙 등장</small>', '<b>고인돌</b>, 돌널무덤|<b>비파형 동검</b>, 거친무늬 거울|<small class="memo">↳ 고조선 (고인돌·비파형 동검 = 고조선 세력 범위의 증거)</small>|⇒ {{강화 고인돌|강화}} · {{고창 고인돌|고창}} · {{화순 고인돌|화순}} 고인돌', '덧널무덤, 독무덤|<u>세형 동검</u>, 잔무늬 거울, 거푸집|<small class="memo">└ 한반도 내 독자적 청동기 문화</small>|<u>명도전 · 오수전, 붓</u>|<small class="memo">└ 중국과의 교류</small>'] },
+    ],
+  },
+  {
+    id: 'gojoseon-timeline',
+    era: 'states',
+    title: '고조선 (최초의 국가)',
+    images: ['notes/img/states-01-gojoseon-a.png', 'notes/img/states-02-gojoseon-b.png'],
+    head: [
+      { label: '사회', cells: ['군장 국가', { html: '연맹 왕국 → <small class="memo">(B.C. 5C 이후)</small>', span: 3 }] },
+      { label: '도구', cells: ['<i>청동기</i> ↓ 고조선 = 최초의 국가', { html: '철기', span: 3 }] },
+      { label: '시기', cells: ['B.C. 2333 · <b>단군 조선</b>', 'B.C. 4C ~ 3C', 'B.C. 2C · <b>위만 조선</b>', 'B.C. 108 · 멸망'] },
+    ],
+    rows: [
+      {
+        label: '건국',
+        cells: [
+          '① 단군 이야기' +
+          '|환인 — 환웅(+3,000) + 곰, 호' +
+          '|<small class="memo">선민 사상 · 계급, 농경, 토템</small>' +
+          '|⇒ <i>단군왕검</i>: <b>제</b>사 = <b>정</b>치 (제정일치)',
+          '—', '—', '—',
+        ],
+      },
+      {
+        label: '정치',
+        cells: [
+          '—',
+          '王 — <b>부왕</b> → <b>준왕</b> (왕위 <u>세습</u>)|관직: 상, 대부, 장군',
+          '준왕 X → 위만 집권|· <u>본격적인 철기 수용</u>',
+          '{{왕검성}} X (우거왕)',
+        ],
+      },
+      {
+        label: '대외',
+        cells: [
+          '—',
+          '<b>연</b>과 대립(4C) → 연의 공격({{연 진개의 침입|진개}}, 3C)',
+          '· <u>중계 무역</u> <small class="memo">(한 ↔ 남쪽 진국)</small>',
+          '{{한 무제의 침입|한(무제)}}의 공격 → <b>한 군현</b> 설치',
+        ],
+      },
+      {
+        label: '유물·법',
+        cells: [
+          '② <u>비파형 동검, 고인돌</u> <small class="memo">↗ 세계 유산</small>' +
+          '|<small class="memo">분포 → 요서·요동 ~ 한반도 서북부 = 고조선 세력 범위</small>' +
+          '|③ <b>8조법</b> (人 X → 死)',
+          '—', '—', '—',
+        ],
+      },
     ],
   },
 ];
