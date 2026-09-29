@@ -216,6 +216,9 @@
       }).addTo(gMarkers);
       mk.bindPopup(popupHtml(m), { maxWidth: 280 });
       const entry = { marker: mk, data: m, size, prio: m.major ? 3 : (m.type === 'capital' || m.type === 'battle') ? 2 : 1 };
+      // 마우스를 올리면 이름 툴팁 — 이름표(콜아웃)가 이미 보이면 툴팁 대신 이름표를 강조
+      mk.bindTooltip(m.year ? `${m.name} (${m.year})` : m.name, { direction: 'top', offset: [0, -8], className: 'mk-label' });
+      mk.on('tooltipopen', () => { if (entry.callout) mk.closeTooltip(); });
       mk.on('mouseover', () => { if (entry.callout) entry.callout.classList.add('hover'); });
       mk.on('mouseout', () => { if (entry.callout) entry.callout.classList.remove('hover'); });
       markerByName.set(m.name, entry);
@@ -297,10 +300,6 @@
     overlay.classList.remove('zooming');
     clearCallouts();
     const entries = [...markerByName.values()];
-    entries.forEach((e) => {
-      e.marker.unbindTooltip();
-      e.marker.bindTooltip(e.data.year ? `${e.data.name} (${e.data.year})` : e.data.name, { direction: 'top', offset: [0, -8], className: 'mk-label' });
-    });
     if (!state.allLabels) return;
 
     const box = map.getContainer();
@@ -361,7 +360,7 @@
       segs.push(best.seg);
       e.callout = el;
       e.offset = [best.r.left - p.x, best.r.top - p.y, w, h];
-      e.marker.unbindTooltip();
+      e.marker.closeTooltip();
       el.addEventListener('click', (ev) => { ev.stopPropagation(); e.marker.openPopup(); });
       el.addEventListener('mouseenter', () => el.classList.add('hover'));
       el.addEventListener('mouseleave', () => el.classList.remove('hover'));
@@ -449,7 +448,7 @@
 
     renderRulers();
 
-    const notes = NOTES.filter((n) => n.era === era.id);
+    const notes = NOTES.filter((n) => noteEras(n).includes(era.id));
     $('#note-count').textContent = notes.length || '';
     $('#tab-notes').innerHTML = notes.length
       ? notes.map(renderNote).join('')
@@ -463,25 +462,104 @@
     return withLinks.split('|').map((l) => `<span class="ln">${l}</span>`).join('');
   }
 
-  function renderNote(n) {
-    // 셀은 문자열 또는 { html, span, rowspan } (span = 가로로, rowspan = 세로로 합칠 칸 수)
+  // 판서 노트의 era 는 문자열 하나 또는 여러 시대 배열
+  function noteEras(n) { return [].concat(n.era); }
+
+  // 셀은 문자열 또는 { html, span, rowspan } (span = 가로로, rowspan = 세로로 합칠 칸 수)
+  function tableHtml(t) {
     const td = (c) => (typeof c === 'object'
       ? `<td colspan="${c.span || 1}" rowspan="${c.rowspan || 1}">${formatCell(c.html)}</td>`
       : `<td>${formatCell(c)}</td>`);
     const tr = (r) => `<tr><th class="row-label"><span>${esc(r.label)}</span></th>${r.cells.map(td).join('')}</tr>`;
-    const head = n.head.map(tr).join('');
-    const body = n.rows.map(tr).join('');
+    return `<div class="chalk-wrap"><table class="chalk"><thead>${t.head.map(tr).join('')}</thead><tbody>${t.rows.map(tr).join('')}</tbody></table></div>`;
+  }
+
+  // 흥망 곡선 그래프 (판서의 그래프를 SVG로 재현)
+  function curveHtml(n) {
+    const c = n.curve;
+    const W = 1000, H = c.height || 660, base = c.base || 540, left = 60, right = c.right || 860, scale = c.scale || 3.8;
+    const X = (yr) => left + ((yr - c.range[0]) / (c.range[1] - c.range[0])) * (right - left);
+    const Y = (v) => base - v * scale;
+    const vAt = (yr) => {
+      const p = c.points;
+      for (let i = 1; i < p.length; i++) {
+        if (yr <= p[i][0]) { const [x0, v0] = p[i - 1], [x1, v1] = p[i]; return v0 + ((v1 - v0) * (yr - x0)) / (x1 - x0); }
+      }
+      return p[p.length - 1][1];
+    };
+    const pts = c.points.map(([yr, v]) => [X(yr), Y(v)]);
+    let d = `M${pts[0][0]},${pts[0][1]}`;
+    for (let i = 0; i < pts.length - 1; i++) {
+      const p0 = pts[i - 1] || pts[i], p1 = pts[i], p2 = pts[i + 1], p3 = pts[i + 2] || p2;
+      const c1 = [p1[0] + (p2[0] - p0[0]) / 6, p1[1] + (p2[1] - p0[1]) / 6];
+      const c2 = [p2[0] - (p3[0] - p1[0]) / 6, p2[1] - (p3[1] - p1[1]) / 6];
+      d += ` C${c1} ${c2} ${p2}`;
+    }
+    const mid = `ah-${n.id}`;
+    const parts = [];
+    // 축
+    parts.push(`<line class="axis" x1="${left}" y1="${base}" x2="${right + 20}" y2="${base}"/><line class="axis" x1="${left}" y1="${base}" x2="${left}" y2="20"/>`);
+    (c.tickMarks || []).forEach((yr) => parts.push(`<line class="axis" x1="${X(yr)}" y1="${base - 6}" x2="${X(yr)}" y2="${base + 6}"/>`));
+    (c.ticks || []).forEach((t) => {
+      const x = X(t.at);
+      if (t.circle) parts.push(`<circle class="tick-circle" cx="${x}" cy="${base + 21}" r="13"/>`);
+      parts.push(`<text class="tick" x="${x}" y="${base + 26}" text-anchor="middle">${esc(t.label)}</text>`);
+    });
+    // 도읍 막대
+    (c.capitals || []).forEach(([name, a, b]) => {
+      const x1 = X(a), x2 = X(b), y = base + 62;
+      parts.push(`<line class="cap" x1="${x1}" y1="${y}" x2="${x2}" y2="${y}"/><line class="cap" x1="${x1}" y1="${y - 7}" x2="${x1}" y2="${y + 7}"/><line class="cap" x1="${x2}" y1="${y - 7}" x2="${x2}" y2="${y + 7}"/>`);
+      parts.push(`<text class="cap-label" x="${(x1 + x2) / 2}" y="${y + 5}" text-anchor="middle">${esc(name)}</text>`);
+    });
+    parts.push(`<path class="curve-line" d="${d}"/>`);
+    // 주석
+    (n.annos || []).forEach((a) => {
+      if (a.box) {
+        const [bx, by, bw, bh] = a.box;
+        const ax = X(a.at), ay = Y(vAt(a.at));
+        const top = by + 10;
+        const tx = Math.max(bx + 8, Math.min(ax, bx + bw - 8));
+        const ty = Math.max(top, Math.min(ay, by + bh));
+        parts.push(`<line class="lead" x1="${ax}" y1="${ay}" x2="${tx}" y2="${ty}"/><circle class="dot" cx="${ax}" cy="${ay}" r="4.5"/>`);
+        parts.push(`<foreignObject x="${bx}" y="${by}" width="${bw}" height="${bh}"><div xmlns="http://www.w3.org/1999/xhtml" class="cbox"><div class="cbox-title">${esc(a.title)}</div><div class="cbox-body">${formatCell(a.body)}</div></div></foreignObject>`);
+      } else {
+        if (a.arrow) {
+          const [[x1, y1], [x2, y2]] = a.arrow;
+          parts.push(`<line class="arrow ${a.color || ''}" x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" marker-end="url(#${mid})"/>`);
+        }
+        if (a.at != null && a.dot) parts.push(`<circle class="dot" cx="${X(a.at)}" cy="${Y(vAt(a.at))}" r="4.5"/>`);
+        const [lx, ly] = a.pos;
+        const lines = String(a.text).split('|');
+        parts.push(`<text class="clabel q ${a.color || ''}" x="${lx}" y="${ly}" text-anchor="${a.anchor || 'start'}">${lines.map((l, i) => `<tspan x="${lx}" dy="${i ? 19 : 0}">${esc(l)}</tspan>`).join('')}</text>`);
+      }
+    });
+    return `
+      <div class="curve-wrap">
+        <button class="curve-close" data-act="shrink" type="button">✕ 닫기</button>
+        <svg class="curve" viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(n.title)}">
+          <defs><marker id="${mid}" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="ah"/></marker></defs>
+          ${parts.join('')}
+        </svg>
+      </div>`;
+  }
+
+  function renderNote(n) {
     const imgs = (n.images || []).map((src) => `<img src="${esc(src)}" alt="${esc(n.title)} 원본 판서" loading="lazy">`).join('');
+    const isCurve = n.type === 'curve';
+    const body = isCurve
+      ? curveHtml(n) + (n.table ? `${n.table.title ? `<div class="sub-title">${esc(n.table.title)}</div>` : ''}${tableHtml(n.table)}` : '')
+      : tableHtml(n);
     return `
       <article class="note-card" data-note="${esc(n.id)}">
         <div class="note-head">
           <h3>${esc(n.title)}</h3>
           <div class="note-actions">
+            ${isCurve ? '<button data-act="expand" aria-pressed="false">크게 보기</button>' : ''}
             <button data-act="quiz" aria-pressed="false">암기 모드</button>
             ${imgs ? '<button data-act="img" aria-pressed="false">원본 판서</button>' : ''}
           </div>
         </div>
-        <div class="chalk-wrap"><table class="chalk"><thead>${head}</thead><tbody>${body}</tbody></table></div>
+        ${body}
         ${imgs ? `<div class="note-img" hidden>${imgs}</div>` : ''}
       </article>`;
   }
@@ -562,7 +640,7 @@
   // ── 타임라인 ─────────────────────────────
   function renderTimeline() {
     $('#timeline').innerHTML = ERAS.map((e, i) => {
-      const hasNote = NOTES.some((n) => n.era === e.id);
+      const hasNote = NOTES.some((n) => noteEras(n).includes(e.id));
       return `<li><button data-i="${i}" title="${esc(e.period)}">${esc(e.name)}${hasNote ? '<span class="dot" title="판서 노트 있음"></span>' : ''}<small>${esc(e.period.split('(')[0].trim())}</small></button></li>`;
     }).join('');
   }
@@ -618,8 +696,10 @@
     index.push({ kind: 'ruler', ei, pos, title: `👑 ${r.name} (${r.reign})`, sub: `${ERAS[ei].name} · ${r.state}`, text: [r.state, r.name, r.key, ...r.items].map(stripTags).join(' ') });
   });
   NOTES.forEach((n) => {
-    const ei = ERAS.findIndex((e) => e.id === n.era);
-    const text = [n.title, ...n.head.flatMap((r) => [r.label, ...r.cells]), ...n.rows.flatMap((r) => [r.label, ...r.cells])].map((c) => stripTags(typeof c === 'object' ? c.html : c)).join(' ');
+    const ei = ERAS.findIndex((e) => e.id === noteEras(n)[0]);
+    const tables = [n, n.table].filter((t) => t && t.head);
+    const annos = (n.annos || []).map((a) => [a.title, a.body, a.text].filter(Boolean).join(' '));
+    const text = [n.title, ...annos, ...tables.flatMap((t) => [...t.head.flatMap((r) => [r.label, ...r.cells]), ...t.rows.flatMap((r) => [r.label, ...r.cells])])].map((c) => stripTags(typeof c === 'object' ? c.html : c)).join(' ');
     index.push({ kind: 'note', ei, title: '📝 ' + n.title, sub: (ERAS[ei] || {}).name + ' · 판서 노트', text, note: n.id });
   });
 
@@ -692,9 +772,14 @@
       const on = btn.getAttribute('aria-pressed') !== 'true';
       btn.setAttribute('aria-pressed', String(on));
       if (btn.dataset.act === 'quiz') {
-        const tbl = $('.chalk', card);
-        tbl.classList.toggle('quiz', on);
-        tbl.querySelectorAll('td.revealed').forEach((td) => td.classList.remove('revealed'));
+        card.querySelectorAll('.chalk, .curve').forEach((el) => el.classList.toggle('quiz', on));
+        card.querySelectorAll('.revealed').forEach((el) => el.classList.remove('revealed'));
+      } else if (btn.dataset.act === 'expand' || btn.dataset.act === 'shrink') {
+        const open = btn.dataset.act === 'expand' ? on : false;
+        card.classList.toggle('expanded', open);
+        const eb = $('button[data-act="expand"]', card);
+        if (eb) eb.setAttribute('aria-pressed', String(open));
+        document.body.classList.toggle('no-scroll', open);
       } else {
         $('.note-img', card).hidden = !on;
       }
@@ -702,6 +787,8 @@
     }
     const td = e.target.closest('.chalk.quiz td');
     if (td) { td.classList.toggle('revealed'); return; }
+    const qc = e.target.closest('.curve.quiz .cbox, .curve.quiz .clabel');
+    if (qc) { qc.classList.toggle('revealed'); return; }
     const img = e.target.closest('.note-img img');
     if (img) openLightbox(img.src, '');
   });

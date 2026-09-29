@@ -346,3 +346,54 @@ a.artifact:hover { color: var(--chalk-yellow); }
 @media (max-width: 900px) {
   .stepper { position: static; margin: -16px -16px 12px; padding: 10px 16px; }
 }
+
+/* ── 판서 그래프 (흥망 곡선) ─────────────────────────── */
+.curve-wrap { overflow-x: auto; border-radius: var(--radius); background: var(--chalk-bg); box-shadow: var(--shadow); }
+.curve { display: block; width: 100%; min-width: 860px; height: auto; font-family: 'Noto Sans KR', sans-serif; }
+.curve .axis { stroke: var(--chalk-text); stroke-width: 2; }
+.curve .tick { fill: var(--chalk-text); font-size: 15px; }
+.curve .tick-circle { fill: none; stroke: var(--chalk-text); stroke-width: 1.5; }
+.curve .cap { stroke: var(--chalk-text); stroke-width: 1.5; }
+.curve .cap-label { fill: var(--chalk-text); font-size: 15px; paint-order: stroke; stroke: var(--chalk-bg); stroke-width: 8px; }
+.curve .curve-line { fill: none; stroke: var(--chalk-blue); stroke-width: 5; stroke-linecap: round; }
+.curve .lead { stroke: var(--chalk-text); stroke-width: 1.3; opacity: .85; }
+.curve .dot { fill: var(--chalk-text); }
+.curve .arrow { stroke: var(--chalk-text); stroke-width: 1.8; }
+.curve .ah { fill: var(--chalk-text); }
+.curve .clabel { fill: var(--chalk-text); font-size: 15px; }
+.curve .clabel.green, .curve .arrow.green { fill: var(--chalk-green); stroke: var(--chalk-green); }
+.curve .clabel.green { stroke: none; }
+.curve .clabel.orange { fill: var(--chalk-memo); }
+.curve .arrow.orange { stroke: var(--chalk-memo); }
+.curve .clabel.small { font-size: 13px; }
+.cbox {
+  position: relative; box-sizing: border-box; height: calc(100% - 10px); margin-top: 10px;
+  border: 1.5px solid var(--chalk-text); padding: 12px 10px 6px; color: var(--chalk-text);
+  font-size: 14.5px; line-height: 1.5; font-family: 'Noto Sans KR', sans-serif;
+}
+.cbox-title {
+  position: absolute; top: -11px; left: 50%; transform: translateX(-50%); white-space: nowrap;
+  background: var(--chalk-bg); padding: 0 8px; font-weight: 700; font-size: 15px; line-height: 20px;
+}
+.cbox .ln { display: block; }
+.cbox u { text-decoration: none; border-bottom: 3px solid var(--chalk-blue); }
+.cbox i { font-style: normal; text-decoration: underline wavy var(--chalk-blue); text-underline-offset: 4px; }
+.cbox b { color: var(--chalk-yellow); }
+.cbox em { font-style: normal; color: var(--chalk-green); }
+.cbox .memo { color: var(--chalk-memo); font-size: 13px; }
+.cbox a.place { color: inherit; text-decoration: none; border-bottom: 1px dotted rgba(255,255,255,.6); cursor: pointer; }
+.cbox a.place:hover { color: var(--chalk-yellow); }
+.curve.quiz .cbox { cursor: pointer; }
+.curve.quiz .cbox:not(.revealed) .cbox-body { filter: blur(6px); opacity: .5; pointer-events: none; }
+.curve.quiz .clabel:not(.revealed) { filter: blur(4px); cursor: pointer; }
+.sub-title { font-size: 14px; font-weight: 900; margin: 14px 0 6px; }
+.curve-close { display: none; }
+.note-card.expanded .curve-wrap {
+  position: fixed; inset: 0; z-index: 2600; border-radius: 0; overflow: auto; padding: 48px 16px 16px;
+}
+.note-card.expanded .curve { min-width: 1100px; max-width: 1500px; margin: 0 auto; }
+.note-card.expanded .curve-close {
+  display: block; position: fixed; top: 10px; right: 16px; z-index: 2601; border: 1px solid var(--chalk-line);
+  background: rgba(0,0,0,.3); color: var(--chalk-text); border-radius: 999px; padding: 5px 14px; font-size: 13px;
+}
+body.no-scroll { overflow: hidden; }
