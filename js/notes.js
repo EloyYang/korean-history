@@ -1395,6 +1395,22 @@ window.NOTES = [
     ],
   },
   {
+    id: 'gukgwon-pital',
+    era: ['gaehang', 'colonial'],
+    title: '개항 ~ 국권 피탈 흐름',
+    images: ['notes/img/gaehang-208.webp', 'notes/img/gaehang-209.webp', 'notes/img/gaehang-210.png'],
+    head: [{ label: '', cells: ['흐름', '내용'] }],
+    rows: [
+      { label: '개항기', cells: [{ html: '강화도 조약(76) — 임오군란(82) — 갑신정변(84) — 동학 농민 운동(94) — 갑오 · 을미개혁 — 아관 파천 — 대한 제국|<small class="memo">↑ 위정척사: 최익현(개항 반대, 강화도 조약) · 영남 만인소(〈조선책략〉 반대) · 을미의병(을미개혁)</small>', span: 2 }] },
+      { label: '러 · 일 전쟁(04)', cells: ['← 러시아 용암포 조차(03)', '· <em>한 · 일 의정서</em>: 군용지 free|· <i>1차 한 · 일 협약</i>: <b>고문</b> ┬ 메가타(재정)|&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;└ 스티븐스(외교)'] },
+      { label: '을사늑약(05)', cells: ['<i>2차 한 · 일 협약</i>', '<em>외교권 X</em>, <b>통감</b>(부) 설치'] },
+      { label: '헤이그 특사(07)', cells: ['이준 · 이위종 · 이상설 (+ 헐버트, 미국)', '→ 고종 X (강제 퇴위), <b>순종 O</b>(융희)'] },
+      { label: '정미 7조약(07)', cells: ['<i>한 · 일 신협약</i>', '<em>군대 X</em>(해산), <b>차관</b> 정치'] },
+      { label: '기유각서(09)', cells: ['—', '<em>사법권 X</em>'] },
+      { label: '국권 피탈', cells: ['경술국치', '<b>1910. 8. 29</b>'] },
+    ],
+  },
+  {
     id: 'gojoseon-timeline',
     era: 'gojoseon',
     title: '고조선 (최초의 국가)',
