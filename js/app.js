@@ -34,15 +34,23 @@
     });
   }
 
+  // src 는 경로 하나 또는 여러 장(배열) — 여러 장이면 나란히 보여 준다
   function openLightbox(src, caption) {
     const lb = document.getElementById('lightbox');
-    const img = lb.querySelector('img');
-    const cap = lb.querySelector('figcaption');
+    const box = lb.querySelector('.lb-imgs');
+    const srcs = [].concat(src);
     lb.classList.remove('missing');
-    img.onerror = () => lb.classList.add('missing');
-    img.src = src;
-    img.alt = caption || '';
-    cap.textContent = caption || '';
+    box.innerHTML = '';
+    box.style.setProperty('--n', srcs.length);
+    let failed = 0;
+    srcs.forEach((u) => {
+      const img = document.createElement('img');
+      img.alt = caption || '';
+      img.onerror = () => { img.remove(); if (++failed === srcs.length) lb.classList.add('missing'); };
+      img.src = u;
+      box.appendChild(img);
+    });
+    lb.querySelector('figcaption').textContent = caption || '';
     lb.hidden = false;
   }
   const COLORS = window.POLITY_COLORS || {};
