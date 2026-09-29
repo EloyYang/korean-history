@@ -1004,6 +1004,178 @@ window.NOTES = [
     ],
   },
   {
+    id: 'joseon-culture-1',
+    era: 'joseon1',
+    title: '조선 전기의 문화 ① 유학 · 불교 · 역사',
+    images: ['notes/img/joseon-cul-144.webp', 'notes/img/joseon-cul-145.webp', 'notes/img/joseon-cul-146.webp', 'notes/img/joseon-cul-147.webp', 'notes/img/joseon-cul-148.webp'],
+    head: [{ label: '', cells: ['유학(성리학↑)', '불교', '<em>역사</em> → 정통성'] }],
+    rows: [
+      { label: '15C 훈구', cells: [
+        '· 중앙: <em>성균관</em>(고등) — 대사성, <i>명륜당</i>(교육) + <i>대성전</i>(제사)|&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;4부 학당(중등)|· 지방: <em>향교</em>(중등) ← 교수, 훈도 파견|⇒ 모두 <b>관학</b>',
+        '· <u>숭유 억불</u>: 도첩제, 교단 정리(세종)|· 〈석보상절〉: <i>수양 대군</i>|&nbsp;&nbsp;└ 세조: 간경도감',
+        '· 〈고려국사〉: by 정도전 (편년체)|· 〈고려사〉: <b>기전체</b>(문종)|· 〈고려사절요〉: <b>편년체</b>|· <em>〈실록〉</em>: 편년체, 춘추관, 세계 기록 유산|· <u><em>〈동국통감〉</em></u>: by 서거정, 고조선 ~ 고려, 통사|· <em>〈동문선〉</em>: by 서거정, 시문집',
+      ] },
+      { label: '16C 사림', cells: [
+        '<u><em>서원</em></u> = 교육 + 제사 ⇒ <b>사학</b>|· <b>이황</b>: 〈주자서절요〉, <u>〈성학십도〉</u> ⇝ 동방 주자|&nbsp;&nbsp;사단칠정 논쟁(with 기대승), 예안 향약, 도산 서원, <em>일본 성리학↑</em>|· <b>이이</b>: 〈동호문답〉, <u>〈성학집요〉</u>|&nbsp;&nbsp;현실 개혁 → 10만 양병설, 수미법',
+        '—',
+        '→ 〈기자실기〉',
+      ] },
+    ],
+  },
+  {
+    id: 'joseon-culture-2',
+    era: 'joseon1',
+    title: '조선 전기의 문화 ② 지리 · 법 · 윤리 · 음악',
+    images: ['notes/img/joseon-cul-149.webp', 'notes/img/joseon-cul-150.webp'],
+    head: [{ label: '', cells: ['<em>지리</em> → 중앙 집권', '법 · 윤리', '음악'] }],
+    rows: [
+      { label: '15C 훈구', cells: [
+        '<u>혼일강리역대국도지도</u>|├ 태종|├ <em>현존 동양 최고 세계 지도</em>|└ 중화사상|<u><em>〈동국여지승람〉</em></u>',
+        '· <u>〈경국대전〉</u>: 세조 ~ <b>성종</b>|· 〈삼강행실도〉: 세종, 충신 · 효자 · 열녀|· 〈국조오례의〉',
+        '〈악학궤범〉|&nbsp;&nbsp;└ 음악 이론',
+      ] },
+      { label: '16C 사림', cells: [
+        '↓ 〈신증동국여지승람〉(중종)',
+        '〈이륜행실도〉: 중종, 연장자 · 연소자, 친구',
+        '—',
+      ] },
+      { label: '', cells: [{ html: '<small class="memo">〈동국여지승람〉 · 〈국조오례의〉 · 〈악학궤범〉 · 〈경국대전〉 완성 = 모두 <b>성종</b> (칠판의 주황 테두리)</small>', span: 3 }] },
+    ],
+  },
+  {
+    id: 'joseon-culture-3',
+    era: 'joseon1',
+    title: '조선 전기의 문화 ③ 문자 · 인쇄 · 천문 · 역법 · 의학 · 농서',
+    images: ['notes/img/joseon-cul-151.webp', 'notes/img/joseon-cul-152.webp'],
+    head: [{ label: '', cells: ['문자 · 인쇄', '천문 · 역법', '의학 · 농서'] }],
+    rows: [
+      { label: '태조·태종', cells: ['태종: 주자소 설치, 계미자', '<em>천상열차분야지도</em>(태조)', '—'] },
+      { label: '세종', cells: [
+        '갑인자|<em>훈민정음</em> → 〈용비어천가〉|⇒ <b>민족적 · 자주적</b>',
+        '· 측우기, 자격루(물시계), 앙부일구(해시계) ⇒ 장영실|· <u>〈칠정산〉</u>: 이순지, <i><em>한양 중심의 역법서</em></i>|&nbsp;&nbsp;수시력(원) + 회회력(아라비아)',
+        '· 〈의방유취〉: 의학 백과사전|· <u>〈향약집성방〉</u>|· <u>〈농사직설〉</u>',
+      ] },
+      { label: '성종', cells: ['—', '—', '〈금양잡록〉: 강희맹'] },
+    ],
+  },
+  {
+    id: 'joseon-culture-4',
+    era: 'joseon1',
+    title: '조선 전기의 문화 ④ 건축 · 공예 · 회화 · 문학',
+    images: ['notes/img/joseon-cul-153.webp', 'notes/img/joseon-cul-154.webp', 'notes/img/joseon-cul-155.webp', 'notes/img/joseon-cul-156.png', 'notes/img/joseon-cul-157.webp', 'notes/img/joseon-cul-158.webp'],
+    head: [{ label: '', cells: ['건축 · 탑', '공예', '회화', '문학'] }],
+    rows: [
+      { label: '15C 훈구', cells: [
+        '· <u>궁궐, 성곽</u>: 경복궁(전기) vs <i>창덕궁</i>(후기) <small class="memo">세계 유산</small>|· 우사(사직단) + <i>좌묘(종묘)</i> <small class="memo">세계 유산</small>|· 해인사 <i>장경판전</i> <small class="memo">세계 유산</small> ← <em>팔만대장경판</em> <small class="memo">세계 기록 유산</small>|· <em>원각사지 10층 석탑</em> ← 고려 경천사지 10층 석탑|&nbsp;&nbsp;└→ 후기: 백탑파(박지원, 박제가)',
+        '<u>분청사기</u>',
+        '<u>고사관수도</u> └ 강희안|<u>몽유도원도</u> ┬ 안평 대군 꿈|&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;└ 안견',
+        '〈금오신화〉 ┬ 김시습|&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;└ <em>최초 한문 소설</em>',
+      ] },
+      { label: '16C 사림', cells: [
+        '<i>서원</i>: 사당(제사) · 강당(교육) · 기숙|⇒ <i>백운동 서원</i> <small class="memo">세계 유산</small>|&nbsp;&nbsp;↓|<i><em>소수 서원</em></i>(사액) ┬ by 이황|&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;└ 안향 배향',
+        '<em>백자</em>',
+        '· 사군자 └ 매 · 난 · 국 · 죽|· <u>초충도</u> └ <em>신사임당</em>',
+        '〈관동별곡〉, 〈사미인곡〉 ┬ 정철(기축옥사)|&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;└ 가사 문학',
+      ] },
+    ],
+  },
+  {
+    id: 'joseon-bungdang-flow',
+    era: ['horan', 'gaehang'],
+    title: '붕당 정치의 전개 — 선조 ~ 숙종',
+    images: ['notes/img/joseon-late-159.webp', 'notes/img/joseon-late-160.webp', 'notes/img/joseon-late-161.webp'],
+    head: [{ label: '', cells: ['내용'] }],
+    rows: [
+      { label: '붕당(선조)', cells: ['척신 잔재 · 이조 전랑 문제 → <b>동인</b> / <b>서인</b>|동인 ┬ <b>북인</b>|&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;└ <b>남인</b>|&nbsp;&nbsp;← <em>정여립</em> 모반 사건 → <i>정철(서인)</i> └ 기축옥사'] },
+      { label: '광해군', cells: ['(북인) ├ <i>중립 외교</i>|&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;├ <i>대동법</i>|&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;├ 영창 대군 X|&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;└ 인목 대비 △|⇑ <b>인조반정</b>(서인) → 북인 몰락, 서인 + 남인'] },
+      { label: '예송(현종)', cells: [{ html: '자의 대비 <i>상복 착용 기간</i>', span: 1 }] },
+      { label: '', cells: ['<table class="mini"><tr><th></th><th>기해예송<br><small>효종 X</small></th><th>갑인예송<br><small>효종비 X</small></th></tr><tr><th>남인</th><td>3년</td><td><b>1년</b> ○ 채택</td></tr><tr><th>서인<br><small>송시열</small></th><td><b>1년</b> ○ 채택</td><td>9개월</td></tr></table>'] },
+      { label: '환국(숙종)↑', cells: ['<b>경신</b>환국: 서인 집권(남인 X)|→ <b>기사</b>환국: 남인 집권 — 장희빈 O, <em>송시열 X</em>|→ <b>갑술</b>환국: 서인 집권(남인 X)|서인 ┬ <b>노론</b> → (영조)|&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;└ <b>소론</b> → (경종)|⇣ <em>일당 전제</em>화'] },
+    ],
+  },
+  {
+    id: 'joseon-tangpyeong',
+    era: 'gaehang',
+    title: '탕평 정치 — 영조 · 정조',
+    images: ['notes/img/joseon-late-162.webp', 'notes/img/joseon-late-163.webp'],
+    head: [{ label: '', cells: ['방법', '정치', '경제', '사회', '문화'] }],
+    rows: [
+      { label: '영조', cells: [
+        '· <em>탕평비</em>|· <b>완론 탕평</b>|&nbsp;&nbsp;(붕당 X)',
+        '· 산림 X|· 서원↓(→ 대원군)|· 전랑↓|· <em>〈속대전〉</em>',
+        '<i>균역법</i>|└ 1년 1필',
+        '· <u>청계천 준설</u>|· 신문고 O (← 태종)|· 사형수 삼심제',
+        '〈동국문헌비고〉',
+      ] },
+      { label: '(사도 세자)', cells: [{ html: '<small class="memo">영조 ─ (사도 세자) ─ 정조</small>', span: 5 }] },
+      { label: '정조', cells: [
+        '<b>준론 탕평</b>|&nbsp;&nbsp;(붕당 O)',
+        '· <u>규장각</u> └ <u>초계문신제</u>|· <u>장용영</u>|· 〈대전통편〉',
+        '<i>신해통공</i>|└ 시전 상인 <em>금난전권 X</em>',
+        '· <i>향약</i> └ by 수령',
+        '· <i>〈동문휘고〉</i> └ 대외 관계|· <u>수원 화성</u>',
+      ] },
+    ],
+  },
+  {
+    id: 'joseon-sedo',
+    era: 'gaehang',
+    title: '세도 정치 — 순조 · 헌종 · 철종',
+    images: ['notes/img/joseon-late-164.webp'],
+    head: [{ label: '', cells: ['내용'] }],
+    rows: [
+      { label: '세도', cells: ['· <i>소수 가문</i> └ 안동 김씨, 풍양 조씨|&nbsp;&nbsp;→ <em>비변사</em>, 5군영 장악|· <i>매관매직</i>|&nbsp;&nbsp;↓|· <u>삼정의 문란</u> ┬ 전정(토지세)|&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;├ 군정(역)|&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;└ 환곡(고리대)|⇒ {{홍경래의 난}}(1811), {{임술 농민 봉기}}(1862)'] },
+    ],
+  },
+  {
+    id: 'joseon-late-military',
+    era: ['imjin', 'horan', 'gaehang'],
+    title: '조선 후기 군사 제도의 변화',
+    images: ['notes/img/joseon-late-171.webp'],
+    head: [{ label: '', cells: ['전기 → (1592) → 후기'] }],
+    rows: [
+      { label: '비변사', cells: ['비변사(임시 → 상설) ← 3포 왜란(중종) · 을묘왜변(명종)|→ <b>권력↑</b>(의정부, 6조↓) ⇢ 세도↑(왕↓) → X(흥선 대원군)'] },
+      { label: '중앙군', cells: ['5위 → <u>5군영</u>: ① <u>훈련도감</u> — 포수 + 사수 + 살수|&nbsp;&nbsp;&nbsp;&nbsp;└→ <b>삼수병</b>(← 삼수미): 모병 → <em>직업 군인</em>(<i>급료 상비군</i>)|&nbsp;&nbsp;· 수어청, 총융청, 어영청 └ 인조(호란)|&nbsp;&nbsp;· 금위영 └ 숙종'] },
+      { label: '지방군', cells: ['영진군 → <u>속오군</u>(<i>양반 ~ 노비</i>), 예비군'] },
+      { label: '수비 체제', cells: ['진관 → 제승방략 → 진관 <small class="memo">(임진왜란 이후 속오군 중심 진관 체제 복구)</small>'] },
+    ],
+  },
+  {
+    id: 'joseon-late-diplomacy',
+    era: ['horan', 'gaehang'],
+    title: '조선 후기의 대외 관계 — 청 · 일본',
+    images: ['notes/img/joseon-late-172.webp'],
+    head: [{ label: '', cells: ['광해군', '인조 ← 반정(서인)', '효종'] }],
+    rows: [
+      { label: '여진(청)', cells: [
+        '<u>중립 외교</u>|└ 강홍립 투항',
+        '· 친명배금|· 정묘: 정봉수(용골), 이립|· 병자: 최명길, 김상헌',
+        '· 북벌론: 송시열(⇝ 윤휴)|· {{나선 정벌 1차|나선 정벌}}(→ 러): 조총 부대 파견',
+      ] },
+      { label: '일본', cells: [
+        '<b>기유약조</b>(1609)',
+        { html: '<u>통신사</u>: 중 → 조 → 일, 선진 문물 전달, 막부 권위 인정|<small class="memo">※ 수신사: 개항 이후, 서 → 일 → 조, 서구 문물 수용</small>', span: 2 },
+      ] },
+    ],
+  },
+  {
+    id: 'joseon-territory',
+    era: ['horan', 'gaehang'],
+    title: '영토 수호 — 간도와 독도',
+    images: ['notes/img/joseon-late-173.webp'],
+    head: [{ label: '', cells: ['조선 후기', '대한 제국'] }],
+    rows: [
+      { label: '간도', cells: [
+        '<b>숙종</b>: <u>{{백두산정계비}}</u>|&nbsp;&nbsp;└ 서위압록, <i>동위토문</i> → <b>간도</b> 귀속 문제|<b>정조</b>: <i>북학론</i> └ 박지원, 박제가',
+        '→ <em>간도 관리사</em>(이범윤) → <i>간도 협약</i>(1909): 청 ⊤ 일|&nbsp;&nbsp;↑ 을사늑약(1905, 외교권 X) — 협약 무효',
+      ] },
+      { label: '독도', cells: [
+        '<i>안용복</i>(숙종): 울릉도, <b>독도</b> → 우리 영토 인정',
+        '<u>대한 제국 칙령 제41호</u>(1900) <small class="memo">울도군이 석도(독도) 관할</small>|→ 러 · 일 전쟁 중 <b>일본 시마네현 강제 편입</b>(1905)',
+      ] },
+    ],
+  },
+  {
     id: 'gojoseon-timeline',
     era: 'gojoseon',
     title: '고조선 (최초의 국가)',

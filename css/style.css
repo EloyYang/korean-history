@@ -249,6 +249,9 @@ body[data-layout="panel"] .era-head { padding-left: max(20px, calc((100% - 1100p
   width: 100%; border-collapse: collapse; background: var(--chalk-bg); color: var(--chalk-text);
   font-size: 14.5px; border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow);
 }
+.chalk table.mini { border-collapse: collapse; margin: 4px 0; }
+.chalk table.mini th, .chalk table.mini td { border: 1px solid var(--chalk-line); padding: 5px 12px; text-align: center; min-width: 0; font-weight: 400; }
+.chalk table.mini th { color: var(--chalk-yellow); }
 .chalk-wrap { overflow-x: auto; border-radius: var(--radius); box-shadow: var(--shadow); }
 .chalk-wrap .chalk { box-shadow: none; }
 .chalk td { min-width: 118px; }
