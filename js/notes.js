@@ -1609,6 +1609,46 @@ window.NOTES = [
     ],
   },
   {
+    id: 'indep-1930s',
+    era: 'colonial',
+    title: '1930년대 이후 독립운동 — 만주 · 관내',
+    images: ['notes/img/colonial-239.webp', 'notes/img/colonial-240.webp', 'notes/img/colonial-241.webp'],
+    head: [{ label: '', cells: ['임시 정부(김구)', 'vs 의열단(김원봉)'] }],
+    rows: [
+      { label: '만주', cells: [{ html: '<u>한 · 중 연합 작전</u> ← 만주 사변(31)|· 혁신 의회 → <em>한국 독립당(군)</em>: 지청천 – <u>{{쌍성보 전투|쌍성보}}</u> · {{대전자령 전투|대전자령}} 전투|&nbsp;&nbsp;⇝ 동북 항일 연군({{보천보 전투}})|· 국민부 → <em>조선 혁명당(군)</em>: 양세봉 – <u>{{영릉가 전투|영릉가}}</u> · {{흥경성 전투|흥경성}} 전투', span: 2 }] },
+      { label: '관내', cells: [
+        '국민 대표 회의(23)|↓|<em>한인 애국단</em> ┬ 이봉창(日)|&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;└ <i>윤봉길(中)</i> ⇒ 中 지원|↓|한국 국민당(35)|↓|<em>한국 독립당(40, 충칭)</em>|<u>한국 광복군</u> → 지청천, 장준하(유신 X)|&nbsp;&nbsp;↑ 합류(42) ← 김원봉',
+        '황푸 군관 학교 입교|↓|조선 혁명 간부 학교|↓|<em>민족 혁명당(35)</em>|↓|조선 민족 전선 연맹(37)|↓|<u>조선 의용대(38)</u>: <b>중국 관내 최초</b> 한인 무장 부대|├ 일부 → 한국 광복군 합류(42)|└ 호가장 전투(41) → <em>조선 의용군(옌안)</em>',
+      ] },
+    ],
+  },
+  {
+    id: 'culture-1930s',
+    era: 'colonial',
+    title: '1930년대 국내 민족 운동 — 국어 · 역사 · 사회주의',
+    images: ['notes/img/colonial-242.webp'],
+    head: [{ label: '', cells: ['민족 말살 통치 속 국내 운동'] }],
+    rows: [
+      { label: '國', cells: ['· 문맹 퇴치 운동: <em>브나로드 운동</em>(동아일보)|· <u>조선어 학회</u>(최현배, 이극로): <em>한글 맞춤법 통일안, 표준어 제정</em>, 〈한글〉 발행, <u>우리말 큰사전</u> 편찬 시도|· 시인 ┬ 저항: <i>윤동주</i>(별 …), <i>이육사</i>(절정 …)|&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;└ 친일: 서정주, 노천명'] },
+      { label: '史', cells: ['· 민족주의 사학: 정인보 – \'얼\', 조선학 운동(여유당전서)|· 실증주의 사학: 이병도 – <em>진단 학회</em>(학보)|· <u>사회 경제 사학</u>: 백남운 – 유물 사관(발전, 법칙, 보편) ⇒ <u>정체성론 비판</u>'] },
+      { label: '사회주의', cells: ['혁명적 조합 활동(지하), <em>강주룡 을밀대 고공 농성(31)</em>'] },
+      { label: '기타', cells: ['베를린(36) 손기정 우승(마라톤) ⇒ <em>동아일보 일장기 X</em>(일장기 말소 사건)'] },
+    ],
+  },
+  {
+    id: 'kunguk-1940s',
+    era: ['colonial', 'modern'],
+    title: '1940년대 건국 준비 — 공화정',
+    images: ['notes/img/colonial-243.webp'],
+    head: [{ label: '', cells: ['세력', '내용'] }],
+    rows: [
+      { label: '충칭', cells: ['<em>한국 광복군(임정)</em>', '조선 의용대 일부 합류'] },
+      { label: '옌안', cells: ['<em>조선 의용군</em>(조선 독립 동맹, 김두봉)', '조선 의용대 일부 → 옌안'] },
+      { label: '국내', cells: ['<i>조선 건국 동맹</i>, 여운형', '→ 45 <b>조선 건국 준비 위원회</b>'] },
+      { label: '공통', cells: [{ html: '모두 <u><b>공화정</b></u> 지향', span: 2 }] },
+    ],
+  },
+  {
     id: 'gojoseon-timeline',
     era: 'gojoseon',
     title: '고조선 (최초의 국가)',
