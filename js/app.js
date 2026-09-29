@@ -120,7 +120,10 @@
   // ── 유틸 ─────────────────────────────
   function $(s, el) { return (el || document).querySelector(s); }
   function esc(s) { return String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c])); }
-  function stripTags(s) { return String(s).replace(/<[^>]*>/g, '').replace(/\{\{([^}|]+)(\|[^}]*)?\}\}/g, '$1'); }
+  function stripTags(s) {
+    return String(s).replace(/<[^>]*>/g, '').replace(/\{\{([^}|]+)(\|[^}]*)?\}\}/g, '$1')
+      .replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&').replace(/\|/g, ' ').replace(/\s+/g, ' ').trim();
+  }
 
   function toPolygon(coords) {
     const ring = coords.map(([lat, lng]) => [lng, lat]);
@@ -317,6 +320,7 @@
       const el = document.createElement('div');
       el.className = 'callout' + (e.prio >= 3 ? ' major' : '') + (e.data.type === 'battle' ? ' battle' : '') + (e.data.type === 'capital' ? ' capital' : '');
       el.textContent = e.data.name;
+      if (state.hlTerms && state.hlTerms.some((t) => e.data.name.includes(t))) el.classList.add('hl');
       overlay.appendChild(el);
       const w = el.offsetWidth, h = el.offsetHeight;
 
@@ -642,6 +646,7 @@
     opts = opts || {};
     state.era = Math.max(0, Math.min(ERAS.length - 1, i));
     const era = ERAS[state.era];
+    if (!opts.fromSearch) { state.hlTerms = null; const c = document.getElementById('search-clear'); if (c) c.hidden = true; }
     if (!opts.keepRuler) {
       const first = RULER_SEQ.findIndex((x) => x.ei === state.era);
       if (first >= 0) state.rulerPos = first;
@@ -720,6 +725,7 @@
   });
 
   let results = [];
+  let lastTerms = [];
   let cursor = -1;
   function runSearch(q) {
     const ul = $('#search-results');
@@ -730,20 +736,88 @@
       .sort((a, b) => (b.title.includes(q) - a.title.includes(q)) || (a.kind === 'marker' ? -1 : 1))
       .slice(0, 30);
     cursor = -1;
+    lastTerms = terms;
     ul.innerHTML = results.length
-      ? results.map((r, i) => `<li data-r="${i}">${esc(r.title)}<span class="sr-era">${esc(r.sub)}</span></li>`).join('')
+      ? results.map((r, i) => {
+        // 제목에 없는 검색어는 본문에서 앞뒤 문맥을 잘라 보여 준다
+        const missing = terms.filter((t) => !r.title.includes(t));
+        let snip = '';
+        if (missing.length) {
+          const at = r.text.indexOf(missing[0]);
+          if (at >= 0) snip = (at > 18 ? '…' : '') + r.text.slice(Math.max(0, at - 18), at + missing[0].length + 26).trim() + '…';
+        }
+        return `<li data-r="${i}">${markTerms(r.title, terms)}${snip ? `<span class="sr-snip">${markTerms(snip, terms)}</span>` : ''}<span class="sr-era">${esc(r.sub)}</span></li>`;
+      }).join('')
       : '<li class="sr-empty">검색 결과가 없습니다</li>';
     ul.hidden = false;
   }
+  function markTerms(text, terms) {
+    let html = esc(text);
+    terms.filter(Boolean).sort((a, b) => b.length - a.length).forEach((t) => {
+      html = html.split(esc(t)).join(`\u0000${esc(t)}\u0001`);
+    });
+    return html.replace(/\u0000/g, '<mark>').replace(/\u0001/g, '</mark>');
+  }
+
+  // 화면(패널·지도 이름표)에서 검색어를 찾아 형광펜으로 칠하고 첫 번째 위치로 스크롤
+  function clearHighlights() {
+    document.querySelectorAll('mark.hl').forEach((m) => m.replaceWith(document.createTextNode(m.textContent)));
+    document.querySelectorAll('.panel .ln, .panel li, .panel td').forEach((el) => el.normalize && el.normalize());
+    document.querySelectorAll('.callout.hl, .hl-row').forEach((el) => el.classList.remove('hl', 'hl-row'));
+  }
+  function highlightIn(root, terms) {
+    if (!root || !terms.length) return [];
+    const re = new RegExp('(' + terms.filter(Boolean).sort((a, b) => b.length - a.length).map((t) => t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|') + ')', 'g');
+    const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
+      acceptNode: (n) => (n.parentElement.closest('script, style, mark, button, .stepper') ? NodeFilter.FILTER_REJECT : NodeFilter.FILTER_ACCEPT),
+    });
+    const nodes = [];
+    while (walker.nextNode()) nodes.push(walker.currentNode);
+    const marks = [];
+    nodes.forEach((node) => {
+      re.lastIndex = 0;
+      if (!re.test(node.nodeValue)) return;
+      const frag = document.createDocumentFragment();
+      node.nodeValue.split(re).forEach((part, i) => {
+        if (!part) return;
+        if (i % 2) { const m = document.createElement('mark'); m.className = 'hl'; m.textContent = part; frag.appendChild(m); marks.push(m); }
+        else frag.appendChild(document.createTextNode(part));
+      });
+      node.parentNode.replaceChild(frag, node);
+    });
+    return marks;
+  }
+  function applyHighlights(terms, scrollTarget) {
+    clearHighlights();
+    const tab = $('#tab-' + state.tab);
+    const marks = highlightIn(tab, terms);
+    document.querySelectorAll('.callout').forEach((c) => { if (terms.some((t) => c.textContent.includes(t))) c.classList.add('hl'); });
+    const first = (scrollTarget && scrollTarget.querySelector('mark.hl')) || marks[0];
+    if (first) {
+      const row = first.closest('tr, li, .cbox');
+      if (row) row.classList.add('hl-row');
+      first.scrollIntoView({ block: 'center', behavior: 'smooth' });
+      first.classList.add('hl-first');
+    }
+    $('#search-clear').hidden = false;
+  }
+
   function pickResult(i) {
     const r = results[i];
     if (!r) return;
+    const terms = lastTerms.slice();
     $('#search-results').hidden = true;
     $('#search').blur();
-    if (r.kind === 'marker') { if (state.era !== r.ei) goEra(r.ei); setTab('info'); focusMarker(r.name); }
-    else if (r.kind === 'ruler') { goEra(r.ei); state.rulerPos = r.pos; renderRulers(); setTab('rulers'); scrollToCurrentRuler(); }
-    else if (r.kind === 'note') { goEra(r.ei); setTab('notes'); const el = document.querySelector(`[data-note="${r.note}"]`); if (el) el.scrollIntoView({ behavior: 'smooth' }); }
-    else { goEra(r.ei); setTab('info'); }
+    state.hlTerms = terms;
+    if (r.kind === 'marker') { if (state.era !== r.ei) goEra(r.ei, { fromSearch: true }); setTab('info'); focusMarker(r.name); }
+    else if (r.kind === 'ruler') { goEra(r.ei, { fromSearch: true }); state.rulerPos = r.pos; renderRulers(); setTab('rulers'); scrollToCurrentRuler(); }
+    else if (r.kind === 'note') { goEra(r.ei, { fromSearch: true }); setTab('notes'); }
+    else { goEra(r.ei, { fromSearch: true }); setTab('info'); }
+    const target = r.kind === 'note' ? document.querySelector(`[data-note="${r.note}"]`)
+      : r.kind === 'ruler' ? $('#tab-rulers .ruler.current')
+        : r.kind === 'marker' ? document.querySelector(`#tab-info li[data-marker="${CSS.escape(r.name)}"]`) : null;
+    // 지도 이동·이름표 배치가 끝난 뒤 칠한다
+    setTimeout(() => applyHighlights(terms, target), r.kind === 'marker' ? 950 : 60);
   }
 
   // ── 이벤트 연결 ─────────────────────────────
@@ -840,6 +914,7 @@
   const search = $('#search');
   search.addEventListener('input', () => runSearch(search.value));
   search.addEventListener('focus', () => { if (search.value) runSearch(search.value); });
+  $('#search-clear').addEventListener('click', () => { clearHighlights(); state.hlTerms = null; search.value = ''; $('#search-clear').hidden = true; });
   search.addEventListener('keydown', (e) => {
     const items = document.querySelectorAll('#search-results li[data-r]');
     if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
