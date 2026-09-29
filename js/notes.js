@@ -488,6 +488,25 @@ window.NOTES = [
     ],
   },
   {
+    id: 'ancient-culture-5',
+    era: ['c6', 'c7', 'nambuk'],
+    title: '고대의 문화 ⑤ 日 교류 · 外 교류',
+    images: ['notes/img/ancient-culture-15.webp', 'notes/img/ancient-culture-16.png', 'notes/img/ancient-culture-17.png'],
+    head: [{ label: '', cells: [{ html: '日 교류', span: 2 }, '外 교류'] }],
+    rows: [
+      { label: '고구려', cells: [
+        { html: '<em>아스카 문화</em>|금동 미륵보살 반가 사유상|&nbsp;&nbsp;↓|목조 미륵보살 반가 사유상 (고류사)', rowspan: 3 },
+        '· 수산리 고분 벽화 → 다카마쓰 고분 벽화|· 담징(금당 벽화)|· 혜자(쇼토쿠 태자 스승)',
+        '· 우즈베키스탄 아프라시아브 궁전 벽화|· 각저총',
+      ] },
+      { label: '백제', cells: ['· 아직기, 왕인 → 日|· <em>백제 가람</em>', '—'] },
+      { label: '신라', cells: ['· 조선술|· 축제술 → <em>한인의 연못</em>', '· 보검|· 유리 제품(페르시아산)'] },
+      { label: '가야', cells: ['—', '<u>스에키</u> <small class="memo">(가야 토기 → 일본 스에키 토기)</small>', '—'] },
+      { label: '통일 신라', cells: [{ html: '<em>하쿠호 문화</em>', rowspan: 2 }, '—', '원성왕릉(괘릉) 무인상'] },
+      { label: '발해', cells: ['—', '—'] },
+    ],
+  },
+  {
     id: 'gojoseon-timeline',
     era: 'gojoseon',
     title: '고조선 (최초의 국가)',
@@ -546,6 +565,8 @@ window.NOTES = [
  * 이름이 지도 마커 이름과 같으면 지도 팝업에도 사진이 함께 나온다.
  */
 window.ARTIFACTS = {
+  '각저총': { src: 'notes/img/artifacts/gakjeochong.webp', caption: '각저총 서역인 — 고구려 고분 벽화 속 서역인(씨름하는 인물), 서역과의 교류' },
+  '원성왕릉': { src: 'notes/img/artifacts/wonseong-tomb-statue.webp', caption: '원성왕릉(괘릉) 무인상 — 서역인 모습, 통일 신라와 서역(아라비아)의 교류' },
   '왕궁리': { src: 'notes/img/artifacts/wanggungri.webp', caption: '익산 왕궁리 유적 — 백제 무왕 때 궁궐 터 (왕궁리 5층 석탑)' },
   '불국사': { src: 'notes/img/artifacts/bulguksa.webp', caption: '경주 불국사 (3층 석탑 · 다보탑) — 통일 신라' },
   '석굴암': { src: 'notes/img/artifacts/seokguram.webp', caption: '석굴암 본존불 — 통일 신라' },
