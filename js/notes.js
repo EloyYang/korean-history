@@ -21,6 +21,7 @@
  *   <em>…</em>        → 판서의 연두색 글씨 (도구·용어)
  *   <small class="memo">…</small> → 선생님이 옆에 적은 메모
  *   |                 → 셀 안 줄바꿈
+ *   <span class="no-art">…</span> → 유물 사진 자동 링크를 걸지 않음 (이름이 같은 다른 유물일 때)
  */
 
 window.NOTES = [
@@ -746,7 +747,7 @@ window.NOTES = [
   {
     id: 'goryeo-culture',
     era: ['goryeo1', 'goryeo2'],
-    title: '고려의 문화 (유학 · 역사 · 불교 · 풍수지리설)',
+    title: '고려의 문화 ① 유학 · 역사 · 불교 · 풍수지리설',
     images: ['notes/img/goryeo-culture-112.webp', 'notes/img/goryeo-culture-113.webp', 'notes/img/goryeo-culture-114.webp', 'notes/img/goryeo-culture-115.webp', 'notes/img/goryeo-culture-116.png', 'notes/img/goryeo-culture-117.webp', 'notes/img/goryeo-culture-118.webp', 'notes/img/goryeo-culture-119.png'],
     head: [{ label: '', cells: ['호족', '문벌', '무신', '원↑ ⋯ 권문세족 ← <b>신진 사대부</b>'] }],
     rows: [
@@ -774,6 +775,43 @@ window.NOTES = [
         '—',
         '→ <em>한양 천도(조선)</em>',
       ] },
+    ],
+  },
+  {
+    id: 'goryeo-art',
+    era: ['goryeo1', 'goryeo2'],
+    title: '고려의 문화 ② 예술 · 인쇄 · 과학',
+    images: ['notes/img/goryeo-art-120.webp', 'notes/img/goryeo-art-121.webp', 'notes/img/goryeo-art-122.webp', 'notes/img/goryeo-art-123.webp', 'notes/img/goryeo-art-124.webp', 'notes/img/goryeo-art-125.webp'],
+    head: [{ label: '', cells: ['초기', '중기', '후기'] }],
+    rows: [
+      { label: '불상 · 회화', cells: [
+        '· <u>철불</u> 유행: 하남 하사창동 철조 석가여래 좌상|· <u>대형</u> 석불: 논산 관촉사 석조 미륵보살 입상, 안동 이천동 마애 여래 입상, 파주 용미리 마애 이불 입상',
+        '신라 계승: 영주 <i>부석사</i> 소조 아미타여래 좌상|&nbsp;&nbsp;└ <em>의상</em>',
+        '· 불화 ┬ 아미타래영도|&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;└ 수월관음도 ⇒ 지배층 소원|· 천산대렵도(by 공민왕?)',
+      ] },
+      { label: '불탑', cells: [
+        '· 여주 고달사지 승탑|· 충주 정토사지 홍법국사 승탑(국박)',
+        '<b>다각 다층 석탑</b> ⇒ <em>평창 월정사 8각 9층 석탑</em>(석조 보살 좌상)',
+        '<u><em>개성 경천사지 10층 석탑</em>(원 영향)</u> – 대리석(국박 실내)|→ <em>서울 원각사지 10층 석탑(조선)</em>',
+      ] },
+      { label: '공예', cells: ['—', '나전 칠기, <b>순청자</b> ⇝', '→ <b>상감 청자</b> → 분청사기 / 은입사'] },
+      { label: '인쇄(목판)', cells: [
+        '대량 O, 다양 X|<em>초조대장경</em>(거란 X)',
+        '교장(의천)',
+        'X → 재조대장경(= <u>팔만대장경</u>, 몽골 X, 무신) – {{합천 해인사}}에 보관, <em>유네스코 세계 기록 유산</em>',
+      ] },
+      { label: '인쇄(활판)', cells: [
+        '소량 O, 다양 O',
+        '〈상정고금예문〉(인종 X) <small class="memo">(전하지 않음)</small>',
+        '<u>〈직지심체요절〉</u>[<em>현존 세계 최고(最古) 금속 활자본</em>] – 청주(서원경) 흥덕사에서 제작, <em>유네스코 세계 기록 유산</em>',
+      ] },
+      { label: '건축', cells: [
+        '· <b>주심포 양식</b> <small class="memo">(기둥 위에만 공포, 배흘림기둥)</small>',
+        { html: '→ <u>안동 봉정사 극락전</u>(현존 최고 고려 목조 건축물), 예산 수덕사 대웅전, <u>영주 부석사 무량수전</u>|· <b>다포 양식</b>: 황해도 성불사 응진전 <small class="memo">(후기)</small>', span: 2 },
+      ] },
+      { label: '과학(천문)', cells: ['사천대, 선명력(당)', '—', '수시력(원), <span class="no-art">개성 첨성대</span>(?)'] },
+      { label: '의학', cells: ['—', '—', '<em>〈향약구급방〉: 현존 우리나라 최고(最古) 의학서</em>'] },
+      { label: '무기', cells: ['—', '—', '<b>화통도감</b>(우왕, 최무선) → {{진포 대첩|진포(금강) 전투}} ⋯ {{황산 대첩|황산 전투}}(이성계)'] },
     ],
   },
   {
