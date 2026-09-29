@@ -216,9 +216,107 @@
     });
 
     renderLegend(era);
+    renderSync(era);
     requestAnimationFrame(layoutCallouts);
     if (fit) map.fitBounds(era.view, { padding: [20, 20], animate: false });
   }
+
+  // ── 동시대 연표: 여러 나라가 공존한 시대에 나라별 왕 재위와 사건을 한 축에 나란히 ─────
+  function parseYear(str) {
+    if (str == null) return null;
+    const c = String(str).match(/(기원전\s*)?(\d{1,2})\s*세기/);
+    if (c) return c[1] ? -(Number(c[2]) - 1) * 100 - 50 : (Number(c[2]) - 1) * 100 + 10;
+    const m = String(str).match(/(기원전\s*)?(\d{1,4})/);
+    if (!m) return null;
+    return m[1] ? -Number(m[2]) : Number(m[2]);
+  }
+  function parseReign(str) {
+    const parts = String(str).split('~');
+    const a = parseYear(parts[0]);
+    const b = parts.length > 1 ? parseYear(parts[1].replace(/^[^\d기]*/, '')) : a;
+    return [a, parts.length > 1 && /\d/.test(parts[1]) ? b : null];
+  }
+  const fmtYear = (y) => (y < 0 ? `기원전 ${-y}` : `${y}`);
+
+  function syncData(era) {
+    const list = RULERS[era.id] || [];
+    const states = [...new Set(list.map((r) => r.state))];
+    if (states.length < 2) return null;
+    const lanes = states.map((st) => {
+      const rs = list.filter((r) => r.state === st).map((r) => ({ r, span: parseReign(r.reign) }))
+        .filter((x) => x.span[0] != null).sort((a, b) => a.span[0] - b.span[0]);
+      rs.forEach((x, i) => { if (x.span[1] == null) x.span[1] = rs[i + 1] ? rs[i + 1].span[0] : x.span[0] + 25; });
+      return { st, rs };
+    });
+    const events = era.markers.map((m) => ({ m, y: parseYear(m.year) })).filter((x) => x.y != null);
+    const all = lanes.flatMap((l) => l.rs.flatMap((x) => x.span));
+    const lo0 = Math.min(...all), hi0 = Math.max(...all);
+    const pad = Math.max(3, Math.round((hi0 - lo0) * 0.03));
+    const lo = lo0 - pad, hi = hi0 + pad;
+    return { lanes, events: events.filter((e) => e.y >= lo && e.y <= hi), lo, hi };
+  }
+
+  function renderSync(era) {
+    const box = $('#sync');
+    const d = syncData(era);
+    $('#chip-sync').hidden = !d;
+    if (!d || !$('#tg-sync').checked) { box.hidden = true; document.body.style.setProperty('--sync-h', '0px'); return; }
+    box.hidden = false;
+    const X = (y) => ((y - d.lo) / (d.hi - d.lo)) * 100;
+    const step = [10, 20, 25, 50, 100, 200][[10, 20, 25, 50, 100, 200].findIndex((s) => (d.hi - d.lo) / s <= 9)] || 200;
+    const ticks = [];
+    for (let y = Math.ceil(d.lo / step) * step; y <= d.hi; y += step) ticks.push(y);
+    const lanesHtml = d.lanes.map((l) => `
+      <div class="sync-lane">
+        <div class="sync-name" style="color:${stateColor(l.st)}">${esc(l.st)}</div>
+        <div class="sync-track">${l.rs.map((x) => `<button class="sync-king" data-state="${esc(l.st)}" data-name="${esc(x.r.name)}" style="left:${X(x.span[0])}%;width:${Math.max(0.8, X(x.span[1]) - X(x.span[0]))}%;--c:${stateColor(l.st)}" title="${esc(x.r.name)} (${esc(x.r.reign)}) — ${esc(x.r.key || '')}"><span>${esc(x.r.name)}</span></button>`).join('')}</div>
+      </div>`).join('');
+    const evHtml = d.events.map((e) => `<button class="sync-ev ${e.m.type}" data-marker="${esc(e.m.name)}" style="left:${X(e.y)}%" title="${esc(e.m.name)} (${esc(e.m.year)})"></button>`).join('');
+    box.innerHTML = `
+      <div class="sync-head"><b>동시대 연표</b><span class="sync-read">막대에 마우스를 올리면 그 해의 왕과 사건이 보여요</span><button class="sync-x" title="닫기">✕</button></div>
+      <div class="sync-body">
+        ${lanesHtml}
+        <div class="sync-lane"><div class="sync-name">사건</div><div class="sync-track ev">${evHtml}</div></div>
+        <div class="sync-lane axis"><div class="sync-name"></div><div class="sync-track">${ticks.map((t) => `<span class="sync-tick" style="left:${X(t)}%">${fmtYear(t)}</span>`).join('')}</div></div>
+        <div class="sync-cursor" hidden></div>
+      </div>`;
+    box._d = d;
+    document.body.style.setProperty('--sync-h', box.offsetHeight + 'px');
+  }
+
+  function syncReadout(year) {
+    const d = $('#sync')._d; if (!d) return;
+    const kings = d.lanes.map((l) => {
+      const k = l.rs.find((x) => year >= x.span[0] && year <= x.span[1]);
+      return k ? `<span style="color:${stateColor(l.st)}">${esc(l.st)} <b>${esc(k.r.name)}</b></span>` : '';
+    }).filter(Boolean);
+    const near = d.events.filter((e) => Math.abs(e.y - year) <= Math.max(2, (d.hi - d.lo) / 60)).map((e) => `<em>${esc(e.m.name)}</em>`);
+    $('#sync .sync-read').innerHTML = `<b>${fmtYear(year)}년</b> · ${kings.join(' · ') || '—'}${near.length ? ' · ⚑ ' + near.join(', ') : ''}`;
+  }
+
+  $('#sync').addEventListener('mousemove', (e) => {
+    const body = e.target.closest('.sync-body'); if (!body) return;
+    const track = body.querySelector('.sync-track'); const r = track.getBoundingClientRect();
+    const d = $('#sync')._d; const f = (e.clientX - r.left) / r.width;
+    if (f < 0 || f > 1) return;
+    const year = Math.round(d.lo + f * (d.hi - d.lo));
+    const cur = body.querySelector('.sync-cursor'); cur.hidden = false;
+    cur.style.left = (r.left - body.getBoundingClientRect().left + f * r.width) + 'px';
+    syncReadout(year);
+  });
+  $('#sync').addEventListener('click', (e) => {
+    if (e.target.closest('.sync-x')) { $('#tg-sync').checked = false; store.set('sync', false); renderSync(ERAS[state.era]); return; }
+    const ev = e.target.closest('.sync-ev'); if (ev) { focusMarker(ev.dataset.marker); return; }
+    const k = e.target.closest('.sync-king');
+    if (k) {
+      const pos = RULER_SEQ.findIndex((x) => x.ei === state.era && x.r.name === k.dataset.name && x.r.state === k.dataset.state);
+      if (pos >= 0) { state.rulerPos = pos; renderRulers(); setTab('rulers'); scrollToCurrentRuler(); }
+    }
+  });
+  L.DomEvent.disableClickPropagation($('#sync'));
+  L.DomEvent.disableScrollPropagation($('#sync'));
+  $('#tg-sync').checked = store.get('sync', true);
+  $('#tg-sync').addEventListener('change', () => { store.set('sync', $('#tg-sync').checked); renderSync(ERAS[state.era]); });
 
   // ── 마커 이름표(콜아웃) ─────────────────────────────
   // 이름표를 육지(지도 내용) 밖 — 바다나 빈 곳 — 에 우선 배치하고, 선으로 실제 위치와 연결한다.
@@ -300,7 +398,7 @@
 
     // 피해야 할 영역: 지도 위 UI, 마커, 나라 이름
     const blocked = [];
-    document.querySelectorAll('.map-tools, .legend, .timeline, .leaflet-control-zoom, .leaflet-control-attribution').forEach((el) => {
+    document.querySelectorAll('.map-tools, .legend, .sync, .leaflet-control-zoom, .leaflet-control-attribution').forEach((el) => {
       if (el.offsetParent) blocked.push(relRect(el, base));
     });
     const uiRects = blocked.slice();
