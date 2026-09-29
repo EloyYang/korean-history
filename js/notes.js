@@ -572,6 +572,78 @@ window.NOTES = [
     ],
   },
   {
+    id: 'goryeo-munbeol',
+    era: 'goryeo1',
+    title: '문벌 사회와 그 모순 (중기)',
+    images: ['notes/img/goryeo-06-munbeol.webp', 'notes/img/goryeo-07-contradiction.webp', 'notes/img/goryeo-08-1170.png'],
+    head: [{ label: '', cells: ['초기 → 중기 (~ 1170)'] }],
+    rows: [
+      { label: '변화', cells: ['<i>호족</i> → <i>문벌</i>|선종 → 교종|고구려 → 신라 <small class="memo">(계승 의식)</small>'] },
+      {
+        label: '특권',
+        cells: [{
+          html: '· 정치: <u>음서</u>(5品↑) + <em>과거</em>(광종, 쌍기) <small class="memo">→ 관료</small>' +
+            '|· 경제: <u>공음전</u> + <em>전시과</em>' +
+            '|· 사회: 폐쇄적 통혼(근친혼)' +
+            '|<small class="memo">음서 · 공음전 = "음(蔭)" → 문벌의 세습 특권</small>',
+          span: 1,
+        }],
+      },
+      {
+        label: '모순↑',
+        cells: [{
+          html: '1. <u>{{이자겸의 난|이자겸}}</u>의 난(인종) + 척준경 X' +
+            '|↓' +
+            '|2. <u>{{묘청의 난|묘청}}</u>의 서경 천도 운동(인종) X <small class="memo">→ 아래 비교표</small>' +
+            '|&nbsp;&nbsp;&nbsp;&nbsp;└→ <em>신채호</em> 〈조선사연구초〉 "조선역사 일천년래 제일 대사건"' +
+            '|↓' +
+            '|3. 김돈중 → 정중부(수염) / 한뢰 → 이소응(뺨)' +
+            '|&nbsp;&nbsp;&nbsp;&nbsp;⇒ <b>무신 정변</b>(1170, 의종)',
+          span: 3,
+        }],
+      },
+    ],
+  },
+  {
+    id: 'goryeo-seogyeong',
+    era: 'goryeo1',
+    title: '묘청의 서경 천도 운동 — 서경파 vs 개경파',
+    images: ['notes/img/goryeo-07-contradiction.webp'],
+    head: [{ label: '', cells: ['서경파 <small class="memo">(패배)</small>', '개경파 <small class="memo">(승리)</small>'] }],
+    rows: [
+      { label: '인물', cells: ['묘청, 정지상', '김부식 <small class="memo">→ 서경파 진압</small>'] },
+      { label: '사상', cells: ['<em>불교, 풍수지리설</em>', '<em>유학</em>'] },
+      { label: '계승', cells: ['<em>고구려 계승(자주)</em>', '<em>신라 계승(사대)</em>'] },
+      { label: '대외', cells: ['금 정벌', '금 사대'] },
+    ],
+  },
+  {
+    id: 'goryeo-musin',
+    era: ['goryeo1', 'goryeo2'],
+    title: '무신 정권 (1170 ~ 1270)',
+    images: ['notes/img/goryeo-09-musin.webp'],
+    head: [{ label: '', cells: ['집권자', '정치', '군사'] }],
+    rows: [
+      { label: '초기', cells: ['이의방 → 정중부', { html: '<b>중방</b>', rowspan: 2 }, { html: '도방', rowspan: 2 }] },
+      { label: '', cells: ['경대승 → 이의민'] },
+      { label: '최씨', cells: ['최충헌 (<u>봉사 10조</u>)', '<em>교정도감</em>(별감)', { html: '도방 <small class="memo">(경대승 도방 X → 최충헌 다시 설치)</small>|&nbsp;&nbsp;└ 야별초 → <b>삼별초</b>', rowspan: 2 }] },
+      { label: '', cells: ['최우', '교정도감 + · <em>정방</em>(인사권) · <em>서방</em>(문신↑)'] },
+      { label: '', cells: [{ html: '<small class="memo">무신 정권의 수탈 → 백성의 <b>저항</b> (사회 동요 표)</small>', span: 3 }] },
+    ],
+  },
+  {
+    id: 'goryeo-unrest',
+    era: 'goryeo2',
+    title: '무신 집권기의 사회 동요',
+    images: ['notes/img/goryeo-10-unrest.webp'],
+    head: [{ label: '', cells: ['사회 동요', '주체'] }],
+    rows: [
+      { label: '', cells: ['· 김보당(동계), 조위총(서경)', '지배층'] },
+      { label: '', cells: ['· <u>{{망이·망소이의 난}}(공주 명학소)</u>|· 김사미 · 효심의 난(운문 · 초전)', '양민'] },
+      { label: '', cells: ['· <u>{{만적의 난(모의)|만적의 난}}(개경): <em>신분 해방</em></u>', '천민'] },
+    ],
+  },
+  {
     id: 'gojoseon-timeline',
     era: 'gojoseon',
     title: '고조선 (최초의 국가)',
