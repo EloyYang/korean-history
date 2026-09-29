@@ -869,6 +869,62 @@ window.NOTES = [
     ],
   },
   {
+    id: 'joseon-central',
+    era: 'joseon1',
+    title: '조선의 행정 조직 ① 중앙',
+    images: ['notes/img/joseon-adm-130.webp'],
+    head: [
+      { label: '', cells: [{ html: '<b>중앙 집권</b> — 중앙: <em>의정부, 6조</em>(이 · 호 · 예 · 병 · 형 · 공조) <small class="memo">구조도: 조선의 중앙 통치 조직</small>', span: 2 }] },
+      { label: '', cells: ['王↑', '王↓'] },
+    ],
+    rows: [
+      { label: '', cells: [
+        '· <b>6조 직계제</b>(태종, 세조)|· 승정원(도승지) <small class="memo">— 왕명 출납</small>|· 의금부(금부도사) <small class="memo">— 국왕 직속 사법</small>',
+        '· <b>의정부 서사제</b>(세종)|· <i>3사</i>(<em>언론</em>)|&nbsp;&nbsp;- 사간원(대사간, 간쟁) – 태종|&nbsp;&nbsp;- 사헌부(대사헌, 감찰)|&nbsp;&nbsp;- 홍문관(대제학, 경연)|&nbsp;&nbsp;⇒ 사간원 + 사헌부 = <i>양사</i>: <em>5品 이하 관리 서경권</em>',
+      ] },
+      { label: '기타', cells: [{ html: '한성부(한양) · 춘추관(역사 – 실록) · 장례원(노비) · 성균관(교육)', span: 2 }] },
+    ],
+  },
+  {
+    id: 'joseon-local',
+    era: 'joseon1',
+    title: '조선의 행정 조직 ② 지방',
+    images: ['notes/img/joseon-adm-132.webp'],
+    head: [{ label: '', cells: ['지방: <u>8도</u>(일원화) — 부 · 목 · 군 · 현'] }],
+    rows: [
+      { label: '관찰사', cells: ['8도 ← <em>관찰사</em>(고려: 안찰사) — 감사(감영)'] },
+      { label: '수령', cells: ['<em>수령</em>(7사, 행정 + 사법 + 군사)|⇒ 관찰사 · 수령 <b>All 파견</b> └ 임기제, 상피제 <small class="memo">(고려: 속현 존재)</small>'] },
+      { label: '향리', cells: ['향리(↓) — 단안 <small class="memo">(수령 보좌, 세습 아전)</small>'] },
+      { label: '사족(사림)', cells: ['┬ <em>유향소</em>(여론) – 향회(향안) ↔ <b>경재소</b>(중앙에서 유향소 통제)|├ <em>서원</em>(교육 + 제사)|└ <em>향약</em>(농민 통제)'] },
+    ],
+  },
+  {
+    id: 'joseon-exam',
+    era: 'joseon1',
+    title: '조선의 관리 선발 방식',
+    images: ['notes/img/joseon-adm-133.webp'],
+    head: [{ label: '', cells: ['내용'] }],
+    rows: [
+      { label: '1. 과거', cells: ['<small class="memo">← 예조</small>|├ <b>문과</b> ┬ 양인 이상 O.K.|│&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;└ <em>X: 서얼, 재가 女의 子</em>|├ 무과 O, 승과 X ≠ 고려 <small class="memo">(고려: 무과 X, 승과 O)</small>|└ 잡과'] },
+      { label: '2. 천거', cells: ['추천: <em>현량과(조광조)</em>'] },
+      { label: '3. 문음', cells: ['2品↑: 고위 관료 X <small class="memo">(고려 음서보다 축소)</small>'] },
+      { label: '4. 취재', cells: ['기술: 하급 관리'] },
+    ],
+  },
+  {
+    id: 'joseon-military',
+    era: 'joseon1',
+    title: '조선의 군사 조직',
+    images: ['notes/img/joseon-adm-134.webp'],
+    head: [{ label: '', cells: ['내용'] }],
+    rows: [
+      { label: '원칙', cells: ['양인 개병 + 농병 일치 = 의무병'] },
+      { label: '편제', cells: ['<u>5위</u>(중앙군) + <u>영진군</u>(지방군) → 후기: 5군영 + 속오군'] },
+      { label: '지방', cells: ['영 ⇒ 국방 요충지 · 진|→ <b>진관 체제</b>(지역 방어)'] },
+      { label: '잡색군', cells: ['예비군: 향리 ~ 노비'] },
+    ],
+  },
+  {
     id: 'gojoseon-timeline',
     era: 'gojoseon',
     title: '고조선 (최초의 국가)',
@@ -927,6 +983,7 @@ window.NOTES = [
  * 이름이 지도 마커 이름과 같으면 지도 팝업에도 사진이 함께 나온다.
  */
 window.ARTIFACTS = {
+  '조선의 중앙 통치 조직': { src: 'notes/img/artifacts/joseon-central.png', caption: '조선의 중앙 통치 조직 — 의정부 · 6조, 승정원, 의금부, 3사(사헌부 · 사간원 · 홍문관), 한성부, 춘추관, 성균관' },
   '2성 6부': { src: 'notes/img/artifacts/goryeo-2seong6bu.png', caption: '고려의 2성 6부 제도 — 중서문하성 · 상서성(6부) · 중추원 · 어사대 · 삼사 + 도병마사 · 식목도감' },
   '각저총': { src: 'notes/img/artifacts/gakjeochong.webp', caption: '각저총 서역인 — 고구려 고분 벽화 속 서역인(씨름하는 인물), 서역과의 교류' },
   '원성왕릉': { src: 'notes/img/artifacts/wonseong-tomb-statue.webp', caption: '원성왕릉(괘릉) 무인상 — 서역인 모습, 통일 신라와 서역(아라비아)의 교류' },
