@@ -458,6 +458,36 @@ window.NOTES = [
     ],
   },
   {
+    id: 'ancient-culture-4',
+    era: ['c6', 'c7', 'nambuk'],
+    title: '고대의 문화 ④ 건축 · 고분',
+    images: ['notes/img/ancient-culture-12.webp', 'notes/img/ancient-culture-13.webp', 'notes/img/ancient-culture-14.webp'],
+    head: [{ label: '', cells: ['건축', '고분'] }],
+    rows: [
+      { label: '고구려', cells: [
+        '안학궁(평양)|&nbsp;&nbsp;└→ 장수왕, 남하 정책',
+        '<u>돌무지무덤</u> (장군총)|&nbsp;&nbsp;↓|굴식 돌방무덤 <small class="memo">(모줄임 천장)</small>|⇒ 입구 O, 벽화 O, 도굴 O',
+      ] },
+      { label: '백제', cells: [
+        '<i>미륵사(익산), 왕궁리</i>|&nbsp;&nbsp;└→ 무왕',
+        '돌무지무덤 (석촌동 고분) <small class="memo">← 고구려 계통</small>|&nbsp;&nbsp;↓|굴식 돌방무덤 + 벽돌무덤(<i>무령왕릉</i>)|&nbsp;&nbsp;└→ 중국 남조(양) 교류',
+      ] },
+      { label: '신라', cells: [
+        '황룡사|&nbsp;&nbsp;└→ 진흥왕',
+        '<u>돌무지덧널무덤</u>(<em>껴묻거리 多</em>)|(<i>천마총</i>, 황남 대총) └ <em>천마도</em>(말안장)|⇒ 입구 X, 벽화 X, 도굴 X',
+      ] },
+      { label: '가야', cells: ['—', '{{김해 대성동 고분군|김해 대성동}} · {{고령 지산동 고분군|고령 지산동}} 고분'] },
+      { label: '통일 신라', cells: [
+        '· <u>불국사, 석굴암</u>|· 동궁과 월지(안압지)|⇒ · 불국사 3층 석탑(석가탑)',
+        '· 굴식 돌방무덤(김유신 묘)|&nbsp;&nbsp;└ <em>12지 신상</em>(호석)',
+      ] },
+      { label: '발해', cells: [
+        '상경 용천부, <u>주작대로</u>|&nbsp;&nbsp;└ 당',
+        '· 정혜 공주(문왕 2) 묘: 굴식 돌방무덤, 돌사자상 ⇒ <em>고구려</em>|· 정효 공주(문왕 4) 묘: 벽돌무덤 ⇒ <em>중국</em>',
+      ] },
+    ],
+  },
+  {
     id: 'gojoseon-timeline',
     era: 'gojoseon',
     title: '고조선 (최초의 국가)',
@@ -516,6 +546,16 @@ window.NOTES = [
  * 이름이 지도 마커 이름과 같으면 지도 팝업에도 사진이 함께 나온다.
  */
 window.ARTIFACTS = {
+  '왕궁리': { src: 'notes/img/artifacts/wanggungri.webp', caption: '익산 왕궁리 유적 — 백제 무왕 때 궁궐 터 (왕궁리 5층 석탑)' },
+  '불국사': { src: 'notes/img/artifacts/bulguksa.webp', caption: '경주 불국사 (3층 석탑 · 다보탑) — 통일 신라' },
+  '석굴암': { src: 'notes/img/artifacts/seokguram.webp', caption: '석굴암 본존불 — 통일 신라' },
+  '상경 용천부': { src: 'notes/img/artifacts/sanggyeong-plan.webp', caption: '발해 상경성 용천부 — 당 장안성을 본뜬 도시 구조, 주작대로' },
+  '주작대로': { src: 'notes/img/artifacts/sanggyeong-plan.webp', caption: '상경성 용천부의 주작대로 — 당 장안성의 영향' },
+  '장군총': { src: 'notes/img/artifacts/janggunchong.webp', caption: '장군총 — 고구려 돌무지무덤 (집안)' },
+  '무령왕릉': { src: 'notes/img/artifacts/muryeong-tomb.webp', caption: '무령왕릉 내부 — 백제 벽돌무덤, 중국 남조(양)의 영향' },
+  '돌무지덧널무덤': { src: 'notes/img/artifacts/dolmuji-deotneol.webp', caption: '돌무지 덧널무덤 구조 — 나무덧널 위에 돌을 쌓고 흙으로 덮음 → 도굴이 어려워 껴묻거리가 많음' },
+  '천마도': { src: 'notes/img/artifacts/cheonmado.webp', caption: '천마도 — 천마총에서 출토된 말다래(말안장 장식) 그림' },
+  '김유신 묘': { src: 'notes/img/artifacts/kimyusin-tomb.webp', caption: '김유신 묘 — 통일 신라 굴식 돌방무덤, 둘레에 12지 신상 호석' },
   '천상열차분야지도': { src: 'notes/img/artifacts/cheonsang-yeolcha.webp', caption: '천상열차분야지도 — 조선 태조 때 고구려 천문도를 바탕으로 돌에 새긴 천문도' },
   '칠지도': { src: 'notes/img/artifacts/chiljido.png', caption: '칠지도 — 백제 근초고왕 때 왜왕에게 보낸 칼 (일본 이소노카미 신궁 소장)' },
   '금관': { src: 'notes/img/artifacts/geumgwan.webp', caption: '신라 금관 — 나뭇가지·사슴뿔 모양 세움 장식' },
