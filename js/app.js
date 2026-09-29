@@ -476,7 +476,7 @@
             ${imgs ? '<button data-act="img" aria-pressed="false">원본 판서</button>' : ''}
           </div>
         </div>
-        <table class="chalk"><thead>${head}</thead><tbody>${body}</tbody></table>
+        <div class="chalk-wrap"><table class="chalk"><thead>${head}</thead><tbody>${body}</tbody></table></div>
         ${imgs ? `<div class="note-img" hidden>${imgs}</div>` : ''}
       </article>`;
   }

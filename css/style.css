@@ -227,6 +227,9 @@ button { font: inherit; color: inherit; cursor: pointer; }
   width: 100%; border-collapse: collapse; background: var(--chalk-bg); color: var(--chalk-text);
   font-size: 14.5px; border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow);
 }
+.chalk-wrap { overflow-x: auto; border-radius: var(--radius); box-shadow: var(--shadow); }
+.chalk-wrap .chalk { box-shadow: none; }
+.chalk td { min-width: 150px; }
 .chalk th, .chalk td { border: 1px solid var(--chalk-line); padding: 9px 11px; vertical-align: top; text-align: left; }
 .chalk thead th { font-weight: 700; }
 .chalk thead td { font-weight: 700; font-size: 15.5px; text-align: center; }
