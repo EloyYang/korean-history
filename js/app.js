@@ -470,7 +470,8 @@
     const td = (c) => (typeof c === 'object'
       ? `<td colspan="${c.span || 1}" rowspan="${c.rowspan || 1}">${formatCell(c.html)}</td>`
       : `<td>${formatCell(c)}</td>`);
-    const tr = (r) => `<tr><th class="row-label"><span>${esc(r.label)}</span></th>${r.cells.map(td).join('')}</tr>`;
+    // label 이 null 이면 왼쪽 제목 칸 없이 셀만 그린다
+    const tr = (r) => `<tr>${r.label === null ? '' : `<th class="row-label"><span>${esc(r.label)}</span></th>`}${r.cells.map(td).join('')}</tr>`;
     return `<div class="chalk-wrap"><table class="chalk"><thead>${t.head.map(tr).join('')}</thead><tbody>${t.rows.map(tr).join('')}</tbody></table></div>`;
   }
 
@@ -699,7 +700,7 @@
     const ei = ERAS.findIndex((e) => e.id === noteEras(n)[0]);
     const tables = [n, n.table].filter((t) => t && t.head);
     const annos = (n.annos || []).map((a) => [a.title, a.body, a.text].filter(Boolean).join(' '));
-    const text = [n.title, ...annos, ...tables.flatMap((t) => [...t.head.flatMap((r) => [r.label, ...r.cells]), ...t.rows.flatMap((r) => [r.label, ...r.cells])])].map((c) => stripTags(typeof c === 'object' ? c.html : c)).join(' ');
+    const text = [n.title, ...annos, ...tables.flatMap((t) => [...t.head.flatMap((r) => [r.label, ...r.cells]), ...t.rows.flatMap((r) => [r.label, ...r.cells])])].filter((c) => c != null).map((c) => stripTags(typeof c === 'object' ? c.html : c)).join(' ');
     index.push({ kind: 'note', ei, title: '📝 ' + n.title, sub: (ERAS[ei] || {}).name + ' · 판서 노트', text, note: n.id });
   });
 

@@ -8,6 +8,7 @@
  *   head   : 표 머리글 행들  { label, cells: [열마다 하나] }
  *            셀을 { html: '…', span: 3 } 으로 쓰면 가로로 여러 칸을 합친다
  *            { html: '…', rowspan: 2 } 는 세로로 합치고, 다음 행에서는 그 칸을 빼고 적는다
+ *            행의 label 을 null 로 두면 왼쪽 제목 칸 없이 그린다
  *   rows   : 본문 행들       { label, cells: [열마다 하나] }
  *   images : 원본 판서 이미지 경로
  *
@@ -213,6 +214,86 @@ window.NOTES = [
       { label: '멸망', cells: ['6C <b>법흥왕</b> X ({{금관가야 병합|532}})', '6C <b>진흥왕</b> X ({{대가야 정복|562}})'] },
       { label: '기타', cells: [{ html: '<b>임나일본부 X</b> <small class="memo">(일본의 가야 지배설 → 근거 없음)</small>', span: 2 }] },
     ],
+  },
+  {
+    id: 'silla-early',
+    era: 'nambuk',
+    title: '통일 신라 전기 (왕권↑)',
+    images: ['notes/img/nambuk-01-silla-early.webp'],
+    head: [
+      { label: null, cells: [{ html: '통일 신라, 발해 → <b>남북국</b> 시대 <small class="memo">└ 〈발해고〉 by 유득공</small>', span: 3 }] },
+      { label: null, cells: ['왕', '분야', '내용'] },
+    ],
+    rows: [
+      { label: null, cells: ['<i>태종 무열왕</i>|<small class="memo">김춘추</small>', { html: '· 최초 <b>진골</b> 출신 왕 <small class="memo">(성골 X)</small>|· <i>나 · 당 연합</i>, 백제 X (with 김유신)', span: 2 }] },
+      { label: null, cells: ['<b>문무왕</b>', { html: '· 고구려 X, 나 · 당 전쟁 O ({{매소성 전투|매}} · {{기벌포 전투|기}}), 삼국 <b>통일</b>|· <i>상수리</i>(인질) <small class="memo">→ 고려 기인</small>, 외사정|· 동해 용 → 문무 대왕암', span: 2 }] },
+      { label: null, cells: [{ html: '<em>신문왕</em>', rowspan: 4 }, '정치', '· 김흠돌 난, 상대등(<u>화백 회의</u>)↓|&nbsp;&nbsp;└ 정사암(백), 제가 회의(고)|· <b>집사부 시중↑</b>, 6두품 O (설총 – 화왕계)'] },
+      { label: null, cells: ['경제', '<u>관료전 O</u> (노동력 X), <u>녹읍 X</u>'] },
+      { label: null, cells: ['사회', '· 9주 <b>5소경</b> ⇒ 수도 편재성 극복|&nbsp;&nbsp;├ {{중원경(충주)}}: 고구려비|&nbsp;&nbsp;└ {{서원경(청주)}}: <em>민정 문서</em>, 〈직지심체요절〉|· <em>9서당</em>(중앙, <em>민족 융합</em>) 10정(지방)'] },
+      { label: null, cells: ['문화', '<u>국학</u>, 감은사 – (만파식적) <small class="memo">→ 문무 대왕암</small>'] },
+      { label: null, cells: [{ html: '<small class="memo">진덕 여왕 ‖ 무열왕 ~ 혜공왕 : 전기(왕권↑) → 선덕왕 ~ 경순왕 : 후기(왕권↓)</small>', span: 3 }] },
+    ],
+  },
+  {
+    id: 'silla-late',
+    era: ['nambuk', 'husamguk'],
+    title: '통일 신라 후기 (왕권↓) → 후삼국',
+    images: ['notes/img/nambuk-02-silla-late.webp'],
+    head: [
+      { label: '', cells: ['후기 (왕↓) · 선덕왕 ~ 경순왕'] },
+    ],
+    rows: [
+      { label: '정치', cells: ['{{김헌창의 난|김헌창 난}} ⇒ 진골 귀족 간 왕위 다툼'] },
+      { label: '경제', cells: ['~ 녹읍 O'] },
+      {
+        label: '사회',
+        cells: [
+          '<u>호족</u>(장군 · 성주)' +
+          '|┬ 1세대 – <u>장보고</u>(법화원, {{청해진}} – 완도)' +
+          '|└ 2세대 – <b>견훤</b>: 후백제({{완산주(전주)|완산주}}) → 후당 · 오월에 사신 파견' +
+          '|&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<b>궁예</b>: 후고구려({{송악(개성)|송악}}) → 마진, 태봉({{철원}}), 광평성 설치' +
+          '|&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<em>왕건</em>: 고려(송악) ⇒ <u>후삼국 통일</u>' +
+          '|&nbsp;&nbsp;&nbsp;&nbsp;· {{공산 전투}}(<b>견훤</b> vs 왕건): 신숭겸 X' +
+          '|&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;↓' +
+          '|&nbsp;&nbsp;&nbsp;&nbsp;· {{고창 전투}}(견훤 vs <b>왕건</b>): 안동 차전놀이' +
+          '|&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;↓' +
+          '|&nbsp;&nbsp;&nbsp;&nbsp;· {{일리천 전투}}(신검 vs <b>왕건 + 견훤</b>) <small class="memo">└ 견훤: {{금산사}} 유폐 후 귀순 · 마의 태자 ↗</small>' +
+          '|<b>民↓</b>: <em>{{원종·애노의 난}}</em> (진성 여왕)',
+        ],
+      },
+      { label: '문화', cells: ['<u>선종↑</u> (9산 선문) · <u>풍수지리설</u> <small class="memo">← 호족의 사상적 기반</small>'] },
+    ],
+  },
+  {
+    id: 'balhae-curve',
+    era: 'nambuk',
+    type: 'curve',
+    title: '발해 (흥망 그래프)',
+    caption: '〈발해〉',
+    images: ['notes/img/nambuk-03-balhae.webp'],
+    curve: {
+      range: [690, 940], right: 900, height: 590, base: 540, scale: 4.4,
+      points: [[698, 0], [720, 28], [745, 55], [770, 75], [800, 88], [818, 92], [835, 90], [860, 76], [885, 52], [905, 28], [926, 0]],
+      tickMarks: [698, 926],
+      ticks: [{ at: 698, label: '698' }, { at: 926, label: '926' }],
+      capitals: [],
+    },
+    annos: [
+      { at: 698, box: [70, 244, 110, 96], title: '대조영', body: '{{동모산}}|건국' },
+      { at: 720, box: [220, 412, 480, 86], title: '무왕(인안)', body: '<i>반당</i> ┬ 대문예 → 흑수 말갈 공격|&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;└ <em>장문휴</em> → 산둥반도({{등주 공격|등주}}) 공격' },
+      { at: 760, box: [330, 282, 330, 86], title: '문왕(대흥)', body: '· 친당: <u>3성 6부</u>, 신라도|· 중경 → {{상경 용천부|상경}} 천도' },
+      { at: 818, box: [250, 12, 330, 92], title: '선왕(건흥)', body: '· 5경 15부 62주 ⇒ 요동|· <u>해동성국</u>' },
+      { text: '거란', pos: [884, 478], anchor: 'middle', color: 'green', arrow: [[878, 486], [858, 530]] },
+    ],
+    table: {
+      title: '고구려 계승 ↓ 발해 ↑ 당 영향',
+      head: [{ label: '', cells: ['내용'] }],
+      rows: [
+        { label: '고구려 계승', cells: ['· 왕: "나 고려왕은~" → 日 (일본에 보낸 국서)|· 지배층: 고구려인|· <em>온돌, 이불병좌상, 돌사자상, 석등</em>'] },
+        { label: '당 영향', cells: ['· <b>3성 · 6부 · 중정대 · 주자감</b> ← 당 제도 수용|· 중정대: 감찰 기구 · 주자감: 교육 기관|· {{상경 용천부}} <u>주작대로</u>'] },
+        { label: '독자성', cells: ['· 3성: <b>정당성</b>(대내상) 중심, 중대성, 선조성|· 6부: <em>충 · 인 · 의 · 지 · 예 · 신</em> (유교식 명칭)'] },
+      ],
+    },
   },
   {
     id: 'gojoseon-timeline',
