@@ -397,3 +397,6 @@ a.artifact:hover { color: var(--chalk-yellow); }
   background: rgba(0,0,0,.3); color: var(--chalk-text); border-radius: 999px; padding: 5px 14px; font-size: 13px;
 }
 body.no-scroll { overflow: hidden; }
+
+.note-caption { margin: 0 0 8px; font-size: 14px; }
+.note-caption .ln { display: inline; }

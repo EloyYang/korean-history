@@ -547,7 +547,7 @@
     const imgs = (n.images || []).map((src) => `<img src="${esc(src)}" alt="${esc(n.title)} 원본 판서" loading="lazy">`).join('');
     const isCurve = n.type === 'curve';
     const body = isCurve
-      ? curveHtml(n) + (n.table ? `${n.table.title ? `<div class="sub-title">${esc(n.table.title)}</div>` : ''}${tableHtml(n.table)}` : '')
+      ? (n.caption ? `<p class="note-caption">${formatCell(n.caption)}</p>` : '') + curveHtml(n) + (n.table ? `${n.table.title ? `<div class="sub-title">${esc(n.table.title)}</div>` : ''}${tableHtml(n.table)}` : '')
       : tableHtml(n);
     return `
       <article class="note-card" data-note="${esc(n.id)}">
