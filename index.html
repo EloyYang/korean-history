@@ -46,13 +46,24 @@
 
     <aside class="panel">
       <div class="era-head">
-        <p class="era-period" id="era-period"></p>
-        <h2 id="era-name"></h2>
+        <div class="era-title">
+          <p class="era-period" id="era-period"></p>
+          <h2 id="era-name"></h2>
+        </div>
+        <div class="era-nav">
+          <button id="era-prev" class="nav-btn" aria-label="이전 시대" title="이전 시대">‹</button>
+          <button id="era-next" class="nav-btn" aria-label="다음 시대" title="다음 시대">›</button>
+        </div>
       </div>
       <div class="tabs" role="tablist">
         <button role="tab" data-tab="info" class="tab active">지도 해설</button>
         <button role="tab" data-tab="rulers" class="tab">왕·대통령 <span id="ruler-count" class="badge"></span></button>
         <button role="tab" data-tab="notes" class="tab">판서 노트 <span id="note-count" class="badge"></span></button>
+        <div class="layout-switch" role="group" aria-label="화면 배치">
+          <button data-layout="map" title="지도 크게" aria-label="지도 크게"><span class="ls-ic ls-map"></span></button>
+          <button data-layout="split" title="반반" aria-label="반반"><span class="ls-ic ls-split"></span></button>
+          <button data-layout="panel" title="노트 크게 (지도 숨김)" aria-label="노트 크게"><span class="ls-ic ls-panel"></span></button>
+        </div>
       </div>
 
       <div class="tab-body" id="tab-info"></div>

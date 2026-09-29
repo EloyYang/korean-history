@@ -390,6 +390,9 @@
     svgLines.innerHTML = out.join('');
   }
 
+  // 팝업이 열려 있는 동안 이름표가 팝업을 가리지 않도록 흐리게
+  map.on('popupopen', () => overlay.classList.add('dim'));
+  map.on('popupclose', () => overlay.classList.remove('dim'));
   map.on('zoomstart', () => overlay.classList.add('zooming'));
   map.on('move', () => { if (!overlay.classList.contains('zooming')) drawLines(); });
   map.on('moveend', () => { overlay.classList.remove('zooming'); requestAnimationFrame(layoutCallouts); });
@@ -664,7 +667,30 @@
     if (history.replaceState) history.replaceState(null, '', '#' + era.id);
   }
 
+  // ── 화면 배치 (지도 크게 · 반반 · 노트 크게) ─────────────────────────────
+  function setLayout(mode, opts) {
+    if (!['map', 'split', 'panel'].includes(mode)) mode = 'split';
+    const prev = document.body.dataset.layout;
+    document.body.dataset.layout = mode;
+    state.layout = mode;
+    store.set('layout', mode);
+    document.querySelectorAll('.layout-switch button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.layout === mode)));
+    // 지도가 다시 보이거나 크기가 바뀌면 크기를 다시 계산하고 시대 범위에 맞춘다
+    if (mode !== 'panel' && prev !== mode) {
+      requestAnimationFrame(() => {
+        map.invalidateSize();
+        if ((prev === 'panel' || !prev) && !(opts && opts.noFit)) map.fitBounds(ERAS[state.era].view, { padding: [20, 20], animate: false });
+      });
+    }
+  }
+  document.querySelector('.layout-switch').addEventListener('click', (e) => {
+    const b = e.target.closest('button[data-layout]');
+    if (b) setLayout(b.dataset.layout);
+  });
+
   function focusMarker(name) {
+    // 노트 크게 상태에서 지명을 누르면 지도가 보이도록 반반으로 전환
+    if (state.layout === 'panel') { setLayout('split', { noFit: true }); map.invalidateSize(); }
     let hit = markerByName.get(name);
     if (!hit) {
       // 다른 시대에서 찾기
@@ -736,6 +762,8 @@
   $('#timeline').addEventListener('click', (e) => { const b = e.target.closest('button'); if (b) goEra(+b.dataset.i); });
   $('#prev').addEventListener('click', () => goEra(state.era - 1));
   $('#next').addEventListener('click', () => goEra(state.era + 1));
+  $('#era-prev').addEventListener('click', () => goEra(state.era - 1));
+  $('#era-next').addEventListener('click', () => goEra(state.era + 1));
   document.querySelectorAll('.tab').forEach((b) => b.addEventListener('click', () => setTab(b.dataset.tab)));
 
   $('#tab-info').addEventListener('click', (e) => {
@@ -847,6 +875,7 @@
   });
 
   // ── 시작 ─────────────────────────────
+  setLayout(store.get('layout', 'split'));
   setBase(state.base in BASES ? state.base : 'terrain');
   syncGeo();
   renderTimeline();
