@@ -965,6 +965,45 @@ window.NOTES = [
     ],
   },
   {
+    id: 'joseon-economy',
+    era: 'joseon1',
+    title: '조선 전기의 경제 (중농억상)',
+    images: ['notes/img/joseon-es-139.webp', 'notes/img/joseon-es-140.webp'],
+    head: [{ label: '', cells: ['← 15C', '16C →'] }],
+    rows: [
+      { label: '토지(수조권)', cells: [
+        '<em>과전법</em>(공양왕) → 토지 부족 → <u>직전법</u>(세조) └ <em>관수관급</em>(성종)|· 전 · 현직, 경기 ⇒ 세습 X → 현직|· <em>수신전 · 휼양전</em> ⇒ 세습 O → X',
+        '<em>직전법 X</em>(명종)|· <b>녹봉 전면적 실시</b>|· 수조권 X',
+      ] },
+      { label: '조세', cells: [
+        '<small class="memo">국가 – 民 소유지</small>|<em>과전법</em>(공양왕): 1/10 (30두↑)|→ <u>공법</u>(세종)|· 전분 6등법: 비옥도|· 연분 9등법: 풍흉 → 4 ~ 20두',
+        '→ 최저 세율(관행)',
+      ] },
+      { label: '지대', cells: ['—', '1/2 (타조법, 병작반수)'] },
+      { label: '공납', cells: ['특산물(戶)', '→ <em>방납 폐단</em>'] },
+      { label: '역', cells: ['노동력(군역 → 요역)', '→ <em>대립, 방군수포</em>|⇒ 임꺽정(명종)'] },
+    ],
+  },
+  {
+    id: 'joseon-society',
+    era: 'joseon1',
+    title: '조선 전기의 사회',
+    images: ['notes/img/joseon-es-141.webp', 'notes/img/joseon-es-142.webp', 'notes/img/joseon-es-143.webp'],
+    head: [{ label: '', cells: ['양반', '중인', '상민', '천민'] }],
+    rows: [
+      { label: '신분제', cells: [
+        '문 + 무',
+        '하급 관리, <em>서얼</em>',
+        '<em>신량역천</em>(봉수군, 수군)',
+        '노비 多, 백정',
+      ] },
+      { label: '', cells: [{ html: '<b>양천제</b>: 양인(양반 ~ 상민) — 〈경국대전〉 <em>과거 O</em> / 천인 — 실제로는 <b>반상제</b>(양반 · 중인 · 상민 · 천민)', span: 4 }] },
+      { label: '법률', cells: [{ html: '· 대명률(형법) + <em>〈경국대전〉</em>(민법) &gt; 관습법|· 관찰사 + 수령 = <b>사법</b> + 행정 + 군사 ⇝ <em>2차 갑오개혁: 재판소 설치</em>', span: 4 }] },
+      { label: '사회 제도', cells: [{ html: '· 구휼: 의창(춘대추납), 상평창, <em>〈구황촬요〉</em>|· 의료: 동 · 서 대비원, 혜민국 / 제생원(지방), 동 · 서 활인서(유랑민 관리)|⇓ 안정 — <b>농민 = 本</b> — 세금 → 국가, 지대 → 사족|⇑ 통제 — 국가: 호패(태종), 오가작통 / 사족: 향약', span: 4 }] },
+      { label: '향촌 사회', cells: [{ html: '<i>향촌</i> = 군현 단위|· 중앙 — 관찰사(감영) ⇒ 감독 ⇒ 수령(임기 · 상피제) ↔ 향리(단안) ↔ 사족|· 경재소 ⇒ 감시 ⇒ <u>유향소</u>(좌수 · 별감): 여론 형성 └ 향회 ← 향안|· <em>향약</em>: 농민 통제 · <em>서원</em>: 인재 양성 + 제사|· 면 – 리: 오가작통 / 향도, 두레(民 자치)', span: 4 }] },
+    ],
+  },
+  {
     id: 'gojoseon-timeline',
     era: 'gojoseon',
     title: '고조선 (최초의 국가)',
