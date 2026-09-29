@@ -367,6 +367,82 @@ window.NOTES = [
     ],
   },
   {
+    id: 'ancient-culture-1',
+    era: ['c6', 'c7', 'nambuk'],
+    title: '고대의 문화 ① 유교 · 역사 · 도교',
+    images: ['notes/img/ancient-culture-01.webp', 'notes/img/ancient-culture-02.webp', 'notes/img/ancient-culture-03.webp'],
+    head: [{ label: '', cells: ['유교', '역사', '도교'] }],
+    rows: [
+      { label: '고구려', cells: [
+        '· 중앙: <u>태학</u>(소수림왕)|· 지방: <em>경당</em>(장수왕, 평양 천도 이후)|&nbsp;&nbsp;= 문 + 무',
+        '〈유기〉 → <i>〈신집〉 5권</i>|영양왕, 이문진',
+        '<b>도교</b>: 신선, 무위자연|⇒ <u>사신도</u>',
+      ] },
+      { label: '백제', cells: [
+        '· 박사(오경 · 의 · 역박사)|· 왕인(논어, 천자문 → 日)|· 사택지적비(부여)',
+        '<i>〈서기〉</i> └ 근초고왕, 고흥',
+        '· <u>산수무늬 벽돌</u>|· <u>금동 대향로</u>(부여)',
+      ] },
+      { label: '신라', cells: [
+        '· <em>임신서기석</em>|· 화랑도의 세속 오계(by 원광)',
+        '<i>〈국사〉</i> └ 진흥왕, 거칠부',
+        '화랑도 ⇒ <i>낭가 사상</i> └ 신채호',
+      ] },
+      { label: '통일 신라', cells: [
+        '· <em>국학</em>(신문왕)|· <i>설총</i>(신문왕 ← 화왕계): 이두 정리|· 강수: 외교 문서, 〈<i>청방인문표</i>〉|· 김대문: 〈화랑세기〉, 〈고승전〉, 〈한산기〉|&nbsp;&nbsp;⇒ <em>자주적, 주체적</em>',
+        '—', '—',
+      ] },
+      { label: '통일 신라 말', cells: [
+        '· 독서삼품과(원성왕) △|· <u>최치원</u>: 빈공과, 토황소격문, 〈계원필경〉',
+        '—', '—',
+      ] },
+      { label: '발해', cells: ['주자감', '—', '—'] },
+    ],
+  },
+  {
+    id: 'ancient-culture-2',
+    era: ['c6', 'c7', 'nambuk'],
+    title: '고대의 문화 ② 불교 · 불상 · 불탑',
+    images: ['notes/img/ancient-culture-04.webp', 'notes/img/ancient-culture-05.webp', 'notes/img/ancient-culture-06.webp', 'notes/img/ancient-culture-07.png', 'notes/img/ancient-culture-08.webp', 'notes/img/ancient-culture-09.webp'],
+    head: [{ label: '', cells: ['불교(人) ⇒ 왕실, 업, <em>호국</em>', { html: '불상', span: 2 }, '불탑'] }],
+    rows: [
+      { label: '고구려', cells: [
+        '<u>소수림왕</u> ← 전진',
+        { html: '<b>금동 미륵보살 반가 사유상</b>', rowspan: 3 },
+        '금동 연가 7년명 여래 입상',
+        '—',
+      ] },
+      { label: '백제', cells: [
+        '침류왕 ← 동진',
+        '<i>서산 용현리 마애 여래 삼존상</i>|└ 백제의 미소',
+        '· <u>익산 미륵사지 석탑</u>(무왕 – 서동, 선화): 목탑 → 석탑|· <u>부여 정림사지 5층 석탑</u>(= 평제탑)',
+      ] },
+      { label: '신라', cells: [
+        '<b>법</b>흥왕(이차돈)|→ 불교식 이름(법흥왕 ~ 진덕 여왕)',
+        '경주 배동 석조 여래 삼존 입상',
+        '· 경주 분황사 석탑(모전탑)|· 황룡사 9층 목탑(선덕 여왕 ← 자장): 고려 몽골 X',
+      ] },
+      { label: '통일 신라', cells: [
+        '<u>불교 대중화</u>' +
+        '|· <u>원효</u> ┬ 무애가, 일심 사상, <em>아미타 신앙(정토종)</em>' +
+        '|&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;├ 화쟁 사상 ⇝ 원융회통' +
+        '|&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;└ 〈십문화쟁론〉, 〈대승기신론소〉' +
+        '|· 의상 ┬ <em>관음 신앙</em>' +
+        '|&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;├ 화엄종(일즉다 다즉일), 〈화엄일승법계도〉' +
+        '|&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;└ <em>부석사</em> 창건' +
+        '|· 혜초: 〈왕오천축국전〉 저술',
+        { html: '<em>석굴암 본존불</em>', span: 2 },
+        '· <u>경주 불국사 3층 석탑</u>(= 석가탑, 무영탑)|&nbsp;&nbsp;└ 무구정광대다라니경 [현존 세계 최고(最古) 목판 인쇄물]|· 경주 불국사 다보탑|· 경주 감은사지 3층 석탑(신문왕 → 문무왕)',
+      ] },
+      { label: '통일 신라 말', cells: [
+        '<u>선종 유행</u> ⇒ <u>9산 선문</u>(<i>호족 후원</i>)|&nbsp;&nbsp;└ 풍수지리설(도선)',
+        { html: '—', span: 2 },
+        '· 양양 진전사지 3층 석탑(조각)|· <em>승탑 유행</em>: 화순 쌍봉사 철감선사 승탑',
+      ] },
+      { label: '발해', cells: ['—', { html: '<em>이불병좌상</em>', span: 2 }, '영광탑'] },
+    ],
+  },
+  {
     id: 'gojoseon-timeline',
     era: 'gojoseon',
     title: '고조선 (최초의 국가)',
