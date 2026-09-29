@@ -1201,6 +1201,22 @@ window.NOTES = [
     ],
   },
   {
+    id: 'joseon-late-society',
+    era: 'gaehang',
+    title: '조선 후기의 사회 — 신분제 동요 · 민 의식 · 농민 봉기',
+    images: ['notes/img/joseon-soc2-181.webp', 'notes/img/joseon-soc2-182.webp', 'notes/img/joseon-soc2-183.webp', 'notes/img/joseon-soc2-184.webp'],
+    head: [{ label: '', cells: ['〈신분제 동요〉: <u>양반 수↑, 상민 · 노비 수↓</u>'] }],
+    rows: [
+      { label: '원인', cells: ['양난 → 양안 X(토지), 호적 X(사람) → 국가 재정↓|→ <u><em>납속책</em>(공명첩)</u> └ 양반: 군역 X'] },
+      { label: '양반', cells: ['권반 · 향반 · 잔반(몰락 양반)|<b>향전</b>: <em>구향</em>(보학·족보, 사당↑, 동성촌, 가부장 — 여성↓) vs <em>신향</em>(지방관 결탁 └ 향안 X)'] },
+      { label: '중인', cells: ['· <b>서얼</b>: 신분 상승 상소 → <i>규장각 검서관</i>(박제가, 유득공 …)|· 기술직 중인: 소청 X, <em>시사 조직</em> ⇝ 위항(여항) 문학↑'] },
+      { label: '상민', cells: ['· 부농: 족보 매입·위조, 납속책 → 양반|· 임노동자'] },
+      { label: '천민', cells: ['노비 多 ⇒ 도망, <i>양인화</i> ┬ 노비종모법|&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;└ <em>공노비 해방(순조)</em>'] },
+      { label: '民 의식', cells: ['· 예언 사상↑: 〈정감록〉, 도참, 미륵 신앙↑|· <i>평등 의식</i>↑|&nbsp;&nbsp;├ <u>서학</u>(학문) → 천주교(종교, 제사 X → 사교)|&nbsp;&nbsp;│&nbsp;&nbsp;&nbsp;신해박해(정조): 윤지충 · 신유박해(순조): 이승훈, 정약용 · <em>황사영 백서 사건</em>|&nbsp;&nbsp;└ <u>동학</u>(최제우 → 최시형): <em>인내천, 시천주</em>, 〈동경대전〉, 〈용담유사〉'] },
+      { label: '농민 봉기', cells: ['<table class="mini"><tr><th></th><th><u>{{홍경래의 난}}</u></th><th><u>{{임술 농민 봉기}}</u></th></tr><tr><th>왕</th><td>순조</td><td>철종</td></tr><tr><th>주도</th><td>홍경래, 우군칙 + 광산, 농민</td><td>백낙신 ↔ 유계춘 (진주 → 전국)</td></tr><tr><th>원인</th><td>세도 정치, <em>서북 지역민 차별</em></td><td>세도 정치, <em>삼정의 문란</em></td></tr><tr><th>장소</th><td>정주성</td><td>진주</td></tr></table>|대응: 안핵사 파견 ↓ 박규수 → <u><em>삼정이정청</em></u>, 암행어사'] },
+    ],
+  },
+  {
     id: 'gojoseon-timeline',
     era: 'gojoseon',
     title: '고조선 (최초의 국가)',
