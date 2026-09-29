@@ -400,3 +400,4 @@ body.no-scroll { overflow: hidden; }
 
 .note-caption { margin: 0 0 8px; font-size: 14px; }
 .note-caption .ln { display: inline; }
+.curve .arrow.blue { stroke: var(--chalk-blue); stroke-width: 5; }
