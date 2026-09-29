@@ -464,8 +464,10 @@
   }
 
   function renderNote(n) {
-    // 셀은 문자열 또는 { html, span } (span = 가로로 합칠 칸 수)
-    const td = (c) => (typeof c === 'object' ? `<td colspan="${c.span || 1}">${formatCell(c.html)}</td>` : `<td>${formatCell(c)}</td>`);
+    // 셀은 문자열 또는 { html, span, rowspan } (span = 가로로, rowspan = 세로로 합칠 칸 수)
+    const td = (c) => (typeof c === 'object'
+      ? `<td colspan="${c.span || 1}" rowspan="${c.rowspan || 1}">${formatCell(c.html)}</td>`
+      : `<td>${formatCell(c)}</td>`);
     const tr = (r) => `<tr><th class="row-label"><span>${esc(r.label)}</span></th>${r.cells.map(td).join('')}</tr>`;
     const head = n.head.map(tr).join('');
     const body = n.rows.map(tr).join('');
