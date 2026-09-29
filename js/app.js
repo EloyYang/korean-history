@@ -81,7 +81,6 @@
     tab: store.get('tab', 'info'),
     allLabels: store.get('labelsOn', true),
     geoLabels: store.get('geoLabels', true),
-    base: store.get('base', 'terrain'),
     rulerPos: 0,
     rulerFilter: 'all',
     rulerQuiz: false,
@@ -96,20 +95,10 @@
   L.control.zoom({ position: 'topleft' }).addTo(map);
   map.attributionControl.setPrefix(false);
 
-  const BASES = {
-    terrain: {
-      label: '지형',
-      layer: L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Physical_Map/MapServer/tile/{z}/{y}/{x}', {
-        maxNativeZoom: 8, maxZoom: 10, attribution: 'Tiles © Esri — US National Park Service',
-      }),
-    },
-    light: {
-      label: '밝은 지도',
-      layer: L.tileLayer('https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}{r}.png', {
-        subdomains: 'abcd', maxZoom: 10, attribution: '© OpenStreetMap © CARTO',
-      }),
-    },
-  };
+  // 배경 지도: 지형도로 고정
+  L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Physical_Map/MapServer/tile/{z}/{y}/{x}', {
+    maxNativeZoom: 8, maxZoom: 10, attribution: 'Tiles © Esri — US National Park Service',
+  }).addTo(map);
 
   const gTerr = L.layerGroup().addTo(map);
   const gLines = L.layerGroup().addTo(map);
@@ -119,15 +108,6 @@
   GEO_LABELS.forEach(([name, lat, lng]) => {
     L.marker([lat, lng], { interactive: false, keyboard: false, icon: L.divIcon({ className: '', html: `<div class="river-label">${name}</div>`, iconSize: [0, 0] }) }).addTo(gGeo);
   });
-
-  function setBase(key) {
-    Object.values(BASES).forEach((b) => map.removeLayer(b.layer));
-    BASES[key].layer.addTo(map).bringToBack();
-    state.base = key;
-    store.set('base', key);
-    // 버튼에는 "누르면 바뀔" 지도 이름 대신 현재 지도 이름을 보여준다
-    $('#btn-layer').textContent = '배경: ' + BASES[key].label;
-  }
 
   // ── 유틸 ─────────────────────────────
   function $(s, el) { return (el || document).querySelector(s); }
@@ -843,7 +823,6 @@
 
   $('#lightbox').addEventListener('click', () => { $('#lightbox').hidden = true; });
 
-  $('#btn-layer').addEventListener('click', () => setBase(state.base === 'terrain' ? 'light' : 'terrain'));
   const tgLabels = $('#tg-labels');
   tgLabels.checked = state.allLabels;
   tgLabels.addEventListener('change', () => { state.allLabels = tgLabels.checked; store.set('labelsOn', state.allLabels); drawEra(false); });
@@ -876,7 +855,6 @@
 
   // ── 시작 ─────────────────────────────
   setLayout(store.get('layout', 'split'));
-  setBase(state.base in BASES ? state.base : 'terrain');
   syncGeo();
   renderTimeline();
   setTab(['notes', 'rulers'].includes(state.tab) ? state.tab : 'info');
