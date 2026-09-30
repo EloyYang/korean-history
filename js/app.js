@@ -92,6 +92,7 @@
     rulerPos: 0,
     rulerFilter: 'all',
     rulerQuiz: false,
+    rulerView: store.get('rulerView', 'list'),
   };
 
   let land = null;
@@ -238,18 +239,46 @@
   }
   const fmtYear = (y) => (y < 0 ? `기원전 ${-y}` : `${y}`);
 
-  function syncData(era) {
-    const list = RULERS[era.id] || [];
-    const states = [...new Set(list.map((r) => r.state))];
-    if (!states.length) return null;
-    const NOW = new Date().getFullYear();
-    const lanes = states.map((st) => {
-      const rs = list.filter((r) => r.state === st).map((r) => ({ r, span: parseReign(r.reign) }))
-        .filter((x) => x.span[0] != null).sort((a, b) => a.span[0] - b.span[0]);
+  // 나라별 재위 구간(끝이 없으면 다음 왕 즉위년까지). 모든 시대의 인물을 한 번에 계산해 둔다
+  const NOW_Y = new Date().getFullYear();
+  const REIGNS = (() => {
+    const byState = new Map();
+    ERAS.forEach((e, ei) => (RULERS[e.id] || []).forEach((r, ri) => {
+      const span = parseReign(r.reign);
+      if (span[0] == null) return;
+      if (!byState.has(r.state)) byState.set(r.state, []);
+      byState.get(r.state).push({ r, ei, ri, span });
+    }));
+    const all = [];
+    byState.forEach((rs) => {
+      rs.sort((a, b) => a.span[0] - b.span[0]);
       rs.forEach((x, i) => {
-        if (x.span[1] == null) x.span[1] = rs[i + 1] ? rs[i + 1].span[0] : Math.min(x.span[0] + 25, Math.max(NOW, x.span[0] + 1));
+        if (x.span[1] == null) {
+          const nx = rs.slice(i + 1).find((y) => y.span[0] > x.span[0]);
+          x.span[1] = nx ? nx.span[0] : Math.min(x.span[0] + 25, Math.max(NOW_Y, x.span[0] + 1));
+        }
         if (x.span[1] <= x.span[0]) x.span[1] = x.span[0] + 1;
+        all.push(x);
       });
+    });
+    return all;
+  })();
+
+  function eraRulers(era) {
+    const ei = ERAS.indexOf(era);
+    return REIGNS.filter((x) => x.ei === ei);
+  }
+
+  function syncData(era) {
+    const ei = ERAS.indexOf(era);
+    const own = eraRulers(era);
+    if (!own.length) return null;
+    const states = [...new Set((RULERS[era.id] || []).map((r) => r.state))];
+    const lo0 = Math.min(...own.map((x) => x.span[0])), hi0 = Math.max(...own.map((x) => x.span[1]));
+    // 이웃 시대에 정리된 왕이라도 이 시대 범위와 재위가 겹치면 함께 보여 준다(시대 경계에서 칸이 비지 않게)
+    const lanes = states.map((st) => {
+      const rs = REIGNS.filter((x) => x.r.state === st && (x.ei === ei || (x.span[1] > lo0 && x.span[0] < hi0)))
+        .map((x) => ({ ...x, ext: x.ei !== ei })).sort((a, b) => a.span[0] - b.span[0] || a.ext - b.ext);
       // 재위가 겹치는 인물(섭정·무신 집권자 등)은 아래 줄로 쌓는다
       const rowEnd = [];
       rs.forEach((x) => {
@@ -259,12 +288,15 @@
       });
       return { st, rs, rows: Math.max(1, rowEnd.length) };
     }).filter((l) => l.rs.length);
-    if (!lanes.length) return null;
-    const events = era.markers.map((m) => ({ m, y: parseYear(m.year) })).filter((x) => x.y != null);
-    const all = lanes.flatMap((l) => l.rs.flatMap((x) => x.span));
-    const lo0 = Math.min(...all), hi0 = Math.max(...all);
     const pad = Math.max(3, Math.round((hi0 - lo0) * 0.03));
     const lo = lo0 - pad, hi = hi0 + pad;
+    // 사건: 기출·판서 기반으로 고른 주요 사건(ERA_EVENTS) — 지도 마커와 이름이 맞으면 클릭 시 지도로 이동
+    const findMarker = (name) => name && (era.markers.find((m) => m.name === name) || era.markers.find((m) => m.name.includes(name) || name.includes(m.name)));
+    let events = ((window.ERA_EVENTS || {})[era.id] || []).map(([y, label, type, mk]) => {
+      const m = findMarker(mk);
+      return { y, label: label.replace(/^★/, ''), star: label.startsWith('★'), type, marker: m ? m.name : '' };
+    });
+    if (!events.length) events = era.markers.map((m) => ({ y: parseYear(m.year), label: m.name, type: m.type, marker: m.name, star: !!m.major })).filter((x) => x.y != null);
     return { lanes, events: events.filter((e) => e.y >= lo && e.y <= hi), lo, hi };
   }
 
@@ -274,20 +306,22 @@
     $('#chip-sync').hidden = !d;
     if (!d || !$('#tg-sync').checked) { box.hidden = true; document.body.style.setProperty('--sync-h', '0px'); return; }
     box.hidden = false;
-    const X = (y) => ((y - d.lo) / (d.hi - d.lo)) * 100;
+    const X = (y) => ((Math.max(d.lo, Math.min(d.hi, y)) - d.lo) / (d.hi - d.lo)) * 100;
     const step = [10, 20, 25, 50, 100, 200][[10, 20, 25, 50, 100, 200].findIndex((s) => (d.hi - d.lo) / s <= 9)] || 200;
     const ticks = [];
     for (let y = Math.ceil(d.lo / step) * step; y <= d.hi; y += step) ticks.push(y);
     const lanesHtml = d.lanes.map((l) => `
       <div class="sync-lane" style="height:${l.rows * 22}px">
         <div class="sync-name" style="color:${stateColor(l.st)}">${esc(l.st)}</div>
-        <div class="sync-track">${l.rs.map((x) => `<button class="sync-king" data-state="${esc(l.st)}" data-name="${esc(x.r.name)}" style="left:${X(x.span[0])}%;width:${Math.max(0.8, X(x.span[1]) - X(x.span[0]))}%;top:${x.row * 22 + 2}px;height:18px;--c:${stateColor(l.st)}" title="${esc(x.r.name)} (${esc(x.r.reign)}) — ${esc(x.r.key || '')}"><span>${esc(x.r.name)}</span></button>`).join('')}</div>
+        <div class="sync-track">${l.rs.map((x) => `<button class="sync-king${x.ext ? ' ext' : ''}" data-ei="${x.ei}" data-ri="${x.ri}" style="left:${X(x.span[0])}%;width:${Math.max(0.8, X(x.span[1]) - X(x.span[0]))}%;top:${x.row * 22 + 2}px;height:18px;--c:${stateColor(l.st)}" title="${esc(x.r.name)} (${esc(x.r.reign)})${x.r.key ? ' — ' + esc(x.r.key) : ''}${x.ext ? ' · ' + esc(ERAS[x.ei].name) : ''}"><span>${esc(x.r.name)}</span></button>`).join('')}</div>
       </div>`).join('');
     const evs = d.events.slice().sort((a, b) => a.y - b.y);
-    const evHtml = evs.map((e) => `<button class="sync-ev ${e.m.type}" data-marker="${esc(e.m.name)}" style="left:${X(e.y)}%" title="${esc(e.m.name)} (${esc(e.m.year)})"></button>`).join('')
-      + evs.map((e) => `<span class="sync-evl ${e.m.type}" data-marker="${esc(e.m.name)}" style="left:${X(e.y)}%">${esc(e.m.name)}</span>`).join('');
+    const tip = (e) => `${esc(e.label)} (${fmtYear(e.y)})${e.star ? ' · 기출 빈출' : ''}`;
+    // 이름표는 기출 빈출(★) 사건을 먼저 자리 잡게 한다
+    const evHtml = evs.map((e) => `<button class="sync-ev ${e.type}${e.star ? ' star' : ''}" data-marker="${esc(e.marker)}" style="left:${X(e.y)}%" title="${tip(e)}"></button>`).join('')
+      + evs.slice().sort((a, b) => b.star - a.star).map((e) => `<span class="sync-evl ${e.type}${e.star ? ' star' : ''}" data-marker="${esc(e.marker)}" data-x="${X(e.y)}" style="left:${X(e.y)}%" title="${tip(e)}">${esc(e.label)}</span>`).join('');
     box.innerHTML = `
-      <div class="sync-head"><b>동시대 연표</b><span class="sync-read">막대에 마우스를 올리면 그 해의 인물(왕·대통령)과 사건이 보여요</span><button class="sync-x" title="닫기">✕</button></div>
+      <div class="sync-head"><b>동시대 연표</b><span class="sync-read">막대에 마우스를 올리면 그 해의 인물(왕·대통령)과 사건이 보여요 · <b class="star">굵은 사건</b>은 기출 빈출</span><button class="sync-x" title="닫기">✕</button></div>
       <div class="sync-body">
         ${lanesHtml}
         <div class="sync-lane ev"><div class="sync-name">사건</div><div class="sync-track ev">${evHtml}</div></div>
@@ -301,26 +335,33 @@
 
   // 사건 이름표: 두 줄에 번갈아 배치하고, 겹치면 숨긴다(점에 마우스를 올리면 보임)
   function layoutEvLabels(box) {
+    if (!box.offsetWidth) return; // 지도가 숨겨진 상태면 다시 보일 때 배치
     const labels = [...box.querySelectorAll('.sync-evl')];
-    const ends = [-Infinity, -Infinity];
+    const rows = [[], []];
+    const tr = box.querySelector('.sync-track.ev').getBoundingClientRect();
     labels.forEach((el) => {
       el.classList.remove('hide', 'r1');
-      const r = el.getBoundingClientRect();
-      const row = ends.findIndex((end) => r.left > end + 4);
+      el.style.transform = '';
+      let r = el.getBoundingClientRect();
+      // 양 끝 이름표는 연표 밖으로 잘리지 않게 안쪽으로 붙인다
+      if (r.left < tr.left) el.style.transform = 'translateX(0)';
+      else if (r.right > tr.right) el.style.transform = 'translateX(-100%)';
+      r = el.getBoundingClientRect();
+      const row = rows.findIndex((taken) => taken.every(([a, b]) => r.right + 4 < a || r.left > b + 4));
       if (row < 0) { el.classList.add('hide'); return; }
       if (row === 1) el.classList.add('r1');
       const r2 = el.getBoundingClientRect();
-      ends[row] = r2.right;
+      rows[row].push([r2.left, r2.right]);
     });
   }
 
   function syncReadout(year) {
     const d = $('#sync')._d; if (!d) return;
     const kings = d.lanes.map((l) => {
-      const k = l.rs.find((x) => year >= x.span[0] && year <= x.span[1]);
+      const k = l.rs.find((x) => year >= x.span[0] && year < x.span[1]) || l.rs.find((x) => year === x.span[1]);
       return k ? `<span style="color:${stateColor(l.st)}">${esc(l.st)} <b>${esc(k.r.name)}</b></span>` : '';
     }).filter(Boolean);
-    const near = d.events.filter((e) => Math.abs(e.y - year) <= Math.max(2, (d.hi - d.lo) / 60)).map((e) => `<em>${esc(e.m.name)}</em>`);
+    const near = d.events.filter((e) => Math.abs(e.y - year) <= Math.max(2, (d.hi - d.lo) / 60)).map((e) => `<em>${esc(e.label)}</em>`);
     $('#sync .sync-read').innerHTML = `<b>${fmtYear(year)}년</b> · ${kings.join(' · ') || '—'}${near.length ? ' · ⚑ ' + near.join(', ') : ''}`;
   }
 
@@ -336,12 +377,9 @@
   });
   $('#sync').addEventListener('click', (e) => {
     if (e.target.closest('.sync-x')) { $('#tg-sync').checked = false; store.set('sync', false); renderSync(ERAS[state.era]); return; }
-    const ev = e.target.closest('.sync-ev, .sync-evl'); if (ev) { focusMarker(ev.dataset.marker); return; }
+    const ev = e.target.closest('.sync-ev, .sync-evl'); if (ev) { if (ev.dataset.marker) focusMarker(ev.dataset.marker); return; }
     const k = e.target.closest('.sync-king');
-    if (k) {
-      const pos = RULER_SEQ.findIndex((x) => x.ei === state.era && x.r.name === k.dataset.name && x.r.state === k.dataset.state);
-      if (pos >= 0) { state.rulerPos = pos; renderRulers(); setTab('rulers'); scrollToCurrentRuler(); }
-    }
+    if (k) selectRuler(+k.dataset.ei, +k.dataset.ri);
   });
   L.DomEvent.disableClickPropagation($('#sync'));
   L.DomEvent.disableScrollPropagation($('#sync'));
@@ -424,6 +462,7 @@
     const box = map.getContainer();
     const base = box.getBoundingClientRect();
     const W = box.clientWidth, H = box.clientHeight;
+    if (!W || !H) return; // 노트 크게(지도 숨김) 상태
     landMask = buildLandMask(W, H);
 
     // 피해야 할 영역: 지도 위 UI, 마커, 나라 이름
@@ -517,7 +556,14 @@
   map.on('move', () => { if (!overlay.classList.contains('zooming')) drawLines(); });
   map.on('moveend', () => { overlay.classList.remove('zooming'); requestAnimationFrame(layoutCallouts); });
   map.on('resize', () => requestAnimationFrame(layoutCallouts));
-  window.addEventListener('resize', () => { const b = $('#sync'); if (b && !b.hidden) layoutEvLabels(b); });
+  function relayoutSync() {
+    const b = $('#sync');
+    if (!b || b.hidden) return;
+    layoutEvLabels(b);
+    document.body.style.setProperty('--sync-h', b.offsetHeight + 'px');
+  }
+  window.addEventListener('resize', relayoutSync);
+  map.on('resize', relayoutSync);
 
   function renderLegend(era) {
     const rows = [];
@@ -709,6 +755,37 @@
     return COLORS[name] || { 태봉: COLORS.태봉, 일제: COLORS.일제 }[name] || '#888';
   }
 
+  // 동시대 나란히 보기: 행 = 왕이 바뀐 해, 열 = 나라. 한 왕의 재위는 세로로 이어진 칸 하나
+  function rulerGridHtml(era) {
+    const d = syncData(era);
+    if (!d) return '';
+    const own = eraRulers(era);
+    const lo0 = Math.min(...own.map((x) => x.span[0]));
+    const cols = d.lanes.flatMap((l) => Array.from({ length: l.rows }, (_, r) => ({ l, r, rs: l.rs.filter((x) => x.row === r) })));
+    const years = [...new Set([lo0, ...cols.flatMap((c) => c.rs.map((x) => x.span[0]))])].filter((y) => y >= lo0 && y < d.hi).sort((a, b) => a - b);
+    const covers = (x, y) => y >= x.span[0] && y < x.span[1];
+    const cur = RULER_SEQ[state.rulerPos];
+    const skip = cols.map(() => 0);
+    const body = years.map((y, i) => {
+      const tds = cols.map((c, ci) => {
+        if (skip[ci] > 0) { skip[ci]--; return ''; }
+        const k = c.rs.find((x) => covers(x, y));
+        let n = 1;
+        while (i + n < years.length && (k ? covers(k, years[i + n]) : !c.rs.some((x) => covers(x, years[i + n])))) n++;
+        skip[ci] = n - 1;
+        const rs = n > 1 ? ` rowspan="${n}"` : '';
+        if (!k) return `<td class="g-empty"${rs}></td>`;
+        const isCur = cur && cur.ei === k.ei && cur.ri === k.ri;
+        const cont = k.span[0] < y; // 이전 시대부터 이어지는 재위
+        return `<td class="g-king${k.ext ? ' ext' : ''}${isCur ? ' current' : ''}"${rs} style="--c:${stateColor(c.l.st)}" data-ei="${k.ei}" data-ri="${k.ri}">
+          <b>${esc(k.r.name)}</b><small>${esc(k.r.reign)}${cont ? ' · 이어짐' : ''}</small>${k.r.key && !k.ext ? `<span class="g-key">${esc(k.r.key)}</span>` : ''}${k.ext ? `<span class="g-key">${esc(ERAS[k.ei].name)}</span>` : ''}</td>`;
+      }).join('');
+      return `<tr><th class="g-year">${fmtYear(y)}</th>${tds}</tr>`;
+    }).join('');
+    const head = d.lanes.map((l) => `<th colspan="${l.rows}" style="--c:${stateColor(l.st)}">${esc(l.st)}</th>`).join('');
+    return `<div class="rgrid-wrap"><table class="rgrid"><thead><tr><th class="g-year">즉위</th>${head}</tr></thead><tbody>${body}</tbody></table></div>`;
+  }
+
   function renderRulers() {
     const era = ERAS[state.era];
     const list = RULERS[era.id] || [];
@@ -719,12 +796,15 @@
     const cur = RULER_SEQ[state.rulerPos];
     const states = [...new Set(list.map((r) => r.state))];
     if (!states.includes(state.rulerFilter)) state.rulerFilter = 'all';
+    const multi = states.length > 1;
+    const grid = multi && state.rulerView === 'grid';
 
     const items = list.map((r, ri) => {
       if (state.rulerFilter !== 'all' && r.state !== state.rulerFilter) return '';
       const isCur = cur && cur.ei === state.era && cur.ri === ri;
+      const bare = !r.key && !(r.items || []).length;
       return `
-        <li class="ruler${isCur ? ' current' : ''}" data-ri="${ri}" style="--c:${stateColor(r.state)}">
+        <li class="ruler${isCur ? ' current' : ''}${bare ? ' compact' : ''}" data-ri="${ri}" style="--c:${stateColor(r.state)}">
           <div class="ruler-card">
             <div class="ruler-top">
               <span class="ruler-state">${esc(r.state)}</span>
@@ -732,7 +812,7 @@
               <span class="ruler-reign">${esc(r.reign)}</span>
             </div>
             ${r.key ? `<div class="ruler-key">${esc(r.key)}</div>` : ''}
-            <ul class="ruler-items">${r.items.map((it) => `<li>${formatCell(it)}</li>`).join('')}</ul>
+            ${bare ? '' : `<ul class="ruler-items">${r.items.map((it) => `<li>${formatCell(it)}</li>`).join('')}</ul>`}
           </div>
         </li>`;
     }).join('');
@@ -745,12 +825,26 @@
         <button data-step="1" ${pos >= RULER_SEQ.length - 1 ? 'disabled' : ''}>다음 ▶</button>
       </div>
       <div class="ruler-tools">
-        ${states.length > 1 ? ['all', ...states].map((st) => `<button data-filter="${esc(st)}" aria-pressed="${state.rulerFilter === st}">${st === 'all' ? '전체' : esc(st)}</button>`).join('') : ''}
+        ${multi ? `<span class="seg"><button data-view="list" aria-pressed="${!grid}">목록</button><button data-view="grid" aria-pressed="${grid}">동시대 나란히</button></span>` : ''}
+        ${multi && !grid ? ['all', ...states].map((st) => `<button data-filter="${esc(st)}" aria-pressed="${state.rulerFilter === st}">${st === 'all' ? '전체' : esc(st)}</button>`).join('') : ''}
         <span class="spacer"></span>
-        <button data-act="rquiz" aria-pressed="${state.rulerQuiz}">정책 가리기</button>
+        ${grid ? '' : `<button data-act="rquiz" aria-pressed="${state.rulerQuiz}">정책 가리기</button>`}
       </div>
-      <ol class="ruler-list${state.rulerQuiz ? ' quiz' : ''}">${items}</ol>`;
+      ${grid ? `<p class="rgrid-help">같은 줄에 있는 왕들이 같은 시기에 재위했어요. 칸을 누르면 그 왕의 정책을 볼 수 있어요. <span class="ext-sample">흐린 칸</span>은 앞뒤 시대에 정리된 왕이에요.</p>${rulerGridHtml(era)}`
+        : `<ol class="ruler-list${state.rulerQuiz ? ' quiz' : ''}">${items}</ol>`}`;
     linkArtifacts(box);
+  }
+
+  // 연표·나란히 보기에서 왕을 누르면 목록에서 그 왕을 보여 준다
+  function selectRuler(ei, ri) {
+    const pos = RULER_SEQ.findIndex((x) => x.ei === ei && x.ri === ri);
+    if (pos < 0) return;
+    state.rulerPos = pos;
+    state.rulerView = 'list'; store.set('rulerView', 'list');
+    state.rulerFilter = 'all';
+    if (ei !== state.era) goEra(ei, { keepRuler: true }); else renderRulers();
+    setTab('rulers');
+    scrollToCurrentRuler();
   }
 
   function scrollToCurrentRuler() {
@@ -984,6 +1078,10 @@
     const f = e.target.closest('button[data-filter]');
     if (f) { state.rulerFilter = f.dataset.filter; renderRulers(); return; }
     if (e.target.closest('button[data-act="rquiz"]')) { state.rulerQuiz = !state.rulerQuiz; renderRulers(); return; }
+    const v = e.target.closest('button[data-view]');
+    if (v) { state.rulerView = v.dataset.view; store.set('rulerView', state.rulerView); renderRulers(); return; }
+    const g = e.target.closest('.g-king');
+    if (g) { selectRuler(+g.dataset.ei, +g.dataset.ri); return; }
     const li = e.target.closest('.ruler');
     if (!li) return;
     const ri = +li.dataset.ri;
