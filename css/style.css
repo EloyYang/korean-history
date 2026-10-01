@@ -543,3 +543,31 @@ body:has(.sync:not([hidden])) .legend { bottom: calc(24px + var(--sync-h, 0px));
 .rgrid td.g-king small { display: block; color: var(--muted); font-size: 11px; }
 .rgrid .g-key { display: block; margin-top: 2px; color: var(--accent); font-weight: 700; font-size: 11.5px; line-height: 1.35; }
 .rgrid td.g-empty { background: repeating-linear-gradient(135deg, transparent 0 6px, var(--surface-2) 6px 7px); }
+
+/* ── 기출 시험 포인트: 실제 시험 문장 ─────────────────────────── */
+.section-title .ex-all {
+  float: right; font-size: 11.5px; font-weight: 700; padding: 3px 10px; border-radius: 999px;
+  border: 1px solid var(--line); background: var(--surface-2); color: var(--text); cursor: pointer;
+}
+.section-title .ex-all[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: #fff; }
+.points.gichul .ex-btn {
+  display: inline-block; margin-left: 6px; padding: 0 7px; font-size: 11px; font-weight: 700; line-height: 18px; vertical-align: 1px;
+  border: 1px solid var(--accent); border-radius: 999px; background: none; color: var(--accent); cursor: pointer;
+}
+.points.gichul .ex-btn::after { content: ' ▾'; }
+.points.gichul li.ex-open .ex-btn { background: var(--accent); color: #fff; }
+.points.gichul li.ex-open .ex-btn::after { content: ' ▴'; }
+.ex-box { display: none; margin-top: 8px; padding: 8px 10px; border-radius: 8px; background: var(--surface); border: 1px solid var(--line); font-size: 13px; }
+li.ex-open > .ex-box { display: block; }
+.ex-h { margin: 0 0 4px; font-size: 11.5px; font-weight: 900; color: var(--muted); }
+.ex-h + ul { margin-bottom: 8px; }
+.ex-box ul { list-style: none; padding: 0; margin: 0; }
+.ex-box ul:last-child { margin-bottom: 0; }
+.points.gichul .ex-box li { position: static; padding: 3px 0; background: none; border: 0; border-radius: 0; }
+.ex-o li q { font-weight: 700; }
+.ex-box q { quotes: '“' '”'; }
+.ex-meta { display: block; font-size: 11px; color: var(--muted); }
+.ex-meta b { color: var(--accent); }
+.ex-meta q { color: var(--text); font-weight: 700; }
+.ex-q li + li { border-top: 1px dashed var(--line); margin-top: 4px; padding-top: 6px; }
+.ex-q blockquote { margin: 0; padding-left: 8px; border-left: 3px solid var(--line); line-height: 1.55; color: var(--text); }

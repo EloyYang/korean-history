@@ -93,6 +93,7 @@
     rulerFilter: 'all',
     rulerQuiz: false,
     rulerView: store.get('rulerView', 'list'),
+    exAll: store.get('exAll', false),
   };
 
   let land = null;
@@ -602,12 +603,23 @@
   function gichulHtml(era) {
     const g = (window.GICHUL || {})[era.id];
     if (!g) return '';
+    const ex = (window.GICHUL_EX || {})[era.id] || [];
     const star = (n) => (n >= 3 ? '★★★' : n === 2 ? '★★' : '★');
+    const exHtml = (x) => {
+      if (!x || (!x.o.length && !x.q.length)) return '';
+      const o = x.o.map(([t, c, k, rs]) => `<li><q>${esc(t)}</q><span class="ex-meta">${c > 1 ? `<b>${c}회</b> 출제` : '1회 출제'}${k ? ` · 정답 ${k}회` : ''} · ${rs.join('·')}회</span></li>`).join('');
+      const q = x.q.map(([t, r, num, ans]) => `<li><blockquote>${esc(t)}</blockquote><span class="ex-meta">${r}회 ${num}번${ans ? ` → 정답 <q>${esc(ans)}</q>` : ''}</span></li>`).join('');
+      return `<div class="ex-box">${o ? `<p class="ex-h">선택지에 이렇게 나와요</p><ul class="ex-o">${o}</ul>` : ''}${q ? `<p class="ex-h">지문(자료)에 이렇게 나와요</p><ul class="ex-q">${q}</ul>` : ''}</div>`;
+    };
+    const any = ex.some((x) => x && (x.o.length || x.q.length));
     return `
-      <div class="section-title">기출 시험 포인트 <small>(한능검 심화 70~79회 · 이 시대 ${g.n}문항)</small></div>
+      <div class="section-title">기출 시험 포인트 <small>(한능검 심화 70~79회 · 이 시대 ${g.n}문항)</small>${any ? `<button class="ex-all" type="button" aria-pressed="${!!state.exAll}">${state.exAll ? '기출 문장 모두 접기' : '기출 문장 모두 펼치기'}</button>` : ''}</div>
       <p class="gichul-top">자주 나온 주제: ${esc(g.top)}</p>
-      <ul class="points gichul">${g.pts.map(([n, t]) => `<li class="f${Math.min(n, 3)}"><span class="freq">${star(n)}</span>${t}</li>`).join('')}</ul>
-      <p class="gichul-legend">★★★ 3회 이상 · ★★ 2회 · ★ 1회(정답) 출제</p>`;
+      <ul class="points gichul">${g.pts.map(([n, t], i) => {
+        const e = exHtml(ex[i]);
+        return `<li class="f${Math.min(n, 3)}${e && state.exAll ? ' ex-open' : ''}"><span class="freq">${star(n)}</span>${t}${e ? `<button class="ex-btn" type="button">기출 문장</button>${e}` : ''}</li>`;
+      }).join('')}</ul>
+      <p class="gichul-legend">★★★ 3회 이상 · ★★ 2회 · ★ 1회(정답) 출제 · <b>기출 문장</b>을 누르면 실제 시험의 선택지·지문 표현을 볼 수 있어요 (국사편찬위원회 출제 문항 발췌)</p>`;
   }
 
   function renderPanel() {
@@ -1064,6 +1076,12 @@
   document.querySelectorAll('.tab').forEach((b) => b.addEventListener('click', () => setTab(b.dataset.tab)));
 
   $('#tab-info').addEventListener('click', (e) => {
+    const xb = e.target.closest('.ex-btn');
+    if (xb) { xb.parentElement.classList.toggle('ex-open'); return; }
+    if (e.target.closest('.ex-all')) {
+      state.exAll = !state.exAll; store.set('exAll', state.exAll);
+      const top = $('#tab-info').scrollTop; renderPanel(); $('#tab-info').scrollTop = top; return;
+    }
     const li = e.target.closest('li[data-marker]');
     if (!li) return;
     document.querySelectorAll('.event-list li').forEach((x) => x.classList.toggle('active', x === li));
