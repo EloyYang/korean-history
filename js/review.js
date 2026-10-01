@@ -14,7 +14,8 @@
     get(k, d) { try { const v = localStorage.getItem('khmap.' + k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } },
     set(k, v) { try { localStorage.setItem('khmap.' + k, JSON.stringify(v)); } catch (e) { /* 무시 */ } },
   };
-  const state = { scope: store.get('reviewScope', 'target'), hideDone: store.get('reviewHideDone', false) };
+  const state = { scope: store.get('reviewScope', 'target'), hideDone: store.get('reviewHideDone', false), openAll: store.get('reviewOpenAll', false) };
+  const openSet = new Set();
   const mastered = new Set(store.get('mastered', []));
 
   // 문항 정보 → 객체
@@ -31,10 +32,25 @@
   const starTxt = (n) => '★'.repeat(n) + '☆'.repeat(Math.max(0, 3 - n));
   const why = (q) => [q.stars < MIN_STARS ? `빈도 ${'★'.repeat(q.stars)}` : '', !EASY.includes(q.diff) ? `난이도 ${q.diff}` : ''].filter(Boolean).join(' · ');
 
+  const FULL = window.WRONG_Q || {};
+  const SOLVE = window.SOLVE || {};
+  const NUMS = '①②③④⑤';
+  // 지문 속 단서에 형광펜
+  const markClues = (html, clues) => (clues || []).reduce((h, c) => h.split(esc(c)).join(`<mark class="clue">${esc(c)}</mark>`), html);
+
   function qCard(q) {
     const done = mastered.has(q.id);
+    const f = FULL[q.id];
+    const sv = SOLVE[q.id];
+    const body = f ? f.body.map(([k, t]) => {
+      const h = markClues(esc(t), sv && sv.clue);
+      return k === 'cap' ? `<p class="rq-cap">${h}</p>` : k === 'say' ? `<p class="rq-say">${h}</p>` : `<p>${h}</p>`;
+    }).join('') : (q.ex ? `<p>${esc(q.ex)}</p>` : '');
+    const opts = f ? `<ol class="rq-opts">${f.opts.map((o, i) => `
+      <li class="${i === f.ans ? 'ans' : ''}"><span class="n">${NUMS[i]}</span><span class="t">${esc(o)}</span>${sv && sv.opts ? `<span class="why">${sv.opts[i]}</span>` : ''}</li>`).join('')}</ol>` : '';
+    const open = state.openAll || openSet.has(q.id);
     return `
-      <li class="rq${done ? ' done' : ''}${q.target ? '' : ' off'}" data-id="${q.id}">
+      <li class="rq${done ? ' done' : ''}${q.target ? '' : ' off'}${open ? ' open' : ''}" data-id="${q.id}">
         <div class="rq-head">
           <span class="rq-no">${q.round}회 ${q.num}번</span>
           <span class="rq-tag">${esc(q.theme)}</span>
@@ -43,8 +59,17 @@
           ${q.pt ? `<span class="rq-pt">${q.pt}점</span>` : ''}
           <label class="rq-done"><input type="checkbox" ${done ? 'checked' : ''}> 외웠어요</label>
         </div>
-        ${q.ex ? `<blockquote class="rq-ex">${esc(q.ex)}</blockquote>` : ''}
-        ${q.ans ? `<p class="rq-ans"><span>정답</span><q>${esc(q.ans)}</q></p>` : ''}
+        ${f && f.stem ? `<p class="rq-stem">${esc(f.stem)}</p>` : ''}
+        <div class="rq-body">${body}</div>
+        ${opts || (q.ans ? `<p class="rq-ans"><span>정답</span><q>${esc(q.ans)}</q></p>` : '')}
+        ${sv ? `<div class="rq-solve">
+          <button class="rq-toggle" type="button">${open ? '정답·도출 포인트 접기 ▴' : '정답·도출 포인트 보기 ▾'}</button>
+          <div class="rq-solve-body">
+            <p class="sv-h">지문에서 잡을 단서</p>
+            <p class="sv-clue">${sv.clue.map((c) => `<mark class="clue">${esc(c)}</mark>`).join(' ')}</p>
+            <p class="sv-h">정답까지 생각의 순서</p>
+            <p class="sv-how">${sv.how}</p>
+          </div></div>` : ''}
         ${q.target ? '' : `<p class="rq-why">복습 대상 제외 — ${why(q)}</p>`}
       </li>`;
   }
@@ -129,6 +154,7 @@
       <div class="r-tools">
         <span class="seg"><button data-scope="target" aria-pressed="${state.scope === 'target'}">복습 대상만 (${targets.length})</button><button data-scope="all" aria-pressed="${state.scope === 'all'}">틀린 문제 전체 (${wrongs.length})</button></span>
         <label class="chip-check"><input type="checkbox" id="hide-done" ${state.hideDone ? 'checked' : ''}> 외운 문항 숨기기</label>
+        <label class="chip-check"><input type="checkbox" id="open-all" ${state.openAll ? 'checked' : ''}> 정답 도출 포인트 모두 펼치기</label>
       </div>
       ${pointsHtml || '<p class="r-empty">모두 외웠어요! 🎉</p>'}
       <p class="r-note">정답 선지·지문은 국사편찬위원회 한국사능력검정시험 심화 문항에서 발췌했어요. 새 회차를 풀면 Claude에게 회차와 틀린 번호를 알려 주세요. ‘외웠어요’ 표시는 이 브라우저에만 저장돼요.</p>`;
@@ -136,9 +162,16 @@
 
   document.addEventListener('click', (e) => {
     const s = e.target.closest('button[data-scope]');
-    if (s) { state.scope = s.dataset.scope; store.set('reviewScope', state.scope); render(); }
+    if (s) { state.scope = s.dataset.scope; store.set('reviewScope', state.scope); render(); return; }
+    const t = e.target.closest('.rq-toggle');
+    if (t) {
+      const li = t.closest('.rq'); const on = !li.classList.contains('open');
+      li.classList.toggle('open', on); if (on) openSet.add(li.dataset.id); else openSet.delete(li.dataset.id);
+      t.textContent = on ? '정답·도출 포인트 접기 ▴' : '정답·도출 포인트 보기 ▾';
+    }
   });
   document.addEventListener('change', (e) => {
+    if (e.target.id === 'open-all') { state.openAll = e.target.checked; store.set('reviewOpenAll', state.openAll); openSet.clear(); render(); return; }
     if (e.target.id === 'hide-done') { state.hideDone = e.target.checked; store.set('reviewHideDone', state.hideDone); render(); return; }
     const li = e.target.closest('.rq');
     if (li && e.target.type === 'checkbox') {
