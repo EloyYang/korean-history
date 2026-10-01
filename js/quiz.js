@@ -78,11 +78,56 @@
           ${state.graded ? `<span class="q-res">${a === right ? '정답' : a ? `오답 (고른 답 ${NUMS[a - 1]})` : '안 품'} · 정답 ${NUMS[right - 1]}</span><span class="q-tm">머문 시간 ${mmss(state.times[n])}</span>`
             : `<span id="q-time" class="q-tm">이 문제 <b>${mmss(state.times[n])}</b> · 총 <b>${mmss(sum(state.times))}</b></span>`}
         </div>
-        <div class="q-imgwrap">
-          <img src="${imgOf(r, n)}" alt="${rname(r)} ${n}번 문제">
-          ${spots}
+        <div class="q-body">
+          <div class="q-imgwrap">
+            <img src="${imgOf(r, n)}" alt="${rname(r)} ${n}번 문제">
+            ${spots}
+          </div>
+          ${memoHtml(r, n)}
         </div>
         ${missing ? `<div class="q-opts">${[1, 2, 3, 4, 5].map((i) => `<button type="button" class="q-spot-btn${a === i ? ' pick' : ''}" data-i="${i}" ${state.graded ? 'disabled' : ''}>${NUMS[i - 1]}</button>`).join('')}</div>` : ''}
+        ${state.graded ? solvePanel(r, n) : ''}
+      </div>`;
+  }
+
+  // ── 메모: 문제(지문)와 선지 ①~⑤ 각각 — 회차별로 저장, 로그인하면 계정에 동기화
+  const memoKey = (r) => window.ATTEMPTS.key('memo.' + r);
+  const memoOf = (r, n) => (S.get(memoKey(r), {}) || {})[n] || { q: '', o: ['', '', '', '', ''] };
+  function memoHtml(r, n) {
+    const m = memoOf(r, n);
+    const has = m.q || m.o.some(Boolean);
+    return `
+      <aside class="q-memo${has ? ' has' : ''}">
+        <p class="q-memo-h">메모 <small>자동 저장</small></p>
+        <label class="q-memo-q"><span>문제·지문</span><textarea data-memo="q" rows="3" placeholder="단서, 떠오른 사건·인물…">${escH(m.q)}</textarea></label>
+        ${[0, 1, 2, 3, 4].map((i) => `<label class="q-memo-o"><span>${NUMS[i]}</span><input data-memo="${i}" value="${escH(m.o[i] || '')}" placeholder="${NUMS[i]} 선지 메모"></label>`).join('')}
+      </aside>`;
+  }
+  let memoTimer = null;
+  function saveMemo() {
+    const box2 = document.querySelector('.q-memo'); if (!box2) return;
+    const r = state.round, n = state.cur;
+    const all = S.get(memoKey(r), {}) || {};
+    const m = { q: box2.querySelector('[data-memo="q"]').value.trim(), o: [0, 1, 2, 3, 4].map((i) => box2.querySelector(`[data-memo="${i}"]`).value.trim()) };
+    if (m.q || m.o.some(Boolean)) all[n] = m; else delete all[n];
+    S.set(memoKey(r), all);
+    box2.classList.toggle('has', !!(m.q || m.o.some(Boolean)));
+  }
+  const escH = (t) => String(t || '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+
+  // ── 채점 후: 정답·도출 포인트
+  const SOLVES = (window.SOLVES || {})[EX.id] || (EX.id === 'history' ? window.SOLVE || {} : {});
+  function solvePanel(r, n) {
+    const sv = SOLVES[`${r}-${n}`];
+    if (!sv) return `<div class="q-solve"><p class="sv-h">정답·도출 포인트</p><p class="sv-how">아직 정리 전이에요.</p></div>`;
+    const right = KEY[r].ans[n - 1];
+    return `
+      <div class="q-solve">
+        <p class="sv-h">지문에서 잡을 단서</p>
+        <p class="sv-clue">${sv.clue.map((c) => `<mark class="clue">${escH(c)}</mark>`).join(' ')}</p>
+        <p class="sv-h">정답까지 생각의 순서</p>
+        <p class="sv-how">${sv.how}</p>
+        ${sv.opts ? `<p class="sv-h">선지별 정리</p><ol class="sv-opts">${sv.opts.map((o, i) => `<li class="${i + 1 === right ? 'ans' : ''}"><span class="n">${NUMS[i]}</span><span>${o}</span></li>`).join('')}</ol>` : ''}
       </div>`;
   }
 
@@ -151,6 +196,7 @@
   }
 
   function go(n) {
+    if (document.querySelector('.q-memo')) { clearTimeout(memoTimer); saveMemo(); }
     state.cur = Math.max(1, Math.min(N(state.round), n));
     saveDraft(); renderSolve(); window.scrollTo(0, 0);
   }
@@ -220,6 +266,11 @@
       state.answers = {}; state.times = {}; state.cur = 1; state.graded = false; state.onlyWrong = false; renderSolve(); window.scrollTo(0, 0);
     }
   });
+  document.addEventListener('input', (e) => {
+    if (!e.target.closest('.q-memo')) return;
+    clearTimeout(memoTimer); memoTimer = setTimeout(saveMemo, 400);
+  });
+  document.addEventListener('focusout', (e) => { if (e.target.closest('.q-memo')) { clearTimeout(memoTimer); saveMemo(); } });
   document.addEventListener('keydown', (e) => {
     if (state.view !== 'solve' || e.target.closest('input, textarea')) return;
     if (/^[1-5]$/.test(e.key)) pick(+e.key);

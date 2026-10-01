@@ -45,6 +45,13 @@
   // 지문 속 단서에 형광펜
   const markClues = (html, clues) => (clues || []).reduce((h, c) => h.split(esc(c)).join(`<mark class="clue">${esc(c)}</mark>`), html);
 
+  // 기출 풀기에서 남긴 메모
+  function memoView(q) {
+    const m = (window.UserStore.get(window.ATTEMPTS.key('memo.' + q.round), {}) || {})[q.num];
+    if (!m || !(m.q || m.o.some(Boolean))) return '';
+    return `<div class="rq-memo"><p class="sv-h">내 메모</p>${m.q ? `<p class="m-q">${esc(m.q)}</p>` : ''}${m.o.some(Boolean) ? `<ul>${m.o.map((t, i) => (t ? `<li><b>${NUMS[i]}</b> ${esc(t)}</li>` : '')).join('')}</ul>` : ''}</div>`;
+  }
+
   function qCard(q) {
     const done = mastered.has(q.id);
     const f = FULL[q.id];
@@ -80,6 +87,7 @@
             <p class="sv-how">${sv.how}</p>
             ${img && f ? `<p class="sv-h">선지별 정리</p><ol class="sv-opts">${f.opts.map((o, i) => `<li class="${i === f.ans ? 'ans' : ''}"><span class="n">${NUMS[i]}</span><span>${esc(o)}<small>${sv.opts ? sv.opts[i] : ''}</small></span></li>`).join('')}</ol>` : ''}
           </div></div>` : ''}
+        ${memoView(q)}
         ${q.target ? '' : `<p class="rq-why">복습 대상 제외 — ${why(q)}</p>`}
       </li>`;
   }
@@ -101,6 +109,7 @@
         <td>${l.score != null ? `<b>${l.score}</b>점` : `${unknown ? '약 ' : ''}<b>${100 - lost}</b>점`}${l.src === 'claude' ? ' <small class="src">Claude 기록</small>' : l.answers ? ' <small class="src">기출 풀기</small>' : ''}</td>
         <td>${l.total ? mmss(l.total) : '-'}</td>
         <td class="nums">${l.wrong.map((n) => `<span class="${tg.includes(n) ? 'on' : ''}">${n}</span>`).join('')}</td>
+        <td><button type="button" class="r-del" data-del="${l.round}" title="${l.round}회 기록 삭제">삭제</button></td>
       </tr>`;
     }).join('');
 
@@ -156,8 +165,8 @@
 
       <h2 class="r-h">회차별 기록</h2>
       <div class="r-table-wrap"><table class="r-table">
-        <thead><tr><th>회차</th><th>푼 날짜</th><th>틀림</th><th>점수</th><th>소요 시간</th><th>틀린 번호 <small>(<span class="on-sample">색칠</span> = 복습 대상)</small></th></tr></thead>
-        <tbody>${rounds || '<tr><td colspan="6">아직 기록이 없어요</td></tr>'}</tbody>
+        <thead><tr><th>회차</th><th>푼 날짜</th><th>틀림</th><th>점수</th><th>소요 시간</th><th>틀린 번호 <small>(<span class="on-sample">색칠</span> = 복습 대상)</small></th><th></th></tr></thead>
+        <tbody>${rounds || '<tr><td colspan="7">아직 기록이 없어요</td></tr>'}</tbody>
       </table></div>
 
       <h2 class="r-h">시대별 약점 <small>진한 막대 = 복습 대상, 연한 막대 = 틀린 문항 전체</small></h2>
@@ -174,6 +183,14 @@
   }
 
   document.addEventListener('click', (e) => {
+    const del = e.target.closest('[data-del]');
+    if (del) {
+      const r = +del.dataset.del;
+      if (!confirm(`${r}회 풀이 기록을 삭제할까요?\n(점수·틀린 문항·풀이 시간이 지워지고, 메모와 '외웠어요' 표시는 남아요)`)) return;
+      window.ATTEMPTS.remove(r);
+      location.reload();
+      return;
+    }
     const im = e.target.closest('[data-import]');
     if (im) { if (im.dataset.import === 'yes') window.ATTEMPTS.importMyLog(); else window.ATTEMPTS.dismissImport(); location.reload(); return; }
     const s = e.target.closest('button[data-scope]');

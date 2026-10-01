@@ -840,3 +840,32 @@ a.brand-mark { text-decoration: none; }
 .r-import span { flex: 1; min-width: 200px; }
 .r-import button { padding: 5px 12px; border-radius: 999px; border: 1px solid var(--accent); background: var(--accent); color: #fff; font-weight: 700; font-size: 13px; }
 .r-import button[data-import="no"] { background: none; color: var(--accent); }
+
+/* ── 기출 풀기: 메모 · 채점 후 풀이 ─────────────────────────── */
+.q-one { max-width: 1120px; }
+.q-body { display: grid; grid-template-columns: minmax(0, 1fr) 280px; gap: 14px; align-items: start; }
+.q-body .q-imgwrap { margin: 0 auto; }
+@media (max-width: 900px) { .q-body { grid-template-columns: minmax(0, 1fr); } }
+.q-memo { display: flex; flex-direction: column; gap: 6px; padding: 10px; border: 1px dashed #c9c2b2; border-radius: 10px; background: #fbf9f3; color: #333; position: sticky; top: 70px; }
+.q-memo.has { border-style: solid; border-color: var(--accent); }
+.q-memo-h { margin: 0; font-size: 12.5px; font-weight: 900; color: #555; }
+.q-memo-h small { font-weight: 500; color: #999; margin-left: 4px; }
+.q-memo label { display: flex; gap: 6px; align-items: flex-start; font-size: 13px; }
+.q-memo label > span { flex: none; width: 22px; padding-top: 5px; font-weight: 900; color: #666; text-align: center; }
+.q-memo-q { flex-direction: column; }
+.q-memo-q > span { width: auto !important; text-align: left !important; padding: 0 !important; font-size: 12px; }
+.q-memo textarea, .q-memo input { width: 100%; min-width: 0; padding: 5px 8px; border: 1px solid #ddd6c6; border-radius: 6px; background: #fff; color: #222; font: inherit; font-size: 13px; }
+.q-memo textarea { resize: vertical; }
+.q-memo textarea:focus, .q-memo input:focus { outline: 2px solid var(--accent); outline-offset: -1px; }
+.q-solve { margin-top: 12px; padding: 12px 14px; border-left: 4px solid var(--accent); border-radius: 0 8px 8px 0; background: #fbf3ef; color: #2a2620; font-size: 14px; }
+.q-solve .sv-h { color: #7a7265; }
+.q-solve .sv-how b { color: #8b2e1f; }
+.q-solve .sv-opts li.ans { color: #8b2e1f; }
+.q-solve .sv-opts { font-size: 13.5px; }
+/* 오답 노트: 메모 · 기록 삭제 */
+.rq-memo { margin-top: 8px; padding: 8px 10px; border: 1px solid var(--line); border-left: 3px solid #f0b400; border-radius: 0 8px 8px 0; background: var(--surface); font-size: 13px; }
+.rq-memo .m-q { margin: 0 0 4px; white-space: pre-wrap; }
+.rq-memo ul { list-style: none; margin: 0; padding: 0; }
+.rq-memo li b { color: var(--muted); margin-right: 4px; }
+.r-del { padding: 3px 10px; border-radius: 999px; border: 1px solid var(--line); background: none; color: var(--muted); font-size: 12px; }
+.r-del:hover { border-color: #c62828; color: #c62828; }
