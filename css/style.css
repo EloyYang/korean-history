@@ -798,3 +798,45 @@ mark.clue { background: #ffe27a; color: #2a2620; border-radius: 3px; padding: 0 
 .q-imgwrap img { width: auto; max-width: 100%; max-height: calc(100vh - 230px); max-height: calc(100dvh - 230px); }
 @media (max-width: 600px) { .q-imgwrap img { max-height: none; width: 100%; } }
 .rq-time { color: var(--text); font-variant-numeric: tabular-nums; }
+
+/* ── 로그인 ─────────────────────────── */
+a.brand-mark { text-decoration: none; }
+.auth-box { position: relative; display: flex; align-items: center; }
+.auth-box[hidden] { display: none; }
+.auth-in { display: inline-flex; align-items: center; gap: 6px; padding: 5px 12px; border-radius: 999px; border: 1px solid var(--line); background: var(--surface); font-size: 13px; font-weight: 700; color: var(--text); }
+.auth-in:hover { border-color: var(--accent); }
+.auth-wait { font-size: 12px; color: var(--muted); }
+.auth-me { display: inline-flex; align-items: center; gap: 6px; padding: 3px 10px 3px 3px; border-radius: 999px; border: 1px solid var(--line); background: var(--surface); font-size: 13px; color: var(--text); max-width: 180px; }
+.auth-me img, .auth-ini { width: 24px; height: 24px; border-radius: 50%; flex: none; }
+.auth-ini { display: grid; place-items: center; background: var(--accent); color: #fff; font-weight: 900; font-size: 12px; }
+.auth-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.auth-sync { color: var(--muted); font-size: 12px; }
+.auth-menu { position: absolute; right: 0; top: calc(100% + 6px); z-index: 1300; width: 240px; padding: 10px 12px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); box-shadow: var(--shadow); font-size: 13px; }
+.auth-menu p { margin: 0 0 6px; word-break: break-all; }
+.auth-note { color: var(--muted); font-size: 12px; }
+.auth-out { width: 100%; padding: 6px; border-radius: 8px; border: 1px solid var(--line); background: var(--surface-2); font-weight: 700; }
+@media (max-width: 600px) { .auth-name { display: none; } .auth-me { padding-right: 3px; } }
+
+/* ── 첫 화면 (시험 선택) ─────────────────────────── */
+.home-mark { background: #2f4f6f; }
+.h-hello p { margin: 0; padding: 12px 14px; border-radius: var(--radius); background: var(--surface); border: 1px solid var(--line); font-size: 14px; }
+.h-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 14px; }
+.h-card { display: flex; flex-direction: column; gap: 12px; padding: 16px; border: 1px solid var(--line); border-top: 4px solid var(--c, var(--accent)); border-radius: var(--radius); background: var(--surface); }
+.h-head { display: flex; gap: 12px; align-items: flex-start; }
+.h-head h2 { margin: 0; font-size: 17px; font-weight: 900; }
+.h-head h2 small { font-size: 12px; font-weight: 700; color: var(--c, var(--accent)); }
+.h-head p { margin: 2px 0 0; font-size: 13px; color: var(--muted); line-height: 1.5; }
+.h-mark { flex: none; width: 42px; height: 42px; display: grid; place-items: center; border-radius: 10px; background: var(--c, var(--accent)); color: #fff; font-size: 22px; font-weight: 900; }
+.h-stats { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }
+.h-stats li { padding: 6px 4px; border-radius: 8px; background: var(--surface-2); text-align: center; font-size: 12px; color: var(--muted); }
+.h-stats b { display: block; font-size: 17px; color: var(--text); }
+.h-stats span { display: block; font-size: 11px; }
+.h-links { display: flex; flex-wrap: wrap; gap: 6px; }
+.h-btn { padding: 7px 14px; border-radius: 999px; border: 1px solid var(--line); background: var(--surface-2); color: var(--text); font-size: 13.5px; font-weight: 700; text-decoration: none; }
+.h-btn.main { background: var(--c, var(--accent)); border-color: var(--c, var(--accent)); color: #fff; }
+.h-add { border-top-color: var(--line); border-style: dashed; background: none; }
+.h-add .h-mark { background: var(--surface-2); color: var(--muted); }
+.r-import { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 10px 12px; margin-bottom: 14px; border: 1px solid var(--accent); border-radius: var(--radius); background: var(--accent-soft); font-size: 13.5px; }
+.r-import span { flex: 1; min-width: 200px; }
+.r-import button { padding: 5px 12px; border-radius: 999px; border: 1px solid var(--accent); background: var(--accent); color: #fff; font-weight: 700; font-size: 13px; }
+.r-import button[data-import="no"] { background: none; color: var(--accent); }

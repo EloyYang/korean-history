@@ -1,12 +1,19 @@
 (function () {
-  const KEY = window.QUIZ_KEY || {};
+  const EX = window.currentExam();
+  window.setupExamHeader(document.getElementById("quiz") ? "quiz" : "review");
+  const KEY = (window.QUIZ_KEYS || {})[EX.id] || {};
+  const S = window.UserStore;
+  const N = (r) => (KEY[r] ? KEY[r].ans.length : 50);
+  const TOTAL = (r) => (KEY[r] ? KEY[r].pt.reduce((a, b) => a + b, 0) : 100);
+  const rname = (r) => EX.round.replace('{r}', r);
+  const imgOf = (r, n) => EX.img.replace('{r}', r).replace('{n}', String(n).padStart(2, '0'));
   const NUMS = '①②③④⑤';
   const rounds = Object.keys(KEY).map(Number).sort((a, b) => b - a);
   const box = document.getElementById('quiz');
   const bar = document.getElementById('quiz-bar');
-  const draftKey = (r) => 'khmap.quizDraft.' + r;
-  const load = (k, d) => { try { const v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } };
-  const save = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) { /* 무시 */ } };
+  const draftKey = (r) => window.ATTEMPTS.key('quizDraft.' + r);
+  const load = (k, d) => S.get(k, d);
+  const save = (k, v) => S.set(k, v);
   const today = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; };
   const mmss = (s) => { s = Math.round(s || 0); const h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), x = s % 60; return (h ? `${h}:${String(m).padStart(2, '0')}` : `${m}`) + ':' + String(x).padStart(2, '0'); };
   const sum = (o) => Object.values(o || {}).reduce((a, b) => a + b, 0);
@@ -16,9 +23,10 @@
   let timer = null;
 
   const lastAttempt = (r) => window.ATTEMPTS.all().find((a) => a.round === r);
+  document.title = `기출 풀기 · ${EX.name}`;
   function score(r, answers) {
     const k = KEY[r]; let s = 0; const wrong = [];
-    for (let n = 1; n <= 50; n++) { if (answers[n] === k.ans[n - 1]) s += k.pt[n - 1]; else wrong.push(n); }
+    for (let n = 1; n <= k.ans.length; n++) { if (answers[n] === k.ans[n - 1]) s += k.pt[n - 1]; else wrong.push(n); }
     return { score: s, wrong };
   }
   const saveDraft = () => { if (!state.graded) save(draftKey(state.round), { answers: state.answers, times: state.times, cur: state.cur }); };
@@ -40,12 +48,12 @@
   function renderList() {
     stopTimer(); bar.hidden = true; state.view = 'list';
     box.innerHTML = `
-      <h2 class="r-h">회차 선택 <small>한국사능력검정시험 심화 · 50문항 · 100점</small></h2>
+      <h2 class="r-h">${EX.name}${EX.level ? ` (${EX.level})` : ''} · 회차 선택</h2>
       <ul class="q-rounds">${rounds.map((r) => {
         const a = lastAttempt(r); const dr = load(draftKey(r), null); const dn = dr ? Object.keys(dr.answers || {}).length : 0;
-        return `<li><a href="#${r}"><b>제${r}회</b>
+        return `<li><a href="#${r}"><b>${rname(r)}</b>
           <span>${a ? `최근 ${a.score != null ? `<em>${a.score}점</em> · ` : ''}틀림 ${a.wrong.length}${a.total ? ` · ${mmss(a.total)}` : ''}${a.date ? ` · ${a.date}` : ''}` : '아직 안 풀었어요'}</span>
-          ${dn ? `<span class="q-draft">이어 풀기 ${dn}/50 · ${mmss(sum(dr.times))}</span>` : ''}</a></li>`;
+          ${dn ? `<span class="q-draft">이어 풀기 ${dn}/${N(r)} · ${mmss(sum(dr.times))}</span>` : ''}</a></li>`;
       }).join('')}</ul>
       <p class="r-note">문제 이미지의 ①~⑤를 누르면 답이 선택되고 다음 문제로 넘어가요. 문제마다 머문 시간과 총 소요 시간이 기록돼요. 키보드 1~5 · ← → 도 쓸 수 있어요.<br>채점 기록은 이 브라우저에 저장되고 오답 노트에 바로 반영돼요. 문항 사진 등의 저작권은 원저작자에게 있어요.</p>`;
   }
@@ -71,7 +79,7 @@
             : `<span id="q-time" class="q-tm">이 문제 <b>${mmss(state.times[n])}</b> · 총 <b>${mmss(sum(state.times))}</b></span>`}
         </div>
         <div class="q-imgwrap">
-          <img src="quiz/${r}/${String(n).padStart(2, '0')}.webp" alt="${r}회 ${n}번 문제">
+          <img src="${imgOf(r, n)}" alt="${rname(r)} ${n}번 문제">
           ${spots}
         </div>
         ${missing ? `<div class="q-opts">${[1, 2, 3, 4, 5].map((i) => `<button type="button" class="q-spot-btn${a === i ? ' pick' : ''}" data-i="${i}" ${state.graded ? 'disabled' : ''}>${NUMS[i - 1]}</button>`).join('')}</div>` : ''}
@@ -80,7 +88,7 @@
 
   function navList() {
     if (state.graded && state.onlyWrong) return score(state.round, state.answers).wrong;
-    return Array.from({ length: 50 }, (_, i) => i + 1);
+    return Array.from({ length: N(state.round) }, (_, i) => i + 1);
   }
 
   function renderSolve() {
@@ -90,16 +98,16 @@
     box.innerHTML = `
       <div class="q-top">
         <a href="#" class="top-link">← 회차 목록</a>
-        <h2>제${r}회 심화 <small>${state.cur} / 50</small></h2>
+        <h2>${rname(r)} <small>${state.cur} / ${N(r)}</small></h2>
         ${state.graded ? `<button type="button" class="top-link q-to-result">결과 보기</button>` : ''}
       </div>
       ${solveHtml()}
       <div class="q-nav">
         <button type="button" class="q-prev" ${pos <= 0 ? 'disabled' : ''}>◀ 이전</button>
-        <button type="button" class="q-gridbtn">${state.graded ? (state.onlyWrong ? '틀린 문제만 보는 중' : '문항 목록') : `답한 문항 ${Object.keys(state.answers).length}/50`}</button>
+        <button type="button" class="q-gridbtn">${state.graded ? (state.onlyWrong ? '틀린 문제만 보는 중' : '문항 목록') : `답한 문항 ${Object.keys(state.answers).length}/${N(r)}`}</button>
         ${pos < list.length - 1 ? `<button type="button" class="q-next">다음 ▶</button>` : state.graded ? '<button type="button" class="q-to-result">결과 보기</button>' : '<button type="button" class="q-grade">채점하기</button>'}
       </div>
-      <div class="q-grid"${state.showGrid ? '' : ' hidden'}>${Array.from({ length: 50 }, (_, i) => {
+      <div class="q-grid"${state.showGrid ? '' : ' hidden'}>${Array.from({ length: N(r) }, (_, i) => {
         const n = i + 1; const a = state.answers[n];
         const c = state.graded ? (a === KEY[r].ans[i] ? 'ok' : 'ng') : a ? 'on' : '';
         return `<button type="button" data-go="${n}" class="${c}${n === state.cur ? ' cur' : ''}">${n}</button>`;
@@ -116,24 +124,24 @@
     stopTimer(); state.view = 'result';
     const r = state.round, k = KEY[r], s = score(r, state.answers);
     const total = sum(state.times);
-    const avg = total / 50;
-    const rows = Array.from({ length: 50 }, (_, i) => {
+    const avg = total / N(r);
+    const rows = Array.from({ length: N(r) }, (_, i) => {
       const n = i + 1, a = state.answers[n], ok = a === k.ans[i], t = state.times[n] || 0;
       return `<button type="button" data-go="${n}" class="q-trow ${ok ? 'ok' : 'ng'}${t > avg * 1.8 && t > 60 ? ' slow' : ''}">
         <b>${n}</b><span>${ok ? '○' : '✕'}</span><span class="t">${mmss(t)}</span><span class="bar" style="width:${Math.min(100, (t / Math.max(1, ...Object.values(state.times))) * 100)}%"></span></button>`;
     }).join('');
     box.innerHTML = `
-      <div class="q-top"><a href="#" class="top-link">← 회차 목록</a><h2>제${r}회 결과</h2></div>
+      <div class="q-top"><a href="#" class="top-link">← 회차 목록</a><h2>${rname(r)} 결과</h2></div>
       <div class="q-result">
-        <b>${s.score}점</b>
-        <span>맞음 ${50 - s.wrong.length} · 틀림 ${s.wrong.length}</span>
+        <b>${s.score}점</b><small>/ ${TOTAL(r)}</small>
+        <span>맞음 ${N(r) - s.wrong.length} · 틀림 ${s.wrong.length}</span>
         <span>총 소요 시간 <b class="tt">${mmss(total)}</b> · 문제당 평균 ${mmss(avg)}</span>
         <span class="q-saved">오답 노트에 저장했어요</span>
       </div>
       <div class="q-actions">
         <button type="button" class="q-review-wrong" ${s.wrong.length ? '' : 'disabled'}>틀린 문제 다시 보기</button>
         <button type="button" class="q-review-all">전체 문제 보기</button>
-        <a class="q-btn" href="review.html">오답 노트</a>
+        <a class="q-btn" href="review.html?exam=${EX.id}">오답 노트</a>
         <button type="button" class="q-retry">다시 풀기</button>
       </div>
       <h3 class="r-h">문제별 머문 시간 <small>○ 정답 · ✕ 오답 · 주황 = 평균보다 오래 걸린 문제</small></h3>
@@ -143,7 +151,7 @@
   }
 
   function go(n) {
-    state.cur = Math.max(1, Math.min(50, n));
+    state.cur = Math.max(1, Math.min(N(state.round), n));
     saveDraft(); renderSolve(); window.scrollTo(0, 0);
   }
   function step(d) {
@@ -161,13 +169,13 @@
     // 다음 문제로 (마지막 문제면 채점 안내)
     setTimeout(() => {
       if (state.cur !== n || state.view !== 'solve') return;
-      if (n < 50) go(n + 1);
+      if (n < N(state.round)) go(n + 1);
       else { state.showGrid = true; renderSolve(); }
     }, 350);
   }
 
   function grade() {
-    const left = 50 - Object.keys(state.answers).length;
+    const left = N(state.round) - Object.keys(state.answers).length;
     if (left && !confirm(`아직 ${left}문항을 고르지 않았어요. 고르지 않은 문항은 틀린 것으로 채점할까요?`)) return;
     const s = score(state.round, state.answers);
     window.ATTEMPTS.save({ round: state.round, date: today(), wrong: s.wrong, answers: state.answers, score: s.score, times: state.times, total: sum(state.times) });
@@ -220,5 +228,6 @@
   });
   document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') saveDraft(); });
   window.addEventListener('hashchange', route);
+  S.onChange((t) => { if (t === 'sync' && state.view !== 'solve') route(); });
   route();
 })();

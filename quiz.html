@@ -12,24 +12,28 @@
 <body class="review-page quiz-page">
   <header class="topbar">
     <div class="brand">
-      <span class="brand-mark">史</span>
+      <a class="brand-mark" href="index.html" title="시험 선택">史</a>
       <div>
         <h1>기출 풀기</h1>
         <p class="brand-sub">한국사능력검정시험 심화 · 번호를 골라 답하고 채점하면 오답 노트에 저장돼요</p>
       </div>
     </div>
     <nav class="top-links">
-      <a class="top-link" href="review.html">오답 노트</a>
-      <a class="top-link" href="index.html">지도 노트</a>
+      <a class="top-link" href="review.html?exam=history">오답 노트</a>
+      <a class="top-link" href="history.html">지도 노트</a>
     </nav>
   </header>
 
   <main class="review" id="quiz"></main>
   <div class="quiz-bar" id="quiz-bar" hidden></div>
 
+  <script src="js/firebase-config.js"></script>
+  <script src="js/userstore.js"></script>
+  <script src="js/exams.js"></script>
   <script src="js/mylog.js"></script>
   <script src="js/attempts.js"></script>
   <script src="js/quiz-key.js"></script>
   <script src="js/quiz.js"></script>
+  <script type="module" src="js/auth.js"></script>
 </body>
 </html>

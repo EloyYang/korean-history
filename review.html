@@ -12,17 +12,20 @@
 <body class="review-page">
   <header class="topbar">
     <div class="brand">
-      <span class="brand-mark">史</span>
+      <a class="brand-mark" href="index.html" title="시험 선택">史</a>
       <div>
         <h1>내 오답 노트</h1>
         <p class="brand-sub">푼 기출 회차의 틀린 문제로 암기가 부족한 기출 포인트 찾기</p>
       </div>
     </div>
-    <nav class="top-links"><a class="top-link" href="quiz.html">기출 풀기</a><a class="top-link" href="index.html">지도 노트</a></nav>
+    <nav class="top-links"><a class="top-link" href="quiz.html?exam=history">기출 풀기</a><a class="top-link" href="history.html">지도 노트</a></nav>
   </header>
 
   <main class="review" id="review"></main>
 
+  <script src="js/firebase-config.js"></script>
+  <script src="js/userstore.js"></script>
+  <script src="js/exams.js"></script>
   <script src="js/eras.js"></script>
   <script src="js/gichul.js"></script>
   <script src="js/exam.js"></script>
@@ -32,5 +35,6 @@
   <script src="js/wrongq.js"></script>
   <script src="js/solve.js"></script>
   <script src="js/review.js"></script>
+  <script type="module" src="js/auth.js"></script>
 </body>
 </html>

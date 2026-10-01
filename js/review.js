@@ -6,8 +6,12 @@
   const ERAS = window.ERAS || [];
   const GICHUL = window.GICHUL || {};
   const EXAM = window.EXAM || {};
-  const LOG = window.ATTEMPTS ? window.ATTEMPTS.all() : (window.MY_LOG || []).slice().sort((a, b) => b.round - a.round);
-  const QKEY = window.QUIZ_KEY || {};
+  const EX = window.currentExam();
+  window.setupExamHeader(document.getElementById("quiz") ? "quiz" : "review");
+  const LOG = window.ATTEMPTS.all();
+  const QKEY = (window.QUIZ_KEYS || {})[EX.id] || {};
+  const imgOf = (r, n) => EX.img.replace('{r}', r).replace('{n}', String(n).padStart(2, '0'));
+  document.title = `오답 노트 · ${EX.name}`;
   const eraName = (id) => (ERAS.find((e) => e.id === id) || { name: id || '기타' }).name;
   const eraOrder = (id) => { const i = ERAS.findIndex((e) => e.id === id); return i < 0 ? 99 : i; };
   const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
@@ -17,7 +21,8 @@
   };
   const state = { scope: store.get('reviewScope', 'target'), hideDone: store.get('reviewHideDone', false), openAll: store.get('reviewOpenAll', false) };
   const openSet = new Set();
-  const mastered = new Set(store.get('mastered', []));
+  const MKEY = window.ATTEMPTS.key('mastered');
+  const mastered = new Set(window.UserStore.get(MKEY, []));
 
   // 문항 정보 → 객체
   const Q = (round, num) => {
@@ -44,7 +49,7 @@
     const done = mastered.has(q.id);
     const f = FULL[q.id];
     const sv = SOLVE[q.id];
-    const img = QKEY[q.round] ? `<img class="rq-img" src="quiz/${q.round}/${String(q.num).padStart(2, '0')}.webp" alt="${q.round}회 ${q.num}번 문제" loading="lazy">` : '';
+    const img = QKEY[q.round] ? `<img class="rq-img" src="${imgOf(q.round, q.num)}" alt="${q.round}회 ${q.num}번 문제" loading="lazy">` : '';
     const body = img ? '' : f ? f.body.map(([k, t]) => {
       const h = markClues(esc(t), sv && sv.clue);
       return k === 'cap' ? `<p class="rq-cap">${h}</p>` : k === 'say' ? `<p class="rq-say">${h}</p>` : `<p>${h}</p>`;
@@ -93,7 +98,7 @@
       return `<tr>
         <th>${l.round}회</th><td>${esc(l.date || '')}</td>
         <td><b>${l.wrong.length}</b> / 50</td>
-        <td>${l.score != null ? `<b>${l.score}</b>점` : `${unknown ? '약 ' : ''}<b>${100 - lost}</b>점`}${l.src === 'local' ? ' <small class="src">기출 풀기</small>' : ''}</td>
+        <td>${l.score != null ? `<b>${l.score}</b>점` : `${unknown ? '약 ' : ''}<b>${100 - lost}</b>점`}${l.src === 'claude' ? ' <small class="src">Claude 기록</small>' : l.answers ? ' <small class="src">기출 풀기</small>' : ''}</td>
         <td>${l.total ? mmss(l.total) : '-'}</td>
         <td class="nums">${l.wrong.map((n) => `<span class="${tg.includes(n) ? 'on' : ''}">${n}</span>`).join('')}</td>
       </tr>`;
@@ -126,7 +131,7 @@
       const n = pts.reduce((a, [, qs]) => a + qs.length, 0);
       return `
         <section class="rp-era">
-          <h3><a href="index.html#${esc(e)}">${esc(eraName(e))}</a> <small>${n}문항</small></h3>
+          <h3><a href="history.html#${esc(e)}">${esc(eraName(e))}</a> <small>${n}문항</small></h3>
           ${pts.map(([pi, qs]) => {
             const p = pi >= 0 && GICHUL[e] ? GICHUL[e].pts[pi] : null;
             return `
@@ -139,7 +144,9 @@
         </section>`;
     }).join('');
 
-    document.getElementById('review').innerHTML = `
+    const pend = window.ATTEMPTS.pendingImport();
+    const banner = pend.length ? `<div class="r-import"><span>채팅으로 Claude에게 알려 준 기록(${pend.map((l) => l.round + '회').join(', ')})이 있어요. 내 기록으로 가져올까요?${window.UserStore.user ? '' : ' <small>(로그인하면 계정에 저장돼요)</small>'}</span><button type="button" data-import="yes">가져오기</button><button type="button" data-import="no">내 기록 아님</button></div>` : '';
+    document.getElementById('review').innerHTML = banner + `
       <section class="r-summary">
         <div><b>${LOG.length}</b><span>푼 회차</span></div>
         <div><b>${wrongs.length}</b><span>틀린 문항</span></div>
@@ -167,6 +174,8 @@
   }
 
   document.addEventListener('click', (e) => {
+    const im = e.target.closest('[data-import]');
+    if (im) { if (im.dataset.import === 'yes') window.ATTEMPTS.importMyLog(); else window.ATTEMPTS.dismissImport(); location.reload(); return; }
     const s = e.target.closest('button[data-scope]');
     if (s) { state.scope = s.dataset.scope; store.set('reviewScope', state.scope); render(); return; }
     const t = e.target.closest('.rq-toggle');
@@ -182,9 +191,10 @@
     const li = e.target.closest('.rq');
     if (li && e.target.type === 'checkbox') {
       if (e.target.checked) mastered.add(li.dataset.id); else mastered.delete(li.dataset.id);
-      store.set('mastered', [...mastered]);
+      window.UserStore.set(MKEY, [...mastered]);
       const y = window.scrollY; render(); window.scrollTo(0, y);
     }
   });
+  window.UserStore.onChange((t) => { if (t === 'auth' || t === 'sync') render(); });
   render();
 })();
