@@ -6,7 +6,8 @@
   const ERAS = window.ERAS || [];
   const GICHUL = window.GICHUL || {};
   const EXAM = window.EXAM || {};
-  const LOG = (window.MY_LOG || []).slice().sort((a, b) => b.round - a.round);
+  const LOG = window.ATTEMPTS ? window.ATTEMPTS.all() : (window.MY_LOG || []).slice().sort((a, b) => b.round - a.round);
+  const QKEY = window.QUIZ_KEY || {};
   const eraName = (id) => (ERAS.find((e) => e.id === id) || { name: id || '기타' }).name;
   const eraOrder = (id) => { const i = ERAS.findIndex((e) => e.id === id); return i < 0 ? 99 : i; };
   const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
@@ -21,7 +22,7 @@
   // 문항 정보 → 객체
   const Q = (round, num) => {
     const row = (EXAM[round] || []).find((x) => x[0] === num);
-    if (!row) return { round, num, missing: true };
+    if (!row) return { round, num, id: `${round}-${num}`, era: '', theme: '분류 정보 없음', stars: 0, diff: '-', ans: '', pEra: '', pIdx: -1, ex: '', pt: QKEY[round] ? QKEY[round].pt[num - 1] : 0, target: true, unknown: true };
     const [, era, theme, stars, diff, ans, pEra, pIdx, ex, pt] = row;
     return { round, num, era, theme, stars, diff, ans, pEra, pIdx, ex, pt, id: `${round}-${num}`,
       target: stars >= MIN_STARS && EASY.includes(diff) };
@@ -42,11 +43,12 @@
     const done = mastered.has(q.id);
     const f = FULL[q.id];
     const sv = SOLVE[q.id];
-    const body = f ? f.body.map(([k, t]) => {
+    const img = QKEY[q.round] ? `<img class="rq-img" src="quiz/${q.round}/${String(q.num).padStart(2, '0')}.webp" alt="${q.round}회 ${q.num}번 문제" loading="lazy">` : '';
+    const body = img ? '' : f ? f.body.map(([k, t]) => {
       const h = markClues(esc(t), sv && sv.clue);
       return k === 'cap' ? `<p class="rq-cap">${h}</p>` : k === 'say' ? `<p class="rq-say">${h}</p>` : `<p>${h}</p>`;
     }).join('') : (q.ex ? `<p>${esc(q.ex)}</p>` : '');
-    const opts = f ? `<ol class="rq-opts">${f.opts.map((o, i) => `
+    const opts = img ? '' : f ? `<ol class="rq-opts">${f.opts.map((o, i) => `
       <li class="${i === f.ans ? 'ans' : ''}"><span class="n">${NUMS[i]}</span><span class="t">${esc(o)}</span>${sv && sv.opts ? `<span class="why">${sv.opts[i]}</span>` : ''}</li>`).join('')}</ol>` : '';
     const open = state.openAll || openSet.has(q.id);
     return `
@@ -59,9 +61,9 @@
           ${q.pt ? `<span class="rq-pt">${q.pt}점</span>` : ''}
           <label class="rq-done"><input type="checkbox" ${done ? 'checked' : ''}> 외웠어요</label>
         </div>
-        ${f && f.stem ? `<p class="rq-stem">${esc(f.stem)}</p>` : ''}
-        <div class="rq-body">${body}</div>
-        ${opts || (q.ans ? `<p class="rq-ans"><span>정답</span><q>${esc(q.ans)}</q></p>` : '')}
+        ${img || `${f && f.stem ? `<p class="rq-stem">${esc(f.stem)}</p>` : ''}<div class="rq-body">${body}</div>`}
+        ${opts || (!img && q.ans ? `<p class="rq-ans"><span>정답</span><q>${esc(q.ans)}</q></p>` : '')}
+        ${img && !sv ? `<div class="rq-solve"><button class="rq-toggle" type="button">${open ? '정답·도출 포인트 접기 ▴' : '정답·도출 포인트 보기 ▾'}</button><div class="rq-solve-body">${QKEY[q.round] ? `<p class="sv-h">정답</p><p class="sv-how"><b>${NUMS[QKEY[q.round].ans[q.num - 1] - 1]}</b> ${q.ans ? esc(q.ans) : ''}</p>` : ''}<p class="sv-h">정답 도출 포인트</p><p class="sv-how">아직 정리 전이에요 — Claude에게 이 문항의 풀이 포인트를 요청해 주세요.</p></div></div>` : ''}
         ${sv ? `<div class="rq-solve">
           <button class="rq-toggle" type="button">${open ? '정답·도출 포인트 접기 ▴' : '정답·도출 포인트 보기 ▾'}</button>
           <div class="rq-solve-body">
@@ -69,6 +71,7 @@
             <p class="sv-clue">${sv.clue.map((c) => `<mark class="clue">${esc(c)}</mark>`).join(' ')}</p>
             <p class="sv-h">정답까지 생각의 순서</p>
             <p class="sv-how">${sv.how}</p>
+            ${img && f ? `<p class="sv-h">선지별 정리</p><ol class="sv-opts">${f.opts.map((o, i) => `<li class="${i === f.ans ? 'ans' : ''}"><span class="n">${NUMS[i]}</span><span>${esc(o)}<small>${sv.opts ? sv.opts[i] : ''}</small></span></li>`).join('')}</ol>` : ''}
           </div></div>` : ''}
         ${q.target ? '' : `<p class="rq-why">복습 대상 제외 — ${why(q)}</p>`}
       </li>`;
@@ -82,13 +85,13 @@
     // 회차 기록
     const rounds = LOG.map((l) => {
       const qs = l.wrong.map((n) => Q(l.round, n));
-      const lost = qs.reduce((a, q) => a + (q.pt || 0), 0);
+      const lost = qs.reduce((a, q) => a + (q.pt || (QKEY[l.round] ? QKEY[l.round].pt[q.num - 1] : 0)), 0);
       const unknown = qs.some((q) => !q.pt);
       const tg = qs.filter((q) => q.target).map((q) => q.num);
       return `<tr>
         <th>${l.round}회</th><td>${esc(l.date || '')}</td>
         <td><b>${l.wrong.length}</b> / 50</td>
-        <td>${unknown ? '약 ' : ''}<b>${100 - lost}</b>점</td>
+        <td>${l.score != null ? `<b>${l.score}</b>점` : `${unknown ? '약 ' : ''}<b>${100 - lost}</b>점`}${l.src === 'local' ? ' <small class="src">기출 풀기</small>' : ''}</td>
         <td class="nums">${l.wrong.map((n) => `<span class="${tg.includes(n) ? 'on' : ''}">${n}</span>`).join('')}</td>
       </tr>`;
     }).join('');

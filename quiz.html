@@ -3,34 +3,33 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>내 오답 노트</title>
+  <title>기출 풀기</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/style.css">
 </head>
-<body class="review-page">
+<body class="review-page quiz-page">
   <header class="topbar">
     <div class="brand">
       <span class="brand-mark">史</span>
       <div>
-        <h1>내 오답 노트</h1>
-        <p class="brand-sub">푼 기출 회차의 틀린 문제로 암기가 부족한 기출 포인트 찾기</p>
+        <h1>기출 풀기</h1>
+        <p class="brand-sub">한국사능력검정시험 심화 · 번호를 골라 답하고 채점하면 오답 노트에 저장돼요</p>
       </div>
     </div>
-    <nav class="top-links"><a class="top-link" href="quiz.html">기출 풀기</a><a class="top-link" href="index.html">지도 노트</a></nav>
+    <nav class="top-links">
+      <a class="top-link" href="review.html">오답 노트</a>
+      <a class="top-link" href="index.html">지도 노트</a>
+    </nav>
   </header>
 
-  <main class="review" id="review"></main>
+  <main class="review" id="quiz"></main>
+  <div class="quiz-bar" id="quiz-bar" hidden></div>
 
-  <script src="js/eras.js"></script>
-  <script src="js/gichul.js"></script>
-  <script src="js/exam.js"></script>
   <script src="js/mylog.js"></script>
   <script src="js/attempts.js"></script>
   <script src="js/quiz-key.js"></script>
-  <script src="js/wrongq.js"></script>
-  <script src="js/solve.js"></script>
-  <script src="js/review.js"></script>
+  <script src="js/quiz.js"></script>
 </body>
 </html>

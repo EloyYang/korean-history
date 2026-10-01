@@ -604,7 +604,7 @@
   // 기출 분석 시험 포인트 (70~79회)
   // 오답 노트(review.html)의 복습 대상 문항이 걸린 기출 포인트: '시대:번호' → 개수
   const MY_WRONG = new Map();
-  (window.MY_LOG || []).forEach((l) => l.wrong.forEach((n) => {
+  (window.ATTEMPTS ? window.ATTEMPTS.all() : window.MY_LOG || []).forEach((l) => l.wrong.forEach((n) => {
     const row = ((window.EXAM || {})[l.round] || []).find((x) => x[0] === n);
     if (!row || row[7] < 0 || row[3] < 2 || !['하', '중'].includes(row[4])) return;
     const k = row[6] + ':' + row[7];
