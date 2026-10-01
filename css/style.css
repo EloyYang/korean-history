@@ -743,3 +743,58 @@ mark.clue { background: #ffe27a; color: #2a2620; border-radius: 3px; padding: 0 
 .sv-opts li.ans { font-weight: 700; color: var(--accent); }
 .sv-opts small { display: block; font-weight: 500; color: var(--muted); font-size: 12px; }
 .r-table .src { font-size: 11px; color: var(--muted); }
+
+/* ── 기출 풀기: 한 문제씩 · 이미지 속 ①~⑤ 누르기 · 시간 ─────────────────────────── */
+.q-top h2 small { font-size: 13px; font-weight: 500; color: var(--muted); margin-left: 4px; }
+.q-top .q-to-result { margin-left: auto; cursor: pointer; }
+.q-one { max-width: 760px; margin: 0 auto; padding: 10px; border: 1px solid var(--line); border-radius: var(--radius); background: #fff; }
+.q-one.right { border-color: #2e7d32; box-shadow: inset 4px 0 0 #2e7d32; }
+.q-one.wrong { border-color: #c62828; box-shadow: inset 4px 0 0 #c62828; }
+.q-one .q-head { flex-wrap: wrap; }
+.q-one.right .q-res { color: #2e7d32; }
+.q-one.wrong .q-res { color: #c62828; }
+.q-tm { margin-left: auto; font-size: 12.5px; color: #666; }
+.q-tm b { color: #222; font-variant-numeric: tabular-nums; }
+.q-imgwrap { position: relative; max-width: 720px; margin: 0 auto; }
+.q-imgwrap img { display: block; width: 100%; height: auto; }
+.q-spot { position: absolute; padding: 0; border: 2px solid transparent; border-radius: 6px; background: transparent; cursor: pointer; }
+.q-spot:hover:not(:disabled) { border-color: color-mix(in srgb, var(--accent) 60%, transparent); background: color-mix(in srgb, var(--accent) 8%, transparent); }
+.q-spot.pick { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 16%, transparent); }
+.q-spot.ans { border-color: #2e7d32; background: rgba(46, 125, 50, .16); }
+.q-spot.miss { border-color: #c62828; background: rgba(198, 40, 40, .14); }
+.q-spot:disabled { cursor: default; }
+.q-spot-btn { width: 48px; height: 44px; font-size: 22px; border: 1.5px solid #ccc; border-radius: 10px; background: #fafafa; color: #333; }
+.q-spot-btn.pick { background: var(--accent); border-color: var(--accent); color: #fff; }
+.q-nav { display: flex; justify-content: center; align-items: center; gap: 8px; max-width: 760px; margin: 12px auto 0; }
+.q-nav button { padding: 9px 16px; border-radius: 999px; border: 1px solid var(--line); background: var(--surface); font-weight: 700; font-size: 14px; }
+.q-nav .q-next, .q-nav .q-grade, .q-nav .q-to-result { background: var(--accent); border-color: var(--accent); color: #fff; }
+.q-nav button:disabled { opacity: .4; }
+.q-nav .q-gridbtn { flex: 1; max-width: 220px; color: var(--muted); }
+.q-grid { display: grid; grid-template-columns: repeat(10, minmax(0, 1fr)); gap: 4px; max-width: 760px; margin: 10px auto 0; }
+.q-grid button { padding: 6px 0; font-size: 12px; border-radius: 6px; border: 1px solid var(--line); background: var(--surface-2); color: var(--muted); }
+.q-grid button.on { background: var(--accent); border-color: var(--accent); color: #fff; }
+.q-grid button.ok { background: #2e7d32; border-color: #2e7d32; color: #fff; }
+.q-grid button.ng { background: #c62828; border-color: #c62828; color: #fff; }
+.q-grid button.cur { outline: 2px solid var(--text); outline-offset: 1px; }
+.q-grid .wide { grid-column: 1 / -1; padding: 10px; font-size: 14px; font-weight: 900; background: var(--accent); border-color: var(--accent); color: #fff; }
+.q-result .tt { font-size: 18px; color: var(--accent); }
+.q-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 8px; }
+.q-actions button, .q-actions .q-btn { padding: 8px 14px; border-radius: 999px; border: 1px solid var(--line); background: var(--surface); font-weight: 700; font-size: 13.5px; color: var(--text); text-decoration: none; }
+.q-actions .q-review-wrong { background: #c62828; border-color: #c62828; color: #fff; }
+.q-actions button:disabled { opacity: .4; }
+.q-times { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 4px; }
+.q-trow { position: relative; display: flex; align-items: center; gap: 8px; padding: 5px 8px; border-radius: 6px; border: 1px solid var(--line); background: var(--surface); font-size: 13px; overflow: hidden; text-align: left; }
+.q-trow > * { position: relative; z-index: 1; }
+.q-trow .bar { position: absolute; left: 0; bottom: 0; height: 3px; background: var(--muted); opacity: .5; z-index: 0; }
+.q-trow b { width: 22px; }
+.q-trow.ok span:nth-child(2) { color: #2e7d32; font-weight: 900; }
+.q-trow.ng span:nth-child(2) { color: #c62828; font-weight: 900; }
+.q-trow .t { margin-left: auto; font-variant-numeric: tabular-nums; }
+.q-trow.slow { background: #fff3e0; border-color: #ffb74d; }
+.q-trow.slow .bar { background: #fb8c00; opacity: 1; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .q-trow.slow { background: #3a2a14; } }
+/* 문제 하나가 화면 높이에 들어오게 (선지까지 한눈에) */
+.q-imgwrap { width: fit-content; max-width: 100%; }
+.q-imgwrap img { width: auto; max-width: 100%; max-height: calc(100vh - 230px); max-height: calc(100dvh - 230px); }
+@media (max-width: 600px) { .q-imgwrap img { max-height: none; width: 100%; } }
+.rq-time { color: var(--text); font-variant-numeric: tabular-nums; }

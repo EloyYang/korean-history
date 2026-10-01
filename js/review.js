@@ -27,7 +27,8 @@
     return { round, num, era, theme, stars, diff, ans, pEra, pIdx, ex, pt, id: `${round}-${num}`,
       target: stars >= MIN_STARS && EASY.includes(diff) };
   };
-  const wrongs = LOG.flatMap((l) => l.wrong.map((n) => Q(l.round, n))).filter((q) => !q.missing);
+  const wrongs = LOG.flatMap((l) => l.wrong.map((n) => ({ ...Q(l.round, n), time: (l.times || {})[n] }))).filter((q) => !q.missing);
+  const mmss = (s) => { s = Math.round(s || 0); const h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), x = s % 60; return (h ? `${h}:${String(m).padStart(2, '0')}` : `${m}`) + ':' + String(x).padStart(2, '0'); };
   const targets = wrongs.filter((q) => q.target);
 
   const starTxt = (n) => '★'.repeat(n) + '☆'.repeat(Math.max(0, 3 - n));
@@ -59,6 +60,7 @@
           <span class="rq-star" title="출제빈도">${starTxt(q.stars)}</span>
           <span class="rq-diff d-${esc(q.diff)}">난이도 ${esc(q.diff)}</span>
           ${q.pt ? `<span class="rq-pt">${q.pt}점</span>` : ''}
+          ${q.time ? `<span class="rq-time">풀이 ${mmss(q.time)}</span>` : ''}
           <label class="rq-done"><input type="checkbox" ${done ? 'checked' : ''}> 외웠어요</label>
         </div>
         ${img || `${f && f.stem ? `<p class="rq-stem">${esc(f.stem)}</p>` : ''}<div class="rq-body">${body}</div>`}
@@ -92,6 +94,7 @@
         <th>${l.round}회</th><td>${esc(l.date || '')}</td>
         <td><b>${l.wrong.length}</b> / 50</td>
         <td>${l.score != null ? `<b>${l.score}</b>점` : `${unknown ? '약 ' : ''}<b>${100 - lost}</b>점`}${l.src === 'local' ? ' <small class="src">기출 풀기</small>' : ''}</td>
+        <td>${l.total ? mmss(l.total) : '-'}</td>
         <td class="nums">${l.wrong.map((n) => `<span class="${tg.includes(n) ? 'on' : ''}">${n}</span>`).join('')}</td>
       </tr>`;
     }).join('');
@@ -146,8 +149,8 @@
 
       <h2 class="r-h">회차별 기록</h2>
       <div class="r-table-wrap"><table class="r-table">
-        <thead><tr><th>회차</th><th>푼 날짜</th><th>틀림</th><th>점수</th><th>틀린 번호 <small>(<span class="on-sample">색칠</span> = 복습 대상)</small></th></tr></thead>
-        <tbody>${rounds || '<tr><td colspan="5">아직 기록이 없어요</td></tr>'}</tbody>
+        <thead><tr><th>회차</th><th>푼 날짜</th><th>틀림</th><th>점수</th><th>소요 시간</th><th>틀린 번호 <small>(<span class="on-sample">색칠</span> = 복습 대상)</small></th></tr></thead>
+        <tbody>${rounds || '<tr><td colspan="6">아직 기록이 없어요</td></tr>'}</tbody>
       </table></div>
 
       <h2 class="r-h">시대별 약점 <small>진한 막대 = 복습 대상, 연한 막대 = 틀린 문항 전체</small></h2>
