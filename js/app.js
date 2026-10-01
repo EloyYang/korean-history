@@ -602,6 +602,15 @@
 
   // ── 패널 ─────────────────────────────
   // 기출 분석 시험 포인트 (70~79회)
+  // 오답 노트(review.html)의 복습 대상 문항이 걸린 기출 포인트: '시대:번호' → 개수
+  const MY_WRONG = new Map();
+  (window.MY_LOG || []).forEach((l) => l.wrong.forEach((n) => {
+    const row = ((window.EXAM || {})[l.round] || []).find((x) => x[0] === n);
+    if (!row || row[7] < 0 || row[3] < 2 || !['하', '중'].includes(row[4])) return;
+    const k = row[6] + ':' + row[7];
+    MY_WRONG.set(k, (MY_WRONG.get(k) || 0) + 1);
+  }));
+
   function gichulHtml(era) {
     const g = (window.GICHUL || {})[era.id];
     if (!g) return '';
@@ -619,7 +628,8 @@
       <p class="gichul-top">자주 나온 주제: ${esc(g.top)}</p>
       <ul class="points gichul">${g.pts.map(([n, t], i) => {
         const e = exHtml(ex[i]);
-        return `<li class="f${Math.min(n, 3)}${e && state.exAll ? ' ex-open' : ''}"><span class="freq">${star(n)}</span>${t}${e ? `<button class="ex-btn" type="button">기출 문장</button>${e}` : ''}</li>`;
+        const mw = MY_WRONG.get(era.id + ':' + i);
+        return `<li class="f${Math.min(n, 3)}${e && state.exAll ? ' ex-open' : ''}"><span class="freq">${star(n)}</span>${t}${mw ? `<a class="my-wrong" href="review.html" title="오답 노트의 복습 대상 문항">내 오답 ${mw}</a>` : ''}${e ? `<button class="ex-btn" type="button">기출 문장</button>${e}` : ''}</li>`;
       }).join('')}</ul>
       <p class="gichul-legend">★★★ 3회 이상 · ★★ 2회 · ★ 1회(정답) 출제 · <b>기출 문장</b>을 누르면 실제 시험의 선택지·지문 표현을 볼 수 있어요 (국사편찬위원회 출제 문항 발췌)</p>`;
   }
