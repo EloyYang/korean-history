@@ -571,3 +571,21 @@ li.ex-open > .ex-box { display: block; }
 .ex-meta q { color: var(--text); font-weight: 700; }
 .ex-q li + li { border-top: 1px dashed var(--line); margin-top: 4px; padding-top: 6px; }
 .ex-q blockquote { margin: 0; padding-left: 8px; border-left: 3px solid var(--line); line-height: 1.55; color: var(--text); }
+
+/* ── 기출 문장 모아 보기 ─────────────────────────── */
+.top-tools { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 8px; }
+.top-tools .seg { display: inline-flex; }
+.top-tools .seg button { font-size: 12px; padding: 4px 10px; border: 1px solid var(--line); background: var(--surface-2); color: var(--text); cursor: pointer; }
+.top-tools .seg button:first-child { border-radius: 999px 0 0 999px; }
+.top-tools .seg button:last-child { border-radius: 0 999px 999px 0; margin-left: -1px; }
+.top-tools .seg button[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: #fff; }
+.top-help { font-size: 11.5px; color: var(--muted); }
+.top-list { list-style: none; margin: 0; padding: 0; }
+.top-list li { display: flex; gap: 10px; align-items: flex-start; padding: 7px 10px; margin-bottom: 5px; background: var(--surface-2); border-radius: 8px; font-size: 14px; }
+.top-list li.has-k { box-shadow: inset 3px 0 0 var(--accent); }
+.top-list q { quotes: '“' '”'; font-weight: 700; }
+.top-list .ex-meta em { font-style: normal; font-weight: 700; color: var(--accent); }
+.top-rank { flex: none; width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center; font-size: 11.5px; font-weight: 900; background: var(--surface); border: 1px solid var(--line); color: var(--muted); }
+.top-list li:nth-child(-n+3) .top-rank { background: var(--accent); border-color: var(--accent); color: #fff; }
+.top-more { display: block; width: 100%; margin-top: 2px; padding: 6px; font-size: 12.5px; font-weight: 700; border: 1px dashed var(--line); border-radius: 8px; background: none; color: var(--muted); cursor: pointer; }
+.top-more:hover { color: var(--accent); border-color: var(--accent); }

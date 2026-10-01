@@ -94,6 +94,8 @@
     rulerQuiz: false,
     rulerView: store.get('rulerView', 'list'),
     exAll: store.get('exAll', false),
+    topSort: store.get('topSort', 'n'),
+    topMore: false,
   };
 
   let land = null;
@@ -622,6 +624,28 @@
       <p class="gichul-legend">★★★ 3회 이상 · ★★ 2회 · ★ 1회(정답) 출제 · <b>기출 문장</b>을 누르면 실제 시험의 선택지·지문 표현을 볼 수 있어요 (국사편찬위원회 출제 문항 발췌)</p>`;
   }
 
+  // 시대별 기출 문장 모아 보기: 많이 나온 순 / 정답으로 많이 나온 순
+  function topHtml(era) {
+    const all = (window.GICHUL_TOP || {})[era.id];
+    if (!all || !all.length) return '';
+    const byK = state.topSort === 'k';
+    const rows = byK
+      ? all.filter((r) => r[2]).sort((a, b) => b[2] - a[2] || b[2] / b[1] - a[2] / a[1] || b[1] - a[1])
+      : all.slice().sort((a, b) => b[1] - a[1] || b[2] - a[2]);
+    const LIMIT = 10;
+    const shown = state.topMore ? rows : rows.slice(0, LIMIT);
+    return `
+      <div class="section-title">기출 문장 모아 보기 <small>(이 시대 선택지 · 70~79회)</small></div>
+      <div class="top-tools">
+        <span class="seg"><button data-top="n" aria-pressed="${!byK}">많이 나온 순</button><button data-top="k" aria-pressed="${byK}">정답 많은 순</button></span>
+        <span class="top-help">${byK ? '정답 선택지로 나온 횟수 순 (같으면 정답률 높은 순)' : '선택지로 나온 횟수 순 (정답·오답 모두)'}</span>
+      </div>
+      <ol class="top-list">${shown.map(([t, c, k, rs], i) => `
+        <li class="${k ? 'has-k' : ''}"><span class="top-rank">${i + 1}</span><div><q>${esc(t)}</q>
+          <span class="ex-meta"><b>${c}회</b> 출제 · ${k ? `<em>정답 ${k}회 (${Math.round((k / c) * 100)}%)</em>` : '정답 0회'} · ${rs.join('·')}회</span></div></li>`).join('')}</ol>
+      ${rows.length > LIMIT ? `<button class="top-more" type="button">${state.topMore ? '접기' : `더 보기 (${rows.length - LIMIT}개 더)`}</button>` : ''}`;
+  }
+
   function renderPanel() {
     const era = ERAS[state.era];
     const G = (window.GICHUL || {})[era.id];
@@ -638,6 +662,7 @@
     $('#tab-info').innerHTML = `
       <p class="summary">${esc(era.summary)}</p>
       ${gichulHtml(era)}
+      <div id="top-box">${topHtml(era)}</div>
       <details class="old-points"${G ? '' : ' open'}><summary class="section-title">기본 시험 포인트</summary>
       <ul class="points">${era.points.map((p) => `<li>${esc(p)}</li>`).join('')}</ul></details>
       ${evs ? `<div class="section-title">지도 위 사건·장소 <small>(누르면 지도 이동)</small></div><ul class="event-list">${evs}</ul>` : ''}
@@ -895,6 +920,7 @@
     opts = opts || {};
     state.era = Math.max(0, Math.min(ERAS.length - 1, i));
     const era = ERAS[state.era];
+    state.topMore = false;
     if (!opts.fromSearch) { state.hlTerms = null; const c = document.getElementById('search-clear'); if (c) c.hidden = true; }
     if (!opts.keepRuler) {
       const first = RULER_SEQ.findIndex((x) => x.ei === state.era);
@@ -1076,6 +1102,12 @@
   document.querySelectorAll('.tab').forEach((b) => b.addEventListener('click', () => setTab(b.dataset.tab)));
 
   $('#tab-info').addEventListener('click', (e) => {
+    const tb = e.target.closest('button[data-top]');
+    if (tb || e.target.closest('.top-more')) {
+      if (tb) { state.topSort = tb.dataset.top; store.set('topSort', state.topSort); } else state.topMore = !state.topMore;
+      $('#top-box').innerHTML = topHtml(ERAS[state.era]);
+      return;
+    }
     const xb = e.target.closest('.ex-btn');
     if (xb) { xb.parentElement.classList.toggle('ex-open'); return; }
     if (e.target.closest('.ex-all')) {
