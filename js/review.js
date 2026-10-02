@@ -149,6 +149,32 @@
     const eraSeg = eraRounds.length ? `<div class="r-tools"><span class="seg">${['all', ...eraRounds].map((r) => `<button data-era-round="${r}" aria-pressed="${String(state.eraRound) === String(r)}">${r === 'all' ? `전체 회차 (${eraRounds.length})` : `${r}회`}</button>`).join('')}</span>
       <p class="r-scope-note">${state.eraRound === 'all' ? `푼 ${eraRounds.length}개 회차` : `${state.eraRound}회`} 전체 ${sumAll}문항 중 <b>${sumWr}</b>문항 틀림 (오답률 ${pct(sumWr, sumAll)}%)</p></div>` : '';
 
+    // 내가 약한 개념: 같은 기출 포인트(없으면 주제)끼리 묶어 출제 수 대비 틀린 수
+    const byPt = new Map();
+    LOG.filter((l) => state.eraRound === 'all' || l.round === +state.eraRound).forEach((l) => {
+      const wr = new Set(l.wrong);
+      (EXAM[l.round] || []).forEach((row) => {
+        const q = Q(l.round, row[0]);
+        const k = q.pIdx >= 0 ? `${q.pEra}#${q.pIdx}` : `t#${q.theme}`;
+        if (!byPt.has(k)) byPt.set(k, { q, all: 0, wrongs: [] });
+        const v = byPt.get(k); v.all++;
+        if (wr.has(q.num)) v.wrongs.push(q);
+      });
+    });
+    const weak = [...byPt.values()].filter((v) => v.wrongs.length)
+      .map((v) => ({ ...v, done: v.wrongs.every((q) => mastered.has(q.id)) }))
+      .filter((v) => !(state.hideDone && v.done))
+      .sort((a, b) => b.wrongs.length - a.wrongs.length || b.wrongs.length / b.all - a.wrongs.length / a.all || (b.q.stars || 0) - (a.q.stars || 0));
+    const weakHtml = weak.map((v) => {
+      const { q } = v; const p = q.pIdx >= 0 && GICHUL[q.pEra] ? GICHUL[q.pEra].pts[q.pIdx] : null;
+      const per = periodName(periodOf(q.pIdx >= 0 ? q.pEra : q.era));
+      return `<li class="wk${v.done ? ' done' : ''}">
+        <span class="wk-era">${esc(per)}</span>
+        <span class="wk-t">${p ? `<span class="rp-freq">${starTxt(Math.min(p[0], 3))}</span>${p[1]}` : `${esc(q.theme)} <small class="rp-none">기출 포인트 외</small>`}</span>
+        <span class="wk-n">틀림 <b>${v.wrongs.length}</b> / 출제 ${v.all}${v.done ? ' · ✓ 외움' : ''}</span>
+        <span class="wk-qs">${v.wrongs.map((w) => `<button type="button" data-goto="${w.id}" class="${mastered.has(w.id) ? 'm' : ''}${w.target ? '' : ' off'}">${w.round}회 ${w.num}번</button>`).join('')}</span></li>`;
+    }).join('');
+
     // 암기 부족 포인트: 시대 → 기출 포인트 → 틀린 문항
     const groups = new Map();
     shown.forEach((q) => {
@@ -197,6 +223,9 @@
       ${eraSeg}
       <ul class="r-bars">${bars || '<li class="r-empty">아직 푼 회차가 없어요</li>'}</ul>
 
+      <h2 class="r-h">내가 약한 개념 <small>${state.eraRound === 'all' ? '푼 회차 전체' : state.eraRound + '회'} 기준 · 많이 틀린 순 · 번호를 누르면 문제로 이동</small></h2>
+      <ol class="r-weak">${weakHtml || '<li class="r-empty">틀린 개념이 없어요 🎉</li>'}</ol>
+
       <h2 class="r-h">암기가 부족한 기출 포인트</h2>
       <div class="r-tools">
         <span class="seg"><button data-scope="target" aria-pressed="${state.scope === 'target'}">복습 대상만 (${targets.length})</button><button data-scope="other" aria-pressed="${state.scope === 'other'}" title="출제빈도 ★ 또는 난이도 중상·상·특">어렵거나 빈도 낮은 문제 (${others.length})</button><button data-scope="all" aria-pressed="${state.scope === 'all'}">틀린 문제 전체 (${wrongs.length})</button></span>
@@ -221,6 +250,17 @@
     if (im) { if (im.dataset.import === 'yes') window.ATTEMPTS.importMyLog(); else window.ATTEMPTS.dismissImport(); location.reload(); return; }
     const er = e.target.closest('button[data-era-round]');
     if (er) { state.eraRound = er.dataset.eraRound; store.set('reviewEraRound', state.eraRound); const y = window.scrollY; render(); window.scrollTo(0, y); return; }
+    const go = e.target.closest('button[data-goto]');
+    if (go) {
+      const sel = `.rq[data-id="${go.dataset.goto}"]`;
+      if (!document.querySelector(sel)) { state.scope = 'all'; state.hideDone = false; store.set('reviewScope', 'all'); store.set('reviewHideDone', false); render(); }
+      const li = document.querySelector(sel); if (!li) return;
+      li.classList.add('open', 'flash'); openSet.add(li.dataset.id);
+      const tg = li.querySelector('.rq-toggle'); if (tg) tg.textContent = '정답·도출 포인트 접기 ▴';
+      li.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      setTimeout(() => li.classList.remove('flash'), 1600);
+      return;
+    }
     const s = e.target.closest('button[data-scope]');
     if (s) { state.scope = s.dataset.scope; store.set('reviewScope', state.scope); render(); return; }
     const t = e.target.closest('.rq-toggle');

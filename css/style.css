@@ -888,3 +888,20 @@ a.brand-mark { text-decoration: none; }
 }
 .r-scope-note { flex-basis: 100%; margin: 2px 0 0; font-size: 12.5px; color: var(--muted); }
 .r-summary { grid-template-columns: repeat(5, minmax(0, 1fr)); } @media (max-width: 700px) { .r-summary { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+
+/* 내가 약한 개념 */
+.r-weak { list-style: none; margin: 0 0 8px; padding: 0; display: grid; gap: 8px; }
+.r-weak .wk { display: grid; grid-template-columns: 96px minmax(0, 1fr) auto; gap: 4px 10px; align-items: baseline; background: var(--surface); border: 1px solid var(--line); border-left: 3px solid var(--accent); border-radius: var(--radius); padding: 9px 12px; }
+.r-weak .wk.done { opacity: .55; border-left-color: var(--line); }
+.wk-era { font-size: 12px; color: var(--muted); }
+.wk-t { font-size: 14px; line-height: 1.5; }
+.wk-t b { color: var(--accent); }
+.wk-n { font-size: 12.5px; color: var(--muted); white-space: nowrap; }
+.wk-n b { color: var(--accent); font-size: 14px; }
+.wk-qs { grid-column: 2 / -1; display: flex; flex-wrap: wrap; gap: 4px; }
+.wk-qs button { font-size: 11.5px; padding: 1px 8px; border-radius: 999px; border: 1px solid var(--accent); background: transparent; color: var(--accent); cursor: pointer; }
+.wk-qs button.off { border-style: dashed; }
+.wk-qs button.m { text-decoration: line-through; opacity: .6; }
+.wk-qs button:hover { background: var(--accent); color: #fff; }
+.rq.flash { outline: 2px solid var(--accent); outline-offset: 2px; transition: outline-color .3s; }
+@media (max-width: 600px) { .r-weak .wk { grid-template-columns: minmax(0, 1fr) auto; } .wk-t { grid-column: 1 / -1; grid-row: 2; } .wk-qs { grid-column: 1 / -1; } }
