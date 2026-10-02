@@ -141,7 +141,7 @@
           <span class="rq-star" title="출제빈도">${starTxt(q.stars)}</span>
           <span class="rq-diff d-${esc(q.diff)}">난이도 ${esc(q.diff)}</span>
           ${q.pt ? `<span class="rq-pt">${q.pt}점</span>` : ''}
-          ${q.time ? `<span class="rq-time">풀이 ${mmss(q.time)}</span>` : ''}
+          ${q.time ? `<span class="rq-time${q.slowSt ? ' slow' : ''}">${q.slowSt ? '⏱ ' : '풀이 '}${mmss(q.time)}${q.slowSt && q.avg ? ` <small>(평균 ${mmss(q.avg)}의 ${(q.time / q.avg).toFixed(1)}배${q.slowSt === 'right' ? ' · 맞힘' : ' · 틀림'})</small>` : ''}</span>` : ''}
           ${FLAGS.has(q.id) ? `<button type="button" class="rq-flag" data-unflag="${q.id}" title="헷갈림 표시 지우기">🚩 헷갈림${q.flagSt === 'right' ? ' · 맞힘' : q.flagSt === 'none' ? ' · 채점 전' : ''} ✕</button>` : ''}
           <label class="rq-done"><input type="checkbox" ${done ? 'checked' : ''}> 외웠어요</label>
         </div>
@@ -162,6 +162,15 @@
       </li>`;
   }
 
+  // 고민 시간이 길었던 문제: 그 회차 평균의 1.8배 이상이면서 1분 넘게, 또는 3분 이상
+  const SLOW_X = 1.8, SLOW_MIN = 60, SLOW_ABS = 180;
+  const slowOf = (logs) => logs.filter((l) => l.times && Object.keys(l.times).length).flatMap((l) => {
+    const n = (QKEY[l.round] ? QKEY[l.round].ans.length : 50); const avg = Object.values(l.times).reduce((a, b) => a + b, 0) / n;
+    return Object.entries(l.times).filter(([, t]) => (t > avg * SLOW_X && t > SLOW_MIN) || t >= SLOW_ABS).map(([k, t]) => {
+      const num = +k; const st = l.wrong.includes(num) ? 'wrong' : 'right';
+      return { ...Q(l.round, num), time: t, avg, slowSt: st, flagOnly: st !== 'wrong', flagSt: st };
+    });
+  }).sort((a, b) => b.time - a.time);
   let FLAGS = new Set();
   function render() {
     FLAGS = flagSet();
@@ -178,6 +187,8 @@
     const vTargets = vWrongs.filter((q) => q.target);
     const others = vWrongs.filter((q) => !q.target);
     const allFlags = flagged();
+    const vSlow = slowOf(FLOG);
+    const timedN = FLOG.filter((l) => l.times && Object.keys(l.times).length).length;
     const vFlags = view === 'all' ? allFlags : allFlags.filter((q) => FLOG.some((l) => l.round === q.round));
     // 시기 필터 (약한 개념·문제 목록에 적용)
     const perOfQ = (q) => periodOf(q.pIdx >= 0 ? q.pEra : q.era);
@@ -192,8 +203,8 @@
     const pBtn = (v, label, n) => `<button data-period="${v}" aria-pressed="${String(state.period) === String(v)}">${label}${n != null ? ` <small>${n}</small>` : ''}</button>`;
     const perRow = perCnt.size ? `<div class="r-view-row"><span class="r-view-lab">시기별</span><span class="r-chips">${pBtn('all', '모든 시기')}${[...perCnt.entries()].sort((a, b) => a[0] - b[0]).map(([i, n]) => pBtn(i, periodName(i), n || null)).join('')}</span></div>` : '';
     const perName = String(state.period) === 'all' ? '' : ` · ${periodName(+state.period)}`;
-    const pTargets = pq(vTargets), pOthers = pq(others), pWrongs = pq(vWrongs), pFlags = pq(vFlags);
-    const list = state.scope === 'flag' ? pFlags : state.scope === 'all' ? pWrongs : state.scope === 'other' ? pOthers : pTargets;
+    const pTargets = pq(vTargets), pOthers = pq(others), pWrongs = pq(vWrongs), pFlags = pq(vFlags), pSlow = pq(vSlow);
+    const list = state.scope === 'slow' ? pSlow : state.scope === 'flag' ? pFlags : state.scope === 'all' ? pWrongs : state.scope === 'other' ? pOthers : pTargets;
     const shown = state.hideDone ? list.filter((q) => !mastered.has(q.id)) : list;
     const doneN = targets.filter((q) => mastered.has(q.id)).length;
     const othersAll = wrongs.filter((q) => !q.target);
@@ -240,7 +251,7 @@
       ${dates.length ? `<div class="r-view-row"><span class="r-view-lab">날짜별</span><span class="r-chips">${dates.map((d) => { const ls = LOG.filter((l) => l.date === d); return btn('d:' + d, d.replace(/^\d{4}-/, '').replace('-', '/'), `${ls.map((l) => l.round + '회').join('·')} · 틀림 ${ls.reduce((a, l) => a + l.wrong.length, 0)}`); }).join('')}</span></div>` : ''}
       <div class="r-view-row"><span class="r-view-lab">회차별</span><span class="r-chips">${eraRounds.map((r) => btn(String(r), `${r}회`)).join('')}</span></div>
       ${perRow}
-      <p class="r-view-sum"><b>${esc(viewName)}</b> — ${FLOG.length}개 회차 ${sumAll}문항 중 <b>${sumWr}</b>문항 틀림 (오답률 ${pct(sumWr, sumAll)}%) · 복습 대상 ${vTargets.length} · 어렵거나 빈도 낮음 ${others.length} · 헷갈림 ${vFlags.length}</p>
+      <p class="r-view-sum"><b>${esc(viewName)}</b> — ${FLOG.length}개 회차 ${sumAll}문항 중 <b>${sumWr}</b>문항 틀림 (오답률 ${pct(sumWr, sumAll)}%) · 복습 대상 ${vTargets.length} · 어렵거나 빈도 낮음 ${others.length} · 헷갈림 ${vFlags.length} · 오래 고민 ${vSlow.length}</p>
     </section>` : '';
 
     // 내가 약한 개념: 같은 기출 포인트(없으면 주제)끼리 묶어 출제 수 대비 틀린 수
@@ -318,13 +329,18 @@
             return `
               <div class="rp-point">
                 <div class="rp-title">${p ? `<span class="rp-freq">${starTxt(Math.min(p[0], 3))}</span>${p[1]}` : '<span class="rp-none">기출 포인트에 아직 없는 내용</span>'}
-                  <span class="rp-cnt">오답 ${qs.length}</span></div>
+                  <span class="rp-cnt">${state.scope === 'flag' ? '헷갈림' : '오답'} ${qs.length}</span></div>
                 <ol class="rq-list">${qs.map(qCard).join('')}</ol>
               </div>`;
           }).join('')}
         </section>`;
     }).join('');
 
+    // 오래 고민한 문제는 시기로 묶지 않고 오래 걸린 순으로
+    const slowHtml = state.scope === 'slow' && shown.length ? `<ol class="rq-list rq-slow">${shown.map((q) => {
+      const p = q.pIdx >= 0 && GICHUL[q.pEra] ? GICHUL[q.pEra].pts[q.pIdx] : null;
+      return `<li class="rq-slow-pt"><span class="wk-era">${esc(periodName(perOfQ(q)))}</span> ${p ? `<span class="rp-freq">${starTxt(Math.min(p[0], 3))}</span>${p[1]}` : esc(q.theme)}</li>${qCard(q)}`;
+    }).join('')}</ol>` : '';
     const pend = window.ATTEMPTS.pendingImport();
     const banner = pend.length ? `<div class="r-import"><span>채팅으로 Claude에게 알려 준 기록(${pend.map((l) => l.round + '회').join(', ')})이 있어요. 내 기록으로 가져올까요?${window.UserStore.user ? '' : ' <small>(로그인하면 계정에 저장돼요)</small>'}</span><button type="button" data-import="yes">가져오기</button><button type="button" data-import="no">내 기록 아님</button></div>` : '';
     document.getElementById('review').innerHTML = banner + `
@@ -357,13 +373,14 @@
 
       <h2 class="r-h">암기가 부족한 기출 포인트 <small>${esc(viewName + perName)}</small></h2>
       <div class="r-tools">
-        <span class="seg"><button data-scope="target" aria-pressed="${state.scope === 'target'}">복습 대상만 (${pTargets.length})</button><button data-scope="other" aria-pressed="${state.scope === 'other'}" title="출제빈도 ★ 또는 난이도 중상·상·특">어렵거나 빈도 낮은 문제 (${pOthers.length})</button><button data-scope="all" aria-pressed="${state.scope === 'all'}">틀린 문제 전체 (${pWrongs.length})</button><button data-scope="flag" aria-pressed="${state.scope === 'flag'}" title="기출 풀기에서 🏳 헷갈림 표시한 문제 (맞힌 문제 포함)">🚩 헷갈린 문제 (${pFlags.length})</button></span>
+        <span class="seg"><button data-scope="target" aria-pressed="${state.scope === 'target'}">복습 대상만 (${pTargets.length})</button><button data-scope="other" aria-pressed="${state.scope === 'other'}" title="출제빈도 ★ 또는 난이도 중상·상·특">어렵거나 빈도 낮은 문제 (${pOthers.length})</button><button data-scope="all" aria-pressed="${state.scope === 'all'}">틀린 문제 전체 (${pWrongs.length})</button><button data-scope="flag" aria-pressed="${state.scope === 'flag'}" title="기출 풀기에서 🏳 헷갈림 표시한 문제 (맞힌 문제 포함)">🚩 헷갈린 문제 (${pFlags.length})</button><button data-scope="slow" aria-pressed="${state.scope === 'slow'}" title="회차 평균의 ${SLOW_X}배 이상(1분 초과) 또는 3분 이상 걸린 문제">⏱ 오래 고민한 문제 (${pSlow.length})</button></span>
+        ${state.scope === 'slow' ? `<p class="r-scope-note">${timedN ? `기출 풀기로 시간을 잰 ${timedN}개 회차에서 그 회차 평균의 ${SLOW_X}배 이상(1분 초과) 또는 3분 이상 걸린 문제예요. 오래 걸린 순 — 맞힘 ${pSlow.filter((q) => q.slowSt === 'right').length} · 틀림 ${pSlow.filter((q) => q.slowSt === 'wrong').length}` : '시간 기록이 있는 회차가 없어요. 기출 풀기에서 풀면 문제별 시간이 기록돼요 (채팅으로 알려 준 기록은 시간이 없어요).'}</p>` : ''}
         ${state.scope === 'flag' ? `<p class="r-scope-note">기출 풀기에서 헷갈림 표시한 문제예요. 맞혔어도 확실히 알지 못한 문제라 같이 복습하면 좋아요 — 맞힘 ${pFlags.filter((q) => q.flagSt === 'right').length} · 틀림 ${pFlags.filter((q) => q.flagSt === 'wrong').length} · 채점 전 ${pFlags.filter((q) => q.flagSt === 'none').length}</p>` : ''}
         ${state.scope === 'other' ? `<p class="r-scope-note">복습 대상(★★ 이상·난이도 하·중)에서 빠진 문제예요. 난이도가 높은 문제 ${pOthers.filter((q) => !EASY.includes(q.diff)).length}개, 출제빈도가 낮은 문제(★) ${pOthers.filter((q) => q.stars < MIN_STARS).length}개 (겹치는 문제 포함)</p>` : ''}
         <label class="chip-check"><input type="checkbox" id="hide-done" ${state.hideDone ? 'checked' : ''}> 외운 문항 숨기기</label>
         <label class="chip-check"><input type="checkbox" id="open-all" ${state.openAll ? 'checked' : ''}> 정답 도출 포인트 모두 펼치기</label>
       </div>
-      ${pointsHtml || '<p class="r-empty">모두 외웠어요! 🎉</p>'}
+      ${(state.scope === 'slow' ? slowHtml : pointsHtml) || `<p class="r-empty">${state.scope === 'slow' ? '오래 고민한 문제가 없어요' : '모두 외웠어요! 🎉'}</p>`}
       <p class="r-note">정답 선지·지문은 국사편찬위원회 한국사능력검정시험 심화 문항에서 발췌했어요. 새 회차를 풀면 Claude에게 회차와 틀린 번호를 알려 주세요. 로그인하면 풀이 기록·메모·‘외웠어요’ 표시가 계정에 저장돼요.</p>`;
   }
 

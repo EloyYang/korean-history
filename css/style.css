@@ -1001,3 +1001,10 @@ body.qv-on { overflow: hidden; }
 .wk-more:hover { background: var(--accent-soft); }
 .r-bars .bar-name.r-link { text-align: left; text-decoration: none; }
 .r-bars .bar-name.r-link:hover { text-decoration: underline; }
+.rq-time.slow { font-weight: 700; color: #e65100; }
+.rq-time.slow small { font-weight: 500; color: var(--muted); }
+.rq-slow { list-style: none; padding: 0; }
+.rq-slow-pt { margin: 14px 0 4px; font-size: 13.5px; line-height: 1.5; }
+.rq-slow-pt b { color: var(--accent); }
+.r-tools .seg { flex-wrap: wrap; gap: 4px; }
+.r-tools .seg button, .r-tools .seg button:first-child, .r-tools .seg button:last-child { border-radius: 999px; margin-left: 0; }
