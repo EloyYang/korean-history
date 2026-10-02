@@ -905,3 +905,21 @@ a.brand-mark { text-decoration: none; }
 .wk-qs button:hover { background: var(--accent); color: #fff; }
 .rq.flash { outline: 2px solid var(--accent); outline-offset: 2px; transition: outline-color .3s; }
 @media (max-width: 600px) { .r-weak .wk { grid-template-columns: minmax(0, 1fr) auto; } .wk-t { grid-column: 1 / -1; grid-row: 2; } .wk-qs { grid-column: 1 / -1; } }
+.wk-add { font-size: 13px; padding: 6px 14px; border-radius: 999px; border: 1px dashed var(--accent); background: transparent; color: var(--accent); cursor: pointer; font-weight: 700; }
+.wk-add:hover { background: var(--accent-soft); }
+.wk-form { display: grid; grid-template-columns: 180px minmax(0, 1fr); gap: 10px 12px; background: var(--surface); border: 1px solid var(--accent); border-radius: var(--radius); padding: 12px; margin-bottom: 10px; }
+.wk-form label { display: flex; flex-direction: column; gap: 4px; font-size: 12.5px; color: var(--muted); }
+.wk-form label small { font-size: 11px; }
+.wk-form .wide { grid-column: 2; }
+.wk-form label:first-child { grid-row: span 2; }
+.wk-form input, .wk-form select, .wk-form textarea { font: inherit; font-size: 14px; color: var(--text); background: var(--surface-2); border: 1px solid var(--line); border-radius: 8px; padding: 6px 9px; resize: vertical; }
+.wk-form-btns { grid-column: 2; display: flex; gap: 6px; justify-content: flex-end; align-self: end; }
+.wk-form-btns button { font-size: 13px; padding: 6px 14px; border-radius: 999px; border: 1px solid var(--line); background: var(--surface-2); color: var(--text); cursor: pointer; }
+.wk-form-btns .primary { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 700; }
+.r-weak .wk.mine { border-left-color: var(--chalk-blue); border-left-width: 4px; }
+.wk-mine { color: var(--text); font-weight: 700; }
+.wk-memo { display: block; margin-top: 3px; font-size: 12.5px; color: var(--muted); white-space: pre-wrap; }
+.wk-act { align-items: center; gap: 8px; }
+.wk-act button { border-color: var(--line); color: var(--muted); }
+.wk-act button:hover { background: var(--surface-2); color: var(--text); }
+@media (max-width: 600px) { .wk-form { grid-template-columns: minmax(0, 1fr); } .wk-form .wide, .wk-form-btns { grid-column: 1; } .wk-form label:first-child { grid-row: auto; } }

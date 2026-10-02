@@ -33,6 +33,11 @@
   const openSet = new Set();
   const MKEY = window.ATTEMPTS.key('mastered');
   const mastered = new Set(window.UserStore.get(MKEY, []));
+  // 내가 직접 추가한 약한 개념 [{id, era, text, memo, ref, done, t}]
+  const WKEY = window.ATTEMPTS.key('myWeak');
+  const myWeak = () => window.UserStore.get(WKEY, []) || [];
+  const saveWeak = (list) => window.UserStore.set(WKEY, list);
+  let weakForm = null; // null = 닫힘, '' = 새로 추가, id = 수정 중
 
   // 문항 정보 → 객체
   const Q = (round, num) => {
@@ -165,6 +170,20 @@
       .map((v) => ({ ...v, done: v.wrongs.every((q) => mastered.has(q.id)) }))
       .filter((v) => !(state.hideDone && v.done))
       .sort((a, b) => b.wrongs.length - a.wrongs.length || b.wrongs.length / b.all - a.wrongs.length / a.all || (b.q.stars || 0) - (a.q.stars || 0));
+    const mine = myWeak().filter((w) => !(state.hideDone && w.done));
+    const editing = weakForm ? myWeak().find((w) => w.id === weakForm) || {} : {};
+    const formHtml = weakForm == null ? '' : `<form class="wk-form" id="wk-form">
+        <label>시대<select name="era"><option value="">선택 안 함</option>${PERIODS.map(([n]) => `<option${editing.era === n ? ' selected' : ''}>${esc(n)}</option>`).join('')}<option${editing.era === '기타' ? ' selected' : ''}>기타</option></select></label>
+        <label class="wide">약한 개념<input name="text" required maxlength="200" placeholder="예) 신민회: 대성 학교·오산 학교, 105인 사건으로 해체" value="${esc(editing.text || '')}"></label>
+        <label class="wide">메모 <small>(헷갈리는 점, 외우는 요령 등)</small><textarea name="memo" rows="2" maxlength="500" placeholder="예) 신간회(1927)와 헷갈림 — 신민회는 1907년 비밀 결사">${esc(editing.memo || '')}</textarea></label>
+        <label>관련 문제 <small>(선택)</small><input name="ref" maxlength="60" placeholder="예) 79회 37번" value="${esc(editing.ref || '')}"></label>
+        <div class="wk-form-btns"><button type="submit" class="primary">${weakForm ? '수정 저장' : '추가'}</button><button type="button" data-wk="cancel">취소</button></div>
+      </form>`;
+    const mineHtml = mine.map((w) => `<li class="wk mine${w.done ? ' done' : ''}">
+        <span class="wk-era">${esc(w.era || '직접 추가')}</span>
+        <span class="wk-t">${esc(w.text)}${w.memo ? `<span class="wk-memo">${esc(w.memo)}</span>` : ''}</span>
+        <span class="wk-n"><span class="wk-mine">내가 추가</span>${w.ref ? ` · ${esc(w.ref)}` : ''}</span>
+        <span class="wk-qs wk-act"><label class="chip-check"><input type="checkbox" data-wk-done="${w.id}" ${w.done ? 'checked' : ''}> 외웠어요</label><button type="button" data-wk-edit="${w.id}">수정</button><button type="button" data-wk-del="${w.id}">삭제</button></span></li>`).join('');
     const weakHtml = weak.map((v) => {
       const { q } = v; const p = q.pIdx >= 0 && GICHUL[q.pEra] ? GICHUL[q.pEra].pts[q.pIdx] : null;
       const per = periodName(periodOf(q.pIdx >= 0 ? q.pEra : q.era));
@@ -224,7 +243,9 @@
       <ul class="r-bars">${bars || '<li class="r-empty">아직 푼 회차가 없어요</li>'}</ul>
 
       <h2 class="r-h">내가 약한 개념 <small>${state.eraRound === 'all' ? '푼 회차 전체' : state.eraRound + '회'} 기준 · 많이 틀린 순 · 번호를 누르면 문제로 이동</small></h2>
-      <ol class="r-weak">${weakHtml || '<li class="r-empty">틀린 개념이 없어요 🎉</li>'}</ol>
+      <div class="r-tools"><button type="button" class="wk-add" data-wk="add">＋ 약한 개념 직접 추가</button>${myWeak().length ? `<small class="r-scope-note">직접 추가 ${myWeak().length}개 · 기출 문제에서 찾은 개념 ${weak.length}개</small>` : ''}</div>
+      ${formHtml}
+      <ol class="r-weak">${mineHtml}${weakHtml || (mineHtml ? '' : '<li class="r-empty">틀린 개념이 없어요 🎉</li>')}</ol>
 
       <h2 class="r-h">암기가 부족한 기출 포인트</h2>
       <div class="r-tools">
@@ -250,6 +271,20 @@
     if (im) { if (im.dataset.import === 'yes') window.ATTEMPTS.importMyLog(); else window.ATTEMPTS.dismissImport(); location.reload(); return; }
     const er = e.target.closest('button[data-era-round]');
     if (er) { state.eraRound = er.dataset.eraRound; store.set('reviewEraRound', state.eraRound); const y = window.scrollY; render(); window.scrollTo(0, y); return; }
+    const wk = e.target.closest('[data-wk], [data-wk-edit], [data-wk-del]');
+    if (wk) {
+      if (wk.dataset.wk === 'add') weakForm = '';
+      else if (wk.dataset.wk === 'cancel') weakForm = null;
+      else if (wk.dataset.wkEdit) weakForm = wk.dataset.wkEdit;
+      else if (wk.dataset.wkDel) {
+        const w = myWeak().find((x) => x.id === wk.dataset.wkDel);
+        if (!w || !confirm(`'${w.text}' 개념을 삭제할까요?`)) return;
+        saveWeak(myWeak().filter((x) => x.id !== w.id)); if (weakForm === w.id) weakForm = null;
+      }
+      const y = window.scrollY; render(); window.scrollTo(0, y);
+      const f = document.querySelector('#wk-form [name="text"]'); if (f) f.focus({ preventScroll: true });
+      return;
+    }
     const go = e.target.closest('button[data-goto]');
     if (go) {
       const sel = `.rq[data-id="${go.dataset.goto}"]`;
@@ -270,7 +305,23 @@
       t.textContent = on ? '정답·도출 포인트 접기 ▴' : '정답·도출 포인트 보기 ▾';
     }
   });
+  document.addEventListener('submit', (e) => {
+    if (e.target.id !== 'wk-form') return;
+    e.preventDefault();
+    const fd = new FormData(e.target);
+    const v = { era: fd.get('era'), text: String(fd.get('text')).trim(), memo: String(fd.get('memo')).trim(), ref: String(fd.get('ref')).trim() };
+    if (!v.text) return;
+    const list = myWeak();
+    if (weakForm) saveWeak(list.map((w) => (w.id === weakForm ? { ...w, ...v } : w)));
+    else saveWeak([{ id: 'w' + Date.now().toString(36), ...v, done: false, t: Date.now() }, ...list]);
+    weakForm = null;
+    const y = window.scrollY; render(); window.scrollTo(0, y);
+  });
   document.addEventListener('change', (e) => {
+    if (e.target.dataset.wkDone) {
+      saveWeak(myWeak().map((w) => (w.id === e.target.dataset.wkDone ? { ...w, done: e.target.checked } : w)));
+      const y = window.scrollY; render(); window.scrollTo(0, y); return;
+    }
     if (e.target.id === 'open-all') { state.openAll = e.target.checked; store.set('reviewOpenAll', state.openAll); openSet.clear(); render(); return; }
     if (e.target.id === 'hide-done') { state.hideDone = e.target.checked; store.set('reviewHideDone', state.hideDone); render(); return; }
     const li = e.target.closest('.rq');
