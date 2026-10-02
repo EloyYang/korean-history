@@ -29,7 +29,8 @@
     get(k, d) { try { const v = localStorage.getItem('khmap.' + k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } },
     set(k, v) { try { localStorage.setItem('khmap.' + k, JSON.stringify(v)); } catch (e) { /* 무시 */ } },
   };
-  const state = { scope: store.get('reviewScope', 'target'), hideDone: store.get('reviewHideDone', false), openAll: store.get('reviewOpenAll', false), eraRound: store.get('reviewEraRound', 'all') };
+  const state = { scope: store.get('reviewScope', 'target'), hideDone: store.get('reviewHideDone', false), openAll: store.get('reviewOpenAll', false), eraRound: store.get('reviewEraRound', 'all'), period: store.get('reviewPeriod', 'all'), weakAll: false };
+  const WEAK_TOP = 10;
   const openSet = new Set();
   const MKEY = window.ATTEMPTS.key('mastered');
   const mastered = new Set(window.UserStore.get(MKEY, []));
@@ -178,7 +179,21 @@
     const others = vWrongs.filter((q) => !q.target);
     const allFlags = flagged();
     const vFlags = view === 'all' ? allFlags : allFlags.filter((q) => FLOG.some((l) => l.round === q.round));
-    const list = state.scope === 'flag' ? vFlags : state.scope === 'all' ? vWrongs : state.scope === 'other' ? others : vTargets;
+    // 시기 필터 (약한 개념·문제 목록에 적용)
+    const perOfQ = (q) => periodOf(q.pIdx >= 0 ? q.pEra : q.era);
+    const perOfW = (w) => (w.pt && ptOf(w.pt) ? periodOf(ptOf(w.pt).e) : PERIODS.findIndex((p) => p[0] === w.era));
+    const PER = String(state.period);
+    const inP = (i) => PER === 'all' || i === +PER;
+    const pq = (arr) => arr.filter((q) => inP(perOfQ(q)));
+    const perCnt = new Map();
+    [...vWrongs, ...vFlags.filter((q) => q.flagOnly)].forEach((q) => { const i = perOfQ(q); perCnt.set(i, (perCnt.get(i) || 0) + 1); });
+    myWeak().forEach((w) => { const i = perOfW(w); if (i >= 0 && !perCnt.has(i)) perCnt.set(i, 0); });
+    if (PER !== 'all' && !perCnt.has(+PER)) state.period = 'all';
+    const pBtn = (v, label, n) => `<button data-period="${v}" aria-pressed="${String(state.period) === String(v)}">${label}${n != null ? ` <small>${n}</small>` : ''}</button>`;
+    const perRow = perCnt.size ? `<div class="r-view-row"><span class="r-view-lab">시기별</span><span class="r-chips">${pBtn('all', '모든 시기')}${[...perCnt.entries()].sort((a, b) => a[0] - b[0]).map(([i, n]) => pBtn(i, periodName(i), n || null)).join('')}</span></div>` : '';
+    const perName = String(state.period) === 'all' ? '' : ` · ${periodName(+state.period)}`;
+    const pTargets = pq(vTargets), pOthers = pq(others), pWrongs = pq(vWrongs), pFlags = pq(vFlags);
+    const list = state.scope === 'flag' ? pFlags : state.scope === 'all' ? pWrongs : state.scope === 'other' ? pOthers : pTargets;
     const shown = state.hideDone ? list.filter((q) => !mastered.has(q.id)) : list;
     const doneN = targets.filter((q) => mastered.has(q.id)).length;
     const othersAll = wrongs.filter((q) => !q.target);
@@ -216,7 +231,7 @@
     const sumWr = [...byEra.values()].reduce((a, v) => a + v.wr, 0);
     const pct = (a, b) => (b ? Math.round((a / b) * 100) : 0);
     const bars = [...byEra.entries()].sort((a, b) => a[0] - b[0]).map(([e, v]) => `
-      <li class="${v.all >= 2 && v.wr / v.all >= 0.5 ? 'weak' : ''}"><span class="bar-name" title="${esc(periodTip(e))}">${esc(periodName(e))}</span>
+      <li class="${v.all >= 2 && v.wr / v.all >= 0.5 ? 'weak' : ''}"><button type="button" class="bar-name r-link" data-period="${e}" title="${esc(periodTip(e))} — 눌러서 이 시기만 보기">${esc(periodName(e))}</button>
         <span class="bar-track"><span class="bar-all" style="width:${(v.all / maxAll) * 100}%"></span><span class="bar-wr" style="width:${(v.wr / maxAll) * 100}%"></span><span class="bar-tg" style="width:${(v.tg / maxAll) * 100}%"></span></span>
         <span class="bar-n">출제 ${v.all} · 틀림 <b>${v.wr}</b> <i>${pct(v.wr, v.all)}%</i></span></li>`).join('');
     const btn = (v, label, n) => `<button data-era-round="${esc(v)}" aria-pressed="${view === v}">${label}${n ? ` <small>${n}</small>` : ''}</button>`;
@@ -224,6 +239,7 @@
       <div class="r-view-row"><span class="r-view-lab">전체</span><span class="r-chips">${btn('all', `전체 기록`, `${eraRounds.length}회차`)}</span></div>
       ${dates.length ? `<div class="r-view-row"><span class="r-view-lab">날짜별</span><span class="r-chips">${dates.map((d) => { const ls = LOG.filter((l) => l.date === d); return btn('d:' + d, d.replace(/^\d{4}-/, '').replace('-', '/'), `${ls.map((l) => l.round + '회').join('·')} · 틀림 ${ls.reduce((a, l) => a + l.wrong.length, 0)}`); }).join('')}</span></div>` : ''}
       <div class="r-view-row"><span class="r-view-lab">회차별</span><span class="r-chips">${eraRounds.map((r) => btn(String(r), `${r}회`)).join('')}</span></div>
+      ${perRow}
       <p class="r-view-sum"><b>${esc(viewName)}</b> — ${FLOG.length}개 회차 ${sumAll}문항 중 <b>${sumWr}</b>문항 틀림 (오답률 ${pct(sumWr, sumAll)}%) · 복습 대상 ${vTargets.length} · 어렵거나 빈도 낮음 ${others.length} · 헷갈림 ${vFlags.length}</p>
     </section>` : '';
 
@@ -243,7 +259,7 @@
       .map((v) => ({ ...v, done: v.wrongs.every((q) => mastered.has(q.id)) }))
       .filter((v) => !(state.hideDone && v.done))
       .sort((a, b) => b.wrongs.length - a.wrongs.length || b.wrongs.length / b.all - a.wrongs.length / a.all || (b.q.stars || 0) - (a.q.stars || 0));
-    const mine = myWeak().filter((w) => !(state.hideDone && w.done));
+    const mine = myWeak().filter((w) => !(state.hideDone && w.done) && inP(perOfW(w)));
     const editing = weakForm ? myWeak().find((w) => w.id === weakForm) || {} : {};
     const formHtml = weakForm == null ? '' : `<form class="wk-form" id="wk-form">
         <label>시대<select name="era"><option value="">선택 안 함</option>${PERIODS.map(([n]) => `<option${editing.era === n ? ' selected' : ''}>${esc(n)}</option>`).join('')}<option${editing.era === '기타' ? ' selected' : ''}>기타</option></select></label>
@@ -256,13 +272,13 @@
           <ul class="wk-sug wk-qsug" hidden></ul>${editing.ref ? `<small class="wk-old">예전 메모: ${esc(editing.ref)}</small>` : ''}</div>
         <div class="wk-form-btns"><button type="submit" class="primary">${weakForm ? '수정 저장' : '추가'}</button><button type="button" data-wk="cancel">취소</button></div>
       </form>`;
-    const mineHtml = mine.map((w) => `<li class="wk mine${w.done ? ' done' : ''}">
+    const mineItems = mine.map((w) => `<li class="wk mine${w.done ? ' done' : ''}">
         <span class="wk-era">${esc(w.era || '직접 추가')}</span>
         <span class="wk-t">${w.pt && ptOf(w.pt) ? `<span class="rp-freq">${starTxt(ptOf(w.pt).stars)}</span>${ptOf(w.pt).html}` : esc(w.text)}${w.memo ? `<span class="wk-memo has-del">${esc(w.memo)}<button type="button" class="wk-memo-x" data-wk-memo-del="${w.id}" title="메모 삭제" aria-label="메모 삭제">✕</button></span>` : ''}</span>
         <span class="wk-n"><span class="wk-mine">내가 추가</span>${w.ref && !(w.refs || []).length ? ` · ${esc(w.ref)}` : ''}${w.pt && byPt.has(w.pt) ? ` · 출제 ${byPt.get(w.pt).all} · 틀림 <b>${byPt.get(w.pt).wrongs.length}</b>` : ''}</span>
         ${(w.refs || []).length ? `<span class="wk-qs">${w.refs.map((id) => `<button type="button" data-qview="${id}" class="${myWrong.has(id) ? 'wr' : ''}${mastered.has(id) ? ' m' : ''}" title="${myWrong.has(id) ? '내가 틀린 문제' : '문제 보기'}">${qLabel(id)}${myWrong.has(id) ? ' ✗' : ''}</button>`).join('')}</span>` : ''}
-        <span class="wk-qs wk-act"><label class="chip-check"><input type="checkbox" data-wk-done="${w.id}" ${w.done ? 'checked' : ''}> 외웠어요</label><button type="button" data-wk-edit="${w.id}">수정</button><button type="button" data-wk-del="${w.id}">삭제</button></span></li>`).join('');
-    const weakHtml = weak.map((v) => {
+        <span class="wk-qs wk-act"><label class="chip-check"><input type="checkbox" data-wk-done="${w.id}" ${w.done ? 'checked' : ''}> 외웠어요</label><button type="button" data-wk-edit="${w.id}">수정</button><button type="button" data-wk-del="${w.id}">삭제</button></span></li>`);
+    const weakItems = weak.filter((v) => inP(perOfQ(v.q))).map((v) => {
       const { q } = v; const p = q.pIdx >= 0 && GICHUL[q.pEra] ? GICHUL[q.pEra].pts[q.pIdx] : null;
       const per = periodName(periodOf(q.pIdx >= 0 ? q.pEra : q.era));
       const ck = q.pIdx >= 0 ? `${q.pEra}#${q.pIdx}` : `t#${q.theme}`;
@@ -276,7 +292,11 @@
         <span class="wk-n">틀림 <b>${v.wrongs.length}</b> / 출제 ${v.all}${v.done ? ' · ✓ 외움' : ''}</span>
         ${memoUi ? `<span class="wk-memo-row">${memoUi}</span>` : ''}
         <span class="wk-qs">${v.wrongs.map((w) => `<button type="button" data-goto="${w.id}" class="${mastered.has(w.id) ? 'm' : ''}${w.target ? '' : ' off'}">${w.round}회 ${w.num}번${FLAGS.has(w.id) ? ' 🚩' : ''}</button>`).join('')}${memoOpen === ck ? '' : `<button type="button" class="wk-memo-btn" data-wm-open="${esc(ck)}">${memo ? '✎ 메모 수정' : '＋ 메모'}</button>`}</span></li>`;
-    }).join('');
+    });
+    // 상위 10개만, 나머지는 펼치기
+    const weakAllItems = [...mineItems, ...weakItems];
+    const weakShown = state.weakAll ? weakAllItems : weakAllItems.slice(0, WEAK_TOP);
+    const weakMore = weakAllItems.length > WEAK_TOP ? `<button type="button" class="wk-more" data-weak-more>${state.weakAll ? '접기 ▴ (상위 10개만 보기)' : `나머지 ${weakAllItems.length - WEAK_TOP}개 더 보기 ▾`}</button>` : '';
 
     // 암기 부족 포인트: 시대 → 기출 포인트 → 틀린 문항
     const groups = new Map();
@@ -323,22 +343,23 @@
         <tbody>${rounds || '<tr><td colspan="7">아직 기록이 없어요</td></tr>'}</tbody>
       </table></div>
 
-      <h2 class="r-h">보기 범위 <small>날짜·회차를 고르면 아래 시대별 약점·약한 개념·틀린 문제가 모두 그 범위로 바뀌어요</small></h2>
+      <h2 class="r-h">보기 범위 <small>날짜·회차를 고르면 아래가 모두 그 범위로, 시기를 고르면 약한 개념·문제 목록이 그 시기로 좁혀져요</small></h2>
       ${eraSeg}
 
       <h2 class="r-h">시대별 약점 <small>${esc(viewName)} · 연한 막대 = 출제 문항, 중간 = 틀린 문항, 진한 막대 = 그중 복습 대상</small></h2>
       <ul class="r-bars">${bars || '<li class="r-empty">아직 푼 회차가 없어요</li>'}</ul>
 
-      <h2 class="r-h">내가 약한 개념 <small>${esc(viewName)} 기준 · 많이 틀린 순 · 번호를 누르면 문제로 이동</small></h2>
-      <div class="r-tools"><button type="button" class="wk-add" data-wk="add">＋ 약한 개념 직접 추가</button>${myWeak().length ? `<small class="r-scope-note">직접 추가 ${myWeak().length}개 · 기출 문제에서 찾은 개념 ${weak.length}개</small>` : ''}</div>
+      <h2 class="r-h" id="weak-h">내가 약한 개념 <small>${esc(viewName + perName)} 기준 · 많이 틀린 순 · 번호를 누르면 문제로 이동</small></h2>
+      <div class="r-tools"><button type="button" class="wk-add" data-wk="add">＋ 약한 개념 직접 추가</button>${myWeak().length ? `<small class="r-scope-note">직접 추가 ${mineItems.length}개 · 기출 문제에서 찾은 개념 ${weakItems.length}개</small>` : ''}</div>
       ${formHtml}
-      <ol class="r-weak">${mineHtml}${weakHtml || (mineHtml ? '' : '<li class="r-empty">틀린 개념이 없어요 🎉</li>')}</ol>
+      <ol class="r-weak">${weakShown.join('') || '<li class="r-empty">틀린 개념이 없어요 🎉</li>'}</ol>
+      ${weakMore}
 
-      <h2 class="r-h">암기가 부족한 기출 포인트 <small>${esc(viewName)}</small></h2>
+      <h2 class="r-h">암기가 부족한 기출 포인트 <small>${esc(viewName + perName)}</small></h2>
       <div class="r-tools">
-        <span class="seg"><button data-scope="target" aria-pressed="${state.scope === 'target'}">복습 대상만 (${vTargets.length})</button><button data-scope="other" aria-pressed="${state.scope === 'other'}" title="출제빈도 ★ 또는 난이도 중상·상·특">어렵거나 빈도 낮은 문제 (${others.length})</button><button data-scope="all" aria-pressed="${state.scope === 'all'}">틀린 문제 전체 (${vWrongs.length})</button><button data-scope="flag" aria-pressed="${state.scope === 'flag'}" title="기출 풀기에서 🏳 헷갈림 표시한 문제 (맞힌 문제 포함)">🚩 헷갈린 문제 (${vFlags.length})</button></span>
-        ${state.scope === 'flag' ? `<p class="r-scope-note">기출 풀기에서 헷갈림 표시한 문제예요. 맞혔어도 확실히 알지 못한 문제라 같이 복습하면 좋아요 — 맞힘 ${vFlags.filter((q) => q.flagSt === 'right').length} · 틀림 ${vFlags.filter((q) => q.flagSt === 'wrong').length} · 채점 전 ${vFlags.filter((q) => q.flagSt === 'none').length}</p>` : ''}
-        ${state.scope === 'other' ? `<p class="r-scope-note">복습 대상(★★ 이상·난이도 하·중)에서 빠진 문제예요. 난이도가 높은 문제 ${others.filter((q) => !EASY.includes(q.diff)).length}개, 출제빈도가 낮은 문제(★) ${others.filter((q) => q.stars < MIN_STARS).length}개 (겹치는 문제 포함)</p>` : ''}
+        <span class="seg"><button data-scope="target" aria-pressed="${state.scope === 'target'}">복습 대상만 (${pTargets.length})</button><button data-scope="other" aria-pressed="${state.scope === 'other'}" title="출제빈도 ★ 또는 난이도 중상·상·특">어렵거나 빈도 낮은 문제 (${pOthers.length})</button><button data-scope="all" aria-pressed="${state.scope === 'all'}">틀린 문제 전체 (${pWrongs.length})</button><button data-scope="flag" aria-pressed="${state.scope === 'flag'}" title="기출 풀기에서 🏳 헷갈림 표시한 문제 (맞힌 문제 포함)">🚩 헷갈린 문제 (${pFlags.length})</button></span>
+        ${state.scope === 'flag' ? `<p class="r-scope-note">기출 풀기에서 헷갈림 표시한 문제예요. 맞혔어도 확실히 알지 못한 문제라 같이 복습하면 좋아요 — 맞힘 ${pFlags.filter((q) => q.flagSt === 'right').length} · 틀림 ${pFlags.filter((q) => q.flagSt === 'wrong').length} · 채점 전 ${pFlags.filter((q) => q.flagSt === 'none').length}</p>` : ''}
+        ${state.scope === 'other' ? `<p class="r-scope-note">복습 대상(★★ 이상·난이도 하·중)에서 빠진 문제예요. 난이도가 높은 문제 ${pOthers.filter((q) => !EASY.includes(q.diff)).length}개, 출제빈도가 낮은 문제(★) ${pOthers.filter((q) => q.stars < MIN_STARS).length}개 (겹치는 문제 포함)</p>` : ''}
         <label class="chip-check"><input type="checkbox" id="hide-done" ${state.hideDone ? 'checked' : ''}> 외운 문항 숨기기</label>
         <label class="chip-check"><input type="checkbox" id="open-all" ${state.openAll ? 'checked' : ''}> 정답 도출 포인트 모두 펼치기</label>
       </div>
@@ -376,6 +397,18 @@
       }
       const y = window.scrollY; render(); window.scrollTo(0, y);
       const f = document.querySelector('#wk-form [name="text"]'); if (f) { showPtQs(f.form); f.focus({ preventScroll: true }); }
+      return;
+    }
+    const pd = e.target.closest('[data-period]');
+    if (pd) {
+      const fromBar = !!pd.closest('.r-bars');
+      state.period = pd.dataset.period; state.weakAll = false; store.set('reviewPeriod', state.period); rerender();
+      if (fromBar) document.getElementById('weak-h')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      return;
+    }
+    if (e.target.closest('[data-weak-more]')) {
+      const top = document.querySelector('.r-weak'); state.weakAll = !state.weakAll; rerender();
+      if (!state.weakAll && top) document.querySelector('.r-weak').scrollIntoView({ block: 'nearest' });
       return;
     }
     const uf = e.target.closest('[data-unflag]');

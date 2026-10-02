@@ -997,3 +997,7 @@ body.qv-on { overflow: hidden; }
 .rq-flag:hover { background: #ffe0b2; }
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .rq-flag { background: #3a2a14; color: #ffb74d; } }
 .r-summary .fl b { color: #e65100; }
+.wk-more { display: block; width: 100%; margin: 0 0 10px; padding: 9px; border-radius: var(--radius); border: 1px dashed var(--line); background: var(--surface); color: var(--accent); font-size: 13.5px; font-weight: 700; cursor: pointer; }
+.wk-more:hover { background: var(--accent-soft); }
+.r-bars .bar-name.r-link { text-align: left; text-decoration: none; }
+.r-bars .bar-name.r-link:hover { text-decoration: underline; }
