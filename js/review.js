@@ -93,7 +93,8 @@
   }
 
   function render() {
-    const list = state.scope === 'all' ? wrongs : targets;
+    const others = wrongs.filter((q) => !q.target);
+    const list = state.scope === 'all' ? wrongs : state.scope === 'other' ? others : targets;
     const shown = state.hideDone ? list.filter((q) => !mastered.has(q.id)) : list;
     const doneN = targets.filter((q) => mastered.has(q.id)).length;
 
@@ -160,6 +161,7 @@
         <div><b>${LOG.length}</b><span>푼 회차</span></div>
         <div><b>${wrongs.length}</b><span>틀린 문항</span></div>
         <div class="hl"><b>${targets.length}</b><span>복습 대상<br><small>★★ 이상 · 난이도 하·중</small></span></div>
+        <div><b>${others.length}</b><span>어렵거나 빈도 낮음<br><small>★ 또는 난이도 중상 이상</small></span></div>
         <div><b>${doneN} / ${targets.length}</b><span>외운 문항</span></div>
       </section>
 
@@ -174,7 +176,8 @@
 
       <h2 class="r-h">암기가 부족한 기출 포인트</h2>
       <div class="r-tools">
-        <span class="seg"><button data-scope="target" aria-pressed="${state.scope === 'target'}">복습 대상만 (${targets.length})</button><button data-scope="all" aria-pressed="${state.scope === 'all'}">틀린 문제 전체 (${wrongs.length})</button></span>
+        <span class="seg"><button data-scope="target" aria-pressed="${state.scope === 'target'}">복습 대상만 (${targets.length})</button><button data-scope="other" aria-pressed="${state.scope === 'other'}" title="출제빈도 ★ 또는 난이도 중상·상·특">어렵거나 빈도 낮은 문제 (${others.length})</button><button data-scope="all" aria-pressed="${state.scope === 'all'}">틀린 문제 전체 (${wrongs.length})</button></span>
+        ${state.scope === 'other' ? `<p class="r-scope-note">복습 대상(★★ 이상·난이도 하·중)에서 빠진 문제예요. 난이도가 높은 문제 ${others.filter((q) => !EASY.includes(q.diff)).length}개, 출제빈도가 낮은 문제(★) ${others.filter((q) => q.stars < MIN_STARS).length}개 (겹치는 문제 포함)</p>` : ''}
         <label class="chip-check"><input type="checkbox" id="hide-done" ${state.hideDone ? 'checked' : ''}> 외운 문항 숨기기</label>
         <label class="chip-check"><input type="checkbox" id="open-all" ${state.openAll ? 'checked' : ''}> 정답 도출 포인트 모두 펼치기</label>
       </div>
