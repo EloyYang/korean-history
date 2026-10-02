@@ -19,7 +19,25 @@
   const sum = (o) => Object.values(o || {}).reduce((a, b) => a + b, 0);
 
   // view: list | solve | result
-  const state = { round: null, answers: {}, times: {}, cur: 1, graded: false, view: 'list', onlyWrong: false, showGrid: false };
+  const state = { round: null, answers: {}, times: {}, cur: 1, graded: false, view: 'list', onlyWrong: false, onlyFlag: false, showGrid: false, paused: false };
+  // 헷갈리는 문제 표시: 회차별 번호 목록 — 채점과 상관없이 남고, 오답 노트에서 모아 본다
+  const flagKey = (r) => window.ATTEMPTS.key('flag.' + r);
+  const flags = (r) => S.get(flagKey(r), []) || [];
+  const isFlag = (r, n) => flags(r).includes(n);
+  function toggleFlag() {
+    const r = state.round, n = state.cur; const f = flags(r);
+    S.set(flagKey(r), f.includes(n) ? f.filter((x) => x !== n) : [...f, n].sort((a, b) => a - b));
+    const on = isFlag(r, n);
+    document.querySelectorAll('.q-flag').forEach((b) => { b.setAttribute('aria-pressed', on); b.innerHTML = on ? '🚩 헷갈림 표시됨' : '🏳 헷갈림 표시'; });
+    const g = box.querySelector(`.q-grid [data-go="${n}"]`); if (g) g.classList.toggle('flag', on);
+  }
+  // 일시정지: 시간이 멈추고 문제가 가려진다
+  function setPause(on) {
+    if (state.graded || state.view !== 'solve') return;
+    state.paused = on; saveDraft();
+    const one = box.querySelector('.q-one'); if (one) one.classList.toggle('paused', on);
+    const b = box.querySelector('.q-pause'); if (b) { b.setAttribute('aria-pressed', on); b.textContent = on ? '▶ 다시 시작' : '⏸ 일시정지'; }
+  }
   let timer = null;
 
   const lastAttempt = (r) => window.ATTEMPTS.all().find((a) => a.round === r);
@@ -29,13 +47,13 @@
     for (let n = 1; n <= k.ans.length; n++) { if (answers[n] === k.ans[n - 1]) s += k.pt[n - 1]; else wrong.push(n); }
     return { score: s, wrong };
   }
-  const saveDraft = () => { if (!state.graded) save(draftKey(state.round), { answers: state.answers, times: state.times, cur: state.cur }); };
+  const saveDraft = () => { if (!state.graded) save(draftKey(state.round), { answers: state.answers, times: state.times, cur: state.cur, paused: state.paused }); };
 
   // ── 시간 재기: 문제 화면이 보이는 동안 그 문제의 시간을 1초씩 더한다
   function startTimer() {
     stopTimer();
     timer = setInterval(() => {
-      if (state.view !== 'solve' || state.graded || document.visibilityState !== 'visible') return;
+      if (state.view !== 'solve' || state.graded || state.paused || document.visibilityState !== 'visible') return;
       state.times[state.cur] = (state.times[state.cur] || 0) + 1;
       const t = document.getElementById('q-time');
       if (t) t.innerHTML = `이 문제 <b>${mmss(state.times[state.cur])}</b> · 총 <b>${mmss(sum(state.times))}</b>`;
@@ -55,7 +73,7 @@
           <span>${a ? `최근 ${a.score != null ? `<em>${a.score}점</em> · ` : ''}틀림 ${a.wrong.length}${a.total ? ` · ${mmss(a.total)}` : ''}${a.date ? ` · ${a.date}` : ''}` : '아직 안 풀었어요'}</span>
           ${dn ? `<span class="q-draft">이어 풀기 ${dn}/${N(r)} · ${mmss(sum(dr.times))}</span>` : ''}</a></li>`;
       }).join('')}</ul>
-      <p class="r-note">문제 이미지의 ①~⑤를 누르면 답이 선택되고 다음 문제로 넘어가요. 문제마다 머문 시간과 총 소요 시간이 기록돼요. 키보드 1~5 · ← → 도 쓸 수 있어요.<br>채점 기록은 이 브라우저에 저장되고 오답 노트에 바로 반영돼요. 문항 사진 등의 저작권은 원저작자에게 있어요.</p>`;
+      <p class="r-note">문제 이미지의 ①~⑤를 누르면 답이 선택되고 다음 문제로 넘어가요. 문제마다 머문 시간과 총 소요 시간이 기록돼요. 키보드 1~5 · ← → 도 쓸 수 있어요. 헷갈리는 문제는 🏳 헷갈림 표시(F), 잠깐 쉴 땐 ⏸ 일시정지(P).<br>채점 기록은 이 브라우저에 저장되고 오답 노트에 바로 반영돼요. 문항 사진 등의 저작권은 원저작자에게 있어요.</p>`;
   }
 
   // ── 한 문제 화면
@@ -72,12 +90,14 @@
     }).join('');
     const missing = hot.filter(Boolean).length < 5;
     return `
-      <div class="q-one ${res}">
+      <div class="q-one ${res}${state.paused && !state.graded ? ' paused' : ''}">
         <div class="q-head">
           <b>${n}번</b><span>${k.pt[n - 1]}점</span>
           ${state.graded ? `<span class="q-res">${a === right ? '정답' : a ? `오답 (고른 답 ${NUMS[a - 1]})` : '안 품'} · 정답 ${NUMS[right - 1]}</span><span class="q-tm">머문 시간 ${mmss(state.times[n])}</span>`
-            : `<span id="q-time" class="q-tm">이 문제 <b>${mmss(state.times[n])}</b> · 총 <b>${mmss(sum(state.times))}</b></span>`}
+            : `<span id="q-time" class="q-tm">이 문제 <b>${mmss(state.times[n])}</b> · 총 <b>${mmss(sum(state.times))}</b></span><button type="button" class="q-pause" aria-pressed="${state.paused}" title="일시정지 (P)">${state.paused ? '▶ 다시 시작' : '⏸ 일시정지'}</button>`}
+          <button type="button" class="q-flag" aria-pressed="${isFlag(r, n)}" title="헷갈리는 문제로 표시 (F) — 오답 노트에 모여요">${isFlag(r, n) ? '🚩 헷갈림 표시됨' : '🏳 헷갈림 표시'}</button>
         </div>
+        ${state.graded ? '' : `<div class="q-pausecover"><p>일시정지 중 <small>시간이 멈췄어요</small></p><button type="button" class="q-resume">▶ 다시 시작</button></div>`}
         <div class="q-body">
           <div class="q-imgwrap">
             <img src="${imgOf(r, n)}" alt="${rname(r)} ${n}번 문제">
@@ -143,6 +163,7 @@
 
   function navList() {
     if (state.graded && state.onlyWrong) return score(state.round, state.answers).wrong;
+    if (state.onlyFlag && flags(state.round).length) return flags(state.round);
     return Array.from({ length: N(state.round) }, (_, i) => i + 1);
   }
 
@@ -159,13 +180,13 @@
       ${solveHtml()}
       <div class="q-nav">
         <button type="button" class="q-prev" ${pos <= 0 ? 'disabled' : ''}>◀ 이전</button>
-        <button type="button" class="q-gridbtn">${state.graded ? (state.onlyWrong ? '틀린 문제만 보는 중' : '문항 목록') : `답한 문항 ${Object.keys(state.answers).length}/${N(r)}`}</button>
+        <button type="button" class="q-gridbtn">${state.onlyFlag ? '헷갈린 문제만 보는 중' : state.graded ? (state.onlyWrong ? '틀린 문제만 보는 중' : '문항 목록') : `답한 문항 ${Object.keys(state.answers).length}/${N(r)}`}</button>
         ${pos < list.length - 1 ? `<button type="button" class="q-next">다음 ▶</button>` : state.graded ? '<button type="button" class="q-to-result">결과 보기</button>' : '<button type="button" class="q-grade">채점하기</button>'}
       </div>
       <div class="q-grid"${state.showGrid ? '' : ' hidden'}>${Array.from({ length: N(r) }, (_, i) => {
         const n = i + 1; const a = state.answers[n];
         const c = state.graded ? (a === KEY[r].ans[i] ? 'ok' : 'ng') : a ? 'on' : '';
-        return `<button type="button" data-go="${n}" class="${c}${n === state.cur ? ' cur' : ''}">${n}</button>`;
+        return `<button type="button" data-go="${n}" class="${c}${n === state.cur ? ' cur' : ''}${isFlag(r, n) ? ' flag' : ''}">${n}</button>`;
       }).join('')}
         ${state.graded ? '' : `<button type="button" class="q-grade wide">채점하기</button>`}
       </div>`;
@@ -183,7 +204,7 @@
     const rows = Array.from({ length: N(r) }, (_, i) => {
       const n = i + 1, a = state.answers[n], ok = a === k.ans[i], t = state.times[n] || 0;
       return `<button type="button" data-go="${n}" class="q-trow ${ok ? 'ok' : 'ng'}${t > avg * 1.8 && t > 60 ? ' slow' : ''}">
-        <b>${n}</b><span>${ok ? '○' : '✕'}</span><span class="t">${mmss(t)}</span><span class="bar" style="width:${Math.min(100, (t / Math.max(1, ...Object.values(state.times))) * 100)}%"></span></button>`;
+        <b>${n}</b><span>${ok ? '○' : '✕'}</span>${isFlag(r, n) ? '<span class="fl" title="헷갈림">🚩</span>' : ''}<span class="t">${mmss(t)}</span><span class="bar" style="width:${Math.min(100, (t / Math.max(1, ...Object.values(state.times))) * 100)}%"></span></button>`;
     }).join('');
     box.innerHTML = `
       <div class="q-top"><a href="#" class="top-link">← 회차 목록</a><h2>${rname(r)} 결과</h2></div>
@@ -191,15 +212,17 @@
         <b>${s.score}점</b><small>/ ${TOTAL(r)}</small>
         <span>맞음 ${N(r) - s.wrong.length} · 틀림 ${s.wrong.length}</span>
         <span>총 소요 시간 <b class="tt">${mmss(total)}</b> · 문제당 평균 ${mmss(avg)}</span>
+        ${flags(r).length ? `<span>헷갈림 표시 ${flags(r).length}문항 · 그중 맞힘 ${flags(r).filter((n) => state.answers[n] === k.ans[n - 1]).length}</span>` : ''}
         <span class="q-saved">오답 노트에 저장했어요</span>
       </div>
       <div class="q-actions">
         <button type="button" class="q-review-wrong" ${s.wrong.length ? '' : 'disabled'}>틀린 문제 다시 보기</button>
+        <button type="button" class="q-review-flag" ${flags(r).length ? '' : 'disabled'}>🚩 헷갈린 문제 다시 보기 (${flags(r).length})</button>
         <button type="button" class="q-review-all">전체 문제 보기</button>
         <a class="q-btn" href="review.html?exam=${EX.id}">오답 노트</a>
         <button type="button" class="q-retry">다시 풀기</button>
       </div>
-      <h3 class="r-h">문제별 머문 시간 <small>○ 정답 · ✕ 오답 · 주황 = 평균보다 오래 걸린 문제</small></h3>
+      <h3 class="r-h">문제별 머문 시간 <small>○ 정답 · ✕ 오답 · 🚩 헷갈림 · 주황 = 평균보다 오래 걸린 문제</small></h3>
       <div class="q-times">${rows}</div>`;
     bar.hidden = true;
     window.scrollTo(0, 0);
@@ -217,7 +240,7 @@
   }
 
   function pick(i) {
-    if (state.graded || state.view !== 'solve') return;
+    if (state.graded || state.view !== 'solve' || state.paused) return;
     const n = state.cur;
     state.answers[n] = i;
     saveDraft();
@@ -236,16 +259,16 @@
     const s = score(state.round, state.answers);
     window.ATTEMPTS.save({ round: state.round, date: today(), wrong: s.wrong, answers: state.answers, score: s.score, times: state.times, total: sum(state.times) });
     try { localStorage.removeItem(draftKey(state.round)); } catch (e) { /* 무시 */ }
-    state.graded = true; state.showGrid = false;
+    state.graded = true; state.showGrid = false; state.paused = false; state.onlyFlag = false;
     renderResult();
   }
 
   function open(r) {
-    state.round = r; state.onlyWrong = false; state.showGrid = false;
+    state.round = r; state.onlyWrong = false; state.onlyFlag = false; state.showGrid = false; state.paused = false;
     const draft = load(draftKey(r), null);
     const a = lastAttempt(r);
     if (draft && Object.keys(draft.answers || {}).length + sum(draft.times) > 0) {
-      state.answers = draft.answers || {}; state.times = draft.times || {}; state.cur = draft.cur || 1; state.graded = false; renderSolve();
+      state.answers = draft.answers || {}; state.times = draft.times || {}; state.cur = draft.cur || 1; state.graded = false; state.paused = !!draft.paused; renderSolve();
     } else if (a && a.answers) {
       state.answers = a.answers; state.times = a.times || {}; state.cur = 1; state.graded = true; renderResult();
     } else {
@@ -265,15 +288,19 @@
     if (e.target.closest('.q-prev')) { step(-1); return; }
     if (e.target.closest('.q-next')) { step(1); return; }
     const g = e.target.closest('[data-go]');
-    if (g) { state.showGrid = false; if (state.view === 'result') state.onlyWrong = false; go(+g.dataset.go); return; }
+    if (g) { state.showGrid = false; if (state.view === 'result') { state.onlyWrong = false; state.onlyFlag = false; } go(+g.dataset.go); return; }
     if (e.target.closest('.q-gridbtn')) { state.showGrid = !state.showGrid; box.querySelector('.q-grid').hidden = !state.showGrid; return; }
     if (e.target.closest('.q-grade')) { grade(); return; }
     if (e.target.closest('.q-to-result')) { renderResult(); return; }
-    if (e.target.closest('.q-review-wrong')) { state.onlyWrong = true; go(score(state.round, state.answers).wrong[0]); return; }
-    if (e.target.closest('.q-review-all')) { state.onlyWrong = false; go(1); return; }
+    if (e.target.closest('.q-flag')) { toggleFlag(); return; }
+    if (e.target.closest('.q-pause')) { setPause(!state.paused); return; }
+    if (e.target.closest('.q-resume')) { setPause(false); return; }
+    if (e.target.closest('.q-review-flag')) { state.onlyWrong = false; state.onlyFlag = true; go(flags(state.round)[0]); return; }
+    if (e.target.closest('.q-review-wrong')) { state.onlyFlag = false; state.onlyWrong = true; go(score(state.round, state.answers).wrong[0]); return; }
+    if (e.target.closest('.q-review-all')) { state.onlyWrong = false; state.onlyFlag = false; go(1); return; }
     if (e.target.closest('.q-retry')) {
       if (!confirm('답과 시간을 모두 지우고 처음부터 다시 풀까요? (오답 노트 기록은 다시 채점할 때 바뀌어요)')) return;
-      state.answers = {}; state.times = {}; state.cur = 1; state.graded = false; state.onlyWrong = false; renderSolve(); window.scrollTo(0, 0);
+      state.answers = {}; state.times = {}; state.cur = 1; state.graded = false; state.onlyWrong = false; state.onlyFlag = false; state.paused = false; renderSolve(); window.scrollTo(0, 0);
     }
   });
   document.addEventListener('input', (e) => {
@@ -283,6 +310,9 @@
   document.addEventListener('focusout', (e) => { if (e.target.closest('.q-memo')) { clearTimeout(memoTimer); saveMemo(); } });
   document.addEventListener('keydown', (e) => {
     if (state.view !== 'solve' || e.target.closest('input, textarea')) return;
+    if (e.key === 'p' || e.key === 'P' || e.key === 'ㅔ') { setPause(!state.paused); return; }
+    if (e.key === 'f' || e.key === 'F' || e.key === 'ㄹ') { toggleFlag(); return; }
+    if (state.paused) return;
     if (/^[1-5]$/.test(e.key)) pick(+e.key);
     else if (e.key === 'ArrowRight') step(1);
     else if (e.key === 'ArrowLeft') step(-1);

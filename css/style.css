@@ -887,7 +887,7 @@ a.brand-mark { text-decoration: none; }
   .q-memo.aligned.has .q-memo-o input:not(:placeholder-shown) { border-color: var(--accent); background: #fff6f2; }
 }
 .r-scope-note { flex-basis: 100%; margin: 2px 0 0; font-size: 12.5px; color: var(--muted); }
-.r-summary { grid-template-columns: repeat(5, minmax(0, 1fr)); } @media (max-width: 700px) { .r-summary { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.r-summary { grid-template-columns: repeat(6, minmax(0, 1fr)); } @media (max-width: 900px) { .r-summary { grid-template-columns: repeat(3, minmax(0, 1fr)); } } @media (max-width: 600px) { .r-summary { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 
 /* 내가 약한 개념 */
 .r-weak { list-style: none; margin: 0 0 8px; padding: 0; display: grid; gap: 8px; }
@@ -978,3 +978,22 @@ body.qv-on { overflow: hidden; }
 .wk-memo-x { position: absolute; top: 3px; right: 3px; width: 20px; height: 20px; padding: 0; border: 0; border-radius: 50%; background: transparent; color: var(--muted); font-size: 11px; line-height: 20px; cursor: pointer; opacity: .6; }
 .wk-memo-x:hover { opacity: 1; background: var(--accent-soft); color: var(--accent); }
 .wk-memo-edit .danger { margin-right: auto; color: var(--accent); border-color: var(--accent); background: transparent; }
+
+/* 헷갈림 표시 · 일시정지 */
+.q-flag, .q-pause { font-size: 12px; padding: 3px 10px; border-radius: 999px; border: 1px solid #ccc; background: #fafafa; color: #444; cursor: pointer; white-space: nowrap; }
+.q-flag[aria-pressed="true"] { background: #fff3e0; border-color: #fb8c00; color: #e65100; font-weight: 700; }
+.q-pause[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 700; }
+.q-one { position: relative; }
+.q-pausecover { display: none; }
+.q-one.paused .q-pausecover { display: flex; position: absolute; inset: 44px 0 0; z-index: 5; flex-direction: column; align-items: center; justify-content: flex-start; padding-top: 18vh; gap: 12px; border-radius: 0 0 var(--radius) var(--radius); background: color-mix(in srgb, var(--surface) 82%, transparent); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); }
+.q-pausecover p { margin: 0; font-size: 20px; font-weight: 900; color: var(--text); text-align: center; }
+.q-pausecover small { display: block; font-size: 13px; font-weight: 500; color: var(--muted); }
+.q-pausecover button { padding: 10px 22px; border-radius: 999px; border: 0; background: var(--accent); color: #fff; font-size: 15px; font-weight: 900; cursor: pointer; }
+.q-grid button.flag { position: relative; }
+.q-grid button.flag::after { content: ''; position: absolute; top: 2px; right: 2px; width: 7px; height: 7px; border-radius: 50%; background: #fb8c00; box-shadow: 0 0 0 1.5px var(--surface); }
+.q-trow .fl { font-size: 11px; }
+.q-actions .q-review-flag:not(:disabled) { border-color: #fb8c00; color: #e65100; }
+.rq-flag { font-size: 11.5px; padding: 1px 8px; border-radius: 999px; border: 1px solid #fb8c00; background: #fff3e0; color: #e65100; font-weight: 700; cursor: pointer; }
+.rq-flag:hover { background: #ffe0b2; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .rq-flag { background: #3a2a14; color: #ffb74d; } }
+.r-summary .fl b { color: #e65100; }

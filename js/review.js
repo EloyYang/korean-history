@@ -94,6 +94,15 @@
   const wrongs = LOG.flatMap((l) => l.wrong.map((n) => ({ ...Q(l.round, n), time: (l.times || {})[n] }))).filter((q) => !q.missing);
   const mmss = (s) => { s = Math.round(s || 0); const h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), x = s % 60; return (h ? `${h}:${String(m).padStart(2, '0')}` : `${m}`) + ':' + String(x).padStart(2, '0'); };
   const targets = wrongs.filter((q) => q.target);
+  // 기출 풀기에서 '헷갈림' 표시한 문제
+  const flagKey = (r) => window.ATTEMPTS.key('flag.' + r);
+  const flagRounds = () => Object.keys(QKEY).map(Number);
+  const flagSet = () => new Set(flagRounds().flatMap((r) => (window.UserStore.get(flagKey(r), []) || []).map((n) => `${r}-${n}`)));
+  const flagged = () => flagRounds().sort((a, b) => b - a).flatMap((r) => (window.UserStore.get(flagKey(r), []) || []).map((n) => {
+    const l = LOG.find((x) => x.round === r);
+    const st = !l ? 'none' : l.wrong.includes(n) ? 'wrong' : 'right';
+    return { ...Q(r, n), time: l && (l.times || {})[n], flagSt: st, flagOnly: st !== 'wrong' };
+  }));
 
   const starTxt = (n) => '★'.repeat(n) + '☆'.repeat(Math.max(0, 3 - n));
   const why = (q) => [q.stars < MIN_STARS ? `빈도 ${'★'.repeat(q.stars)}` : '', !EASY.includes(q.diff) ? `난이도 ${q.diff}` : ''].filter(Boolean).join(' · ');
@@ -132,6 +141,7 @@
           <span class="rq-diff d-${esc(q.diff)}">난이도 ${esc(q.diff)}</span>
           ${q.pt ? `<span class="rq-pt">${q.pt}점</span>` : ''}
           ${q.time ? `<span class="rq-time">풀이 ${mmss(q.time)}</span>` : ''}
+          ${FLAGS.has(q.id) ? `<button type="button" class="rq-flag" data-unflag="${q.id}" title="헷갈림 표시 지우기">🚩 헷갈림${q.flagSt === 'right' ? ' · 맞힘' : q.flagSt === 'none' ? ' · 채점 전' : ''} ✕</button>` : ''}
           <label class="rq-done"><input type="checkbox" ${done ? 'checked' : ''}> 외웠어요</label>
         </div>
         ${img || `${f && f.stem ? `<p class="rq-stem">${esc(f.stem)}</p>` : ''}<div class="rq-body">${body}</div>`}
@@ -147,11 +157,13 @@
             ${img && f ? `<p class="sv-h">선지별 정리</p><ol class="sv-opts">${f.opts.map((o, i) => `<li class="${i === f.ans ? 'ans' : ''}"><span class="n">${NUMS[i]}</span><span>${esc(o)}<small>${sv.opts ? sv.opts[i] : ''}</small></span></li>`).join('')}</ol>` : ''}
           </div></div>` : ''}
         ${memoView(q)}
-        ${q.target ? '' : `<p class="rq-why">복습 대상 제외 — ${why(q)}</p>`}
+        ${q.target || q.flagOnly ? '' : `<p class="rq-why">복습 대상 제외 — ${why(q)}</p>`}
       </li>`;
   }
 
+  let FLAGS = new Set();
   function render() {
+    FLAGS = flagSet();
     // 보기 범위: 전체 / 날짜별(d:YYYY-MM-DD) / 회차별(79)
     const dates = [...new Set(LOG.map((l) => l.date).filter(Boolean))].sort().reverse();
     const eraRounds = LOG.map((l) => l.round).sort((a, b) => b - a);
@@ -164,7 +176,9 @@
     const vWrongs = wrongs.filter((q) => FLOG.some((l) => l.round === q.round));
     const vTargets = vWrongs.filter((q) => q.target);
     const others = vWrongs.filter((q) => !q.target);
-    const list = state.scope === 'all' ? vWrongs : state.scope === 'other' ? others : vTargets;
+    const allFlags = flagged();
+    const vFlags = view === 'all' ? allFlags : allFlags.filter((q) => FLOG.some((l) => l.round === q.round));
+    const list = state.scope === 'flag' ? vFlags : state.scope === 'all' ? vWrongs : state.scope === 'other' ? others : vTargets;
     const shown = state.hideDone ? list.filter((q) => !mastered.has(q.id)) : list;
     const doneN = targets.filter((q) => mastered.has(q.id)).length;
     const othersAll = wrongs.filter((q) => !q.target);
@@ -210,7 +224,7 @@
       <div class="r-view-row"><span class="r-view-lab">전체</span><span class="r-chips">${btn('all', `전체 기록`, `${eraRounds.length}회차`)}</span></div>
       ${dates.length ? `<div class="r-view-row"><span class="r-view-lab">날짜별</span><span class="r-chips">${dates.map((d) => { const ls = LOG.filter((l) => l.date === d); return btn('d:' + d, d.replace(/^\d{4}-/, '').replace('-', '/'), `${ls.map((l) => l.round + '회').join('·')} · 틀림 ${ls.reduce((a, l) => a + l.wrong.length, 0)}`); }).join('')}</span></div>` : ''}
       <div class="r-view-row"><span class="r-view-lab">회차별</span><span class="r-chips">${eraRounds.map((r) => btn(String(r), `${r}회`)).join('')}</span></div>
-      <p class="r-view-sum"><b>${esc(viewName)}</b> — ${FLOG.length}개 회차 ${sumAll}문항 중 <b>${sumWr}</b>문항 틀림 (오답률 ${pct(sumWr, sumAll)}%) · 복습 대상 ${vTargets.length} · 어렵거나 빈도 낮음 ${others.length}</p>
+      <p class="r-view-sum"><b>${esc(viewName)}</b> — ${FLOG.length}개 회차 ${sumAll}문항 중 <b>${sumWr}</b>문항 틀림 (오답률 ${pct(sumWr, sumAll)}%) · 복습 대상 ${vTargets.length} · 어렵거나 빈도 낮음 ${others.length} · 헷갈림 ${vFlags.length}</p>
     </section>` : '';
 
     // 내가 약한 개념: 같은 기출 포인트(없으면 주제)끼리 묶어 출제 수 대비 틀린 수
@@ -261,7 +275,7 @@
         <span class="wk-t">${p ? `<span class="rp-freq">${starTxt(Math.min(p[0], 3))}</span>${p[1]}` : `${esc(q.theme)} <small class="rp-none">기출 포인트 외</small>`}</span>
         <span class="wk-n">틀림 <b>${v.wrongs.length}</b> / 출제 ${v.all}${v.done ? ' · ✓ 외움' : ''}</span>
         ${memoUi ? `<span class="wk-memo-row">${memoUi}</span>` : ''}
-        <span class="wk-qs">${v.wrongs.map((w) => `<button type="button" data-goto="${w.id}" class="${mastered.has(w.id) ? 'm' : ''}${w.target ? '' : ' off'}">${w.round}회 ${w.num}번</button>`).join('')}${memoOpen === ck ? '' : `<button type="button" class="wk-memo-btn" data-wm-open="${esc(ck)}">${memo ? '✎ 메모 수정' : '＋ 메모'}</button>`}</span></li>`;
+        <span class="wk-qs">${v.wrongs.map((w) => `<button type="button" data-goto="${w.id}" class="${mastered.has(w.id) ? 'm' : ''}${w.target ? '' : ' off'}">${w.round}회 ${w.num}번${FLAGS.has(w.id) ? ' 🚩' : ''}</button>`).join('')}${memoOpen === ck ? '' : `<button type="button" class="wk-memo-btn" data-wm-open="${esc(ck)}">${memo ? '✎ 메모 수정' : '＋ 메모'}</button>`}</span></li>`;
     }).join('');
 
     // 암기 부족 포인트: 시대 → 기출 포인트 → 틀린 문항
@@ -300,6 +314,7 @@
         <div class="hl"><b>${targets.length}</b><span>복습 대상<br><small>★★ 이상 · 난이도 하·중</small></span></div>
         <div><b>${othersAll.length}</b><span>어렵거나 빈도 낮음<br><small>★ 또는 난이도 중상 이상</small></span></div>
         <div><b>${doneN} / ${targets.length}</b><span>외운 문항</span></div>
+        <div class="fl"><b>${allFlags.length}</b><span>헷갈린 문항<br><small>그중 맞힘 ${allFlags.filter((q) => q.flagSt === 'right').length}</small></span></div>
       </section>
 
       <h2 class="r-h">회차별 기록</h2>
@@ -321,7 +336,8 @@
 
       <h2 class="r-h">암기가 부족한 기출 포인트 <small>${esc(viewName)}</small></h2>
       <div class="r-tools">
-        <span class="seg"><button data-scope="target" aria-pressed="${state.scope === 'target'}">복습 대상만 (${vTargets.length})</button><button data-scope="other" aria-pressed="${state.scope === 'other'}" title="출제빈도 ★ 또는 난이도 중상·상·특">어렵거나 빈도 낮은 문제 (${others.length})</button><button data-scope="all" aria-pressed="${state.scope === 'all'}">틀린 문제 전체 (${vWrongs.length})</button></span>
+        <span class="seg"><button data-scope="target" aria-pressed="${state.scope === 'target'}">복습 대상만 (${vTargets.length})</button><button data-scope="other" aria-pressed="${state.scope === 'other'}" title="출제빈도 ★ 또는 난이도 중상·상·특">어렵거나 빈도 낮은 문제 (${others.length})</button><button data-scope="all" aria-pressed="${state.scope === 'all'}">틀린 문제 전체 (${vWrongs.length})</button><button data-scope="flag" aria-pressed="${state.scope === 'flag'}" title="기출 풀기에서 🏳 헷갈림 표시한 문제 (맞힌 문제 포함)">🚩 헷갈린 문제 (${vFlags.length})</button></span>
+        ${state.scope === 'flag' ? `<p class="r-scope-note">기출 풀기에서 헷갈림 표시한 문제예요. 맞혔어도 확실히 알지 못한 문제라 같이 복습하면 좋아요 — 맞힘 ${vFlags.filter((q) => q.flagSt === 'right').length} · 틀림 ${vFlags.filter((q) => q.flagSt === 'wrong').length} · 채점 전 ${vFlags.filter((q) => q.flagSt === 'none').length}</p>` : ''}
         ${state.scope === 'other' ? `<p class="r-scope-note">복습 대상(★★ 이상·난이도 하·중)에서 빠진 문제예요. 난이도가 높은 문제 ${others.filter((q) => !EASY.includes(q.diff)).length}개, 출제빈도가 낮은 문제(★) ${others.filter((q) => q.stars < MIN_STARS).length}개 (겹치는 문제 포함)</p>` : ''}
         <label class="chip-check"><input type="checkbox" id="hide-done" ${state.hideDone ? 'checked' : ''}> 외운 문항 숨기기</label>
         <label class="chip-check"><input type="checkbox" id="open-all" ${state.openAll ? 'checked' : ''}> 정답 도출 포인트 모두 펼치기</label>
@@ -361,6 +377,12 @@
       const y = window.scrollY; render(); window.scrollTo(0, y);
       const f = document.querySelector('#wk-form [name="text"]'); if (f) { showPtQs(f.form); f.focus({ preventScroll: true }); }
       return;
+    }
+    const uf = e.target.closest('[data-unflag]');
+    if (uf) {
+      const [r, n] = uf.dataset.unflag.split('-').map(Number);
+      window.UserStore.set(flagKey(r), (window.UserStore.get(flagKey(r), []) || []).filter((x) => x !== n));
+      rerender(); return;
     }
     const qv = e.target.closest('[data-qview]');
     if (qv) { openQView(qv.dataset.qview); return; }
