@@ -244,7 +244,7 @@
       </form>`;
     const mineHtml = mine.map((w) => `<li class="wk mine${w.done ? ' done' : ''}">
         <span class="wk-era">${esc(w.era || '직접 추가')}</span>
-        <span class="wk-t">${w.pt && ptOf(w.pt) ? `<span class="rp-freq">${starTxt(ptOf(w.pt).stars)}</span>${ptOf(w.pt).html}` : esc(w.text)}${w.memo ? `<span class="wk-memo">${esc(w.memo)}</span>` : ''}</span>
+        <span class="wk-t">${w.pt && ptOf(w.pt) ? `<span class="rp-freq">${starTxt(ptOf(w.pt).stars)}</span>${ptOf(w.pt).html}` : esc(w.text)}${w.memo ? `<span class="wk-memo has-del">${esc(w.memo)}<button type="button" class="wk-memo-x" data-wk-memo-del="${w.id}" title="메모 삭제" aria-label="메모 삭제">✕</button></span>` : ''}</span>
         <span class="wk-n"><span class="wk-mine">내가 추가</span>${w.ref && !(w.refs || []).length ? ` · ${esc(w.ref)}` : ''}${w.pt && byPt.has(w.pt) ? ` · 출제 ${byPt.get(w.pt).all} · 틀림 <b>${byPt.get(w.pt).wrongs.length}</b>` : ''}</span>
         ${(w.refs || []).length ? `<span class="wk-qs">${w.refs.map((id) => `<button type="button" data-qview="${id}" class="${myWrong.has(id) ? 'wr' : ''}${mastered.has(id) ? ' m' : ''}" title="${myWrong.has(id) ? '내가 틀린 문제' : '문제 보기'}">${qLabel(id)}${myWrong.has(id) ? ' ✗' : ''}</button>`).join('')}</span>` : ''}
         <span class="wk-qs wk-act"><label class="chip-check"><input type="checkbox" data-wk-done="${w.id}" ${w.done ? 'checked' : ''}> 외웠어요</label><button type="button" data-wk-edit="${w.id}">수정</button><button type="button" data-wk-del="${w.id}">삭제</button></span></li>`).join('');
@@ -254,8 +254,8 @@
       const ck = q.pIdx >= 0 ? `${q.pEra}#${q.pIdx}` : `t#${q.theme}`;
       const memo = weakMemo()[ck] || '';
       const memoUi = memoOpen === ck
-        ? `<span class="wk-memo-edit"><textarea data-wm-text="${esc(ck)}" rows="2" maxlength="500" placeholder="헷갈리는 점, 외우는 요령 등">${esc(memo)}</textarea><span><button type="button" class="primary" data-wm-save="${esc(ck)}">저장</button><button type="button" data-wm-cancel>취소</button></span></span>`
-        : memo ? `<span class="wk-memo">${esc(memo)}</span>` : '';
+        ? `<span class="wk-memo-edit"><textarea data-wm-text="${esc(ck)}" rows="2" maxlength="500" placeholder="헷갈리는 점, 외우는 요령 등">${esc(memo)}</textarea><span>${memo ? `<button type="button" class="danger" data-wm-del="${esc(ck)}">메모 삭제</button>` : ''}<button type="button" class="primary" data-wm-save="${esc(ck)}">저장</button><button type="button" data-wm-cancel>취소</button></span></span>`
+        : memo ? `<span class="wk-memo has-del">${esc(memo)}<button type="button" class="wk-memo-x" data-wm-del="${esc(ck)}" title="메모 삭제" aria-label="메모 삭제">✕</button></span>` : '';
       return `<li class="wk${v.done ? ' done' : ''}">
         <span class="wk-era">${esc(per)}</span>
         <span class="wk-t">${p ? `<span class="rp-freq">${starTxt(Math.min(p[0], 3))}</span>${p[1]}` : `${esc(q.theme)} <small class="rp-none">기출 포인트 외</small>`}</span>
@@ -374,6 +374,17 @@
       memoOpen = null; rerender(); return;
     }
     if (e.target.closest('[data-wm-cancel]')) { memoOpen = null; rerender(); return; }
+    const wd = e.target.closest('[data-wm-del]');
+    if (wd) {
+      if (!confirm('이 개념의 메모를 삭제할까요?')) return;
+      const m = weakMemo(); delete m[wd.dataset.wmDel]; window.UserStore.set(WMKEY, m);
+      memoOpen = null; rerender(); return;
+    }
+    const md = e.target.closest('[data-wk-memo-del]');
+    if (md) {
+      if (!confirm('이 개념의 메모를 삭제할까요?')) return;
+      saveWeak(myWeak().map((w) => (w.id === md.dataset.wkMemoDel ? { ...w, memo: '' } : w))); rerender(); return;
+    }
     const rd = e.target.closest('[data-ref-del]');
     if (rd) { setRefs(rd.closest('form'), getRefs(rd.closest('form')).filter((x) => x !== rd.dataset.refDel)); return; }
     const ra = e.target.closest('[data-ref-add]');
