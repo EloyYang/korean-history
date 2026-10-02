@@ -614,15 +614,18 @@ body.review-page .topbar { position: sticky; top: 0; }
 .r-table .nums span, .on-sample { display: inline-block; min-width: 24px; margin: 1px; padding: 0 4px; border-radius: 4px; text-align: center; font-size: 12px; background: var(--surface-2); color: var(--muted); }
 .r-table .nums span.on, .on-sample { background: var(--accent); color: #fff; font-weight: 700; }
 .r-bars { list-style: none; margin: 0; padding: 0; }
-.r-bars li { display: grid; grid-template-columns: 150px minmax(0, 1fr) 54px; align-items: center; gap: 10px; margin-bottom: 6px; font-size: 13px; }
+.r-bars li { display: grid; grid-template-columns: 150px minmax(0, 1fr) 150px; align-items: center; gap: 10px; margin-bottom: 6px; font-size: 13px; }
 .bar-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .bar-track { position: relative; height: 14px; border-radius: 7px; background: var(--surface-2); overflow: hidden; }
-.bar-all, .bar-tg { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 7px; }
+.bar-all, .bar-wr, .bar-tg { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 7px; }
 .bar-all { background: color-mix(in srgb, var(--accent) 25%, transparent); }
+.bar-wr { background: color-mix(in srgb, var(--accent) 55%, transparent); }
 .bar-tg { background: var(--accent); }
+.bar-n i { font-style: normal; display: inline-block; min-width: 34px; margin-left: 4px; font-variant-numeric: tabular-nums; }
+.r-bars li.weak .bar-name, .r-bars li.weak .bar-n i { color: var(--accent); font-weight: 700; }
 .bar-n { text-align: right; color: var(--muted); }
 .bar-n b { color: var(--accent); }
-@media (max-width: 600px) { .r-bars li { grid-template-columns: 96px minmax(0, 1fr) 46px; } }
+@media (max-width: 600px) { .r-bars li { grid-template-columns: 80px minmax(0, 1fr); row-gap: 2px; } .r-bars .bar-n { grid-column: 2; text-align: left; font-size: 12px; } }
 .r-tools { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-bottom: 12px; }
 .r-tools .seg { display: inline-flex; }
 .r-tools .seg button { font-size: 12.5px; padding: 5px 12px; border: 1px solid var(--line); background: var(--surface-2); }

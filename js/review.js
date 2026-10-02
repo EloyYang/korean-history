@@ -19,7 +19,7 @@
     get(k, d) { try { const v = localStorage.getItem('khmap.' + k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } },
     set(k, v) { try { localStorage.setItem('khmap.' + k, JSON.stringify(v)); } catch (e) { /* 무시 */ } },
   };
-  const state = { scope: store.get('reviewScope', 'target'), hideDone: store.get('reviewHideDone', false), openAll: store.get('reviewOpenAll', false) };
+  const state = { scope: store.get('reviewScope', 'target'), hideDone: store.get('reviewHideDone', false), openAll: store.get('reviewOpenAll', false), eraRound: store.get('reviewEraRound', 'all') };
   const openSet = new Set();
   const MKEY = window.ATTEMPTS.key('mastered');
   const mastered = new Set(window.UserStore.get(MKEY, []));
@@ -114,18 +114,30 @@
       </tr>`;
     }).join('');
 
-    // 시대별 약점
+    // 시대별 약점: 푼 회차의 전체 문항을 시대별로 → 출제 수 · 틀린 수
+    const eraRounds = LOG.map((l) => l.round).sort((a, b) => b - a);
+    if (state.eraRound !== 'all' && !eraRounds.includes(+state.eraRound)) state.eraRound = 'all';
     const byEra = new Map();
-    wrongs.forEach((q) => {
-      const e = q.pEra && q.pIdx >= 0 ? q.pEra : q.era;
-      if (!byEra.has(e)) byEra.set(e, { all: 0, tg: 0 });
-      byEra.get(e).all++; if (q.target) byEra.get(e).tg++;
+    LOG.filter((l) => state.eraRound === 'all' || l.round === +state.eraRound).forEach((l) => {
+      const wr = new Set(l.wrong);
+      const rows = EXAM[l.round] || (QKEY[l.round] ? QKEY[l.round].ans.map((_, i) => [i + 1, '']) : []);
+      rows.forEach((row) => {
+        const e = row[7] >= 0 ? row[6] : row[1];
+        if (!byEra.has(e)) byEra.set(e, { all: 0, wr: 0, tg: 0 });
+        const v = byEra.get(e); v.all++;
+        if (wr.has(row[0])) { v.wr++; if (Q(l.round, row[0]).target) v.tg++; }
+      });
     });
     const maxAll = Math.max(1, ...[...byEra.values()].map((v) => v.all));
+    const sumAll = [...byEra.values()].reduce((a, v) => a + v.all, 0);
+    const sumWr = [...byEra.values()].reduce((a, v) => a + v.wr, 0);
+    const pct = (a, b) => (b ? Math.round((a / b) * 100) : 0);
     const bars = [...byEra.entries()].sort((a, b) => eraOrder(a[0]) - eraOrder(b[0])).map(([e, v]) => `
-      <li><span class="bar-name" title="${esc(eraName(e))}">${esc(eraName(e).split(" · ")[0])}</span>
-        <span class="bar-track"><span class="bar-all" style="width:${(v.all / maxAll) * 100}%"></span><span class="bar-tg" style="width:${(v.tg / maxAll) * 100}%"></span></span>
-        <span class="bar-n"><b>${v.tg}</b> / ${v.all}</span></li>`).join('');
+      <li class="${v.all >= 2 && v.wr / v.all >= 0.5 ? 'weak' : ''}"><span class="bar-name" title="${esc(eraName(e))}">${esc(eraName(e).split(" · ")[0])}</span>
+        <span class="bar-track"><span class="bar-all" style="width:${(v.all / maxAll) * 100}%"></span><span class="bar-wr" style="width:${(v.wr / maxAll) * 100}%"></span><span class="bar-tg" style="width:${(v.tg / maxAll) * 100}%"></span></span>
+        <span class="bar-n">출제 ${v.all} · 틀림 <b>${v.wr}</b> <i>${pct(v.wr, v.all)}%</i></span></li>`).join('');
+    const eraSeg = eraRounds.length ? `<div class="r-tools"><span class="seg">${['all', ...eraRounds].map((r) => `<button data-era-round="${r}" aria-pressed="${String(state.eraRound) === String(r)}">${r === 'all' ? `전체 회차 (${eraRounds.length})` : `${r}회`}</button>`).join('')}</span>
+      <p class="r-scope-note">${state.eraRound === 'all' ? `푼 ${eraRounds.length}개 회차` : `${state.eraRound}회`} 전체 ${sumAll}문항 중 <b>${sumWr}</b>문항 틀림 (오답률 ${pct(sumWr, sumAll)}%)</p></div>` : '';
 
     // 암기 부족 포인트: 시대 → 기출 포인트 → 틀린 문항
     const groups = new Map();
@@ -171,8 +183,9 @@
         <tbody>${rounds || '<tr><td colspan="7">아직 기록이 없어요</td></tr>'}</tbody>
       </table></div>
 
-      <h2 class="r-h">시대별 약점 <small>진한 막대 = 복습 대상, 연한 막대 = 틀린 문항 전체</small></h2>
-      <ul class="r-bars">${bars}</ul>
+      <h2 class="r-h">시대별 약점 <small>연한 막대 = 출제 문항, 중간 = 틀린 문항, 진한 막대 = 그중 복습 대상</small></h2>
+      ${eraSeg}
+      <ul class="r-bars">${bars || '<li class="r-empty">아직 푼 회차가 없어요</li>'}</ul>
 
       <h2 class="r-h">암기가 부족한 기출 포인트</h2>
       <div class="r-tools">
@@ -196,6 +209,8 @@
     }
     const im = e.target.closest('[data-import]');
     if (im) { if (im.dataset.import === 'yes') window.ATTEMPTS.importMyLog(); else window.ATTEMPTS.dismissImport(); location.reload(); return; }
+    const er = e.target.closest('button[data-era-round]');
+    if (er) { state.eraRound = er.dataset.eraRound; store.set('reviewEraRound', state.eraRound); const y = window.scrollY; render(); window.scrollTo(0, y); return; }
     const s = e.target.closest('button[data-scope]');
     if (s) { state.scope = s.dataset.scope; store.set('reviewScope', state.scope); render(); return; }
     const t = e.target.closest('.rq-toggle');
