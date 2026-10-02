@@ -14,6 +14,16 @@
   document.title = `오답 노트 · ${EX.name}`;
   const eraName = (id) => (ERAS.find((e) => e.id === id) || { name: id || '기타' }).name;
   const eraOrder = (id) => { const i = ERAS.findIndex((e) => e.id === id); return i < 0 ? 99 : i; };
+  // 시대별 약점은 교과서식 시대 구분으로 묶어서 보여 준다 (4~7세기 → 삼국 등)
+  const PERIODS = [
+    ['선사 시대', ['prehistoric']], ['고조선', ['gojoseon']], ['여러 나라', ['states']],
+    ['삼국', ['c4', 'c5', 'c6', 'c7']], ['통일신라·발해', ['nambuk']], ['후삼국', ['husamguk']],
+    ['고려 전기', ['goryeo1']], ['고려 후기', ['goryeo2']], ['조선 전기', ['joseon1', 'imjin']],
+    ['조선 후기·개항기', ['horan', 'gaehang']], ['일제 강점기', ['colonial']], ['광복 이후', ['modern']],
+  ];
+  const periodOf = (id) => { const i = PERIODS.findIndex((p) => p[1].includes(id)); return i < 0 ? PERIODS.length : i; };
+  const periodName = (i) => (PERIODS[i] ? PERIODS[i][0] : '기타');
+  const periodTip = (i) => (PERIODS[i] ? PERIODS[i][1].map(eraName).join(', ') : '분류 정보 없음');
   const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
   const store = {
     get(k, d) { try { const v = localStorage.getItem('khmap.' + k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } },
@@ -122,7 +132,7 @@
       const wr = new Set(l.wrong);
       const rows = EXAM[l.round] || (QKEY[l.round] ? QKEY[l.round].ans.map((_, i) => [i + 1, '']) : []);
       rows.forEach((row) => {
-        const e = row[7] >= 0 ? row[6] : row[1];
+        const e = periodOf(row[7] >= 0 ? row[6] : row[1]);
         if (!byEra.has(e)) byEra.set(e, { all: 0, wr: 0, tg: 0 });
         const v = byEra.get(e); v.all++;
         if (wr.has(row[0])) { v.wr++; if (Q(l.round, row[0]).target) v.tg++; }
@@ -132,8 +142,8 @@
     const sumAll = [...byEra.values()].reduce((a, v) => a + v.all, 0);
     const sumWr = [...byEra.values()].reduce((a, v) => a + v.wr, 0);
     const pct = (a, b) => (b ? Math.round((a / b) * 100) : 0);
-    const bars = [...byEra.entries()].sort((a, b) => eraOrder(a[0]) - eraOrder(b[0])).map(([e, v]) => `
-      <li class="${v.all >= 2 && v.wr / v.all >= 0.5 ? 'weak' : ''}"><span class="bar-name" title="${esc(eraName(e))}">${esc(eraName(e).split(" · ")[0])}</span>
+    const bars = [...byEra.entries()].sort((a, b) => a[0] - b[0]).map(([e, v]) => `
+      <li class="${v.all >= 2 && v.wr / v.all >= 0.5 ? 'weak' : ''}"><span class="bar-name" title="${esc(periodTip(e))}">${esc(periodName(e))}</span>
         <span class="bar-track"><span class="bar-all" style="width:${(v.all / maxAll) * 100}%"></span><span class="bar-wr" style="width:${(v.wr / maxAll) * 100}%"></span><span class="bar-tg" style="width:${(v.tg / maxAll) * 100}%"></span></span>
         <span class="bar-n">출제 ${v.all} · 틀림 <b>${v.wr}</b> <i>${pct(v.wr, v.all)}%</i></span></li>`).join('');
     const eraSeg = eraRounds.length ? `<div class="r-tools"><span class="seg">${['all', ...eraRounds].map((r) => `<button data-era-round="${r}" aria-pressed="${String(state.eraRound) === String(r)}">${r === 'all' ? `전체 회차 (${eraRounds.length})` : `${r}회`}</button>`).join('')}</span>
