@@ -96,11 +96,21 @@
   function memoHtml(r, n) {
     const m = memoOf(r, n);
     const has = m.q || m.o.some(Boolean);
+    const hot = ((KEY[r].hot || [])[n - 1]) || [];
+    const aligned = hot.filter(Boolean).length === 5;
+    // 선지 위치(이미지 기준 세로 비율)에 맞춰 메모 칸을 둔다. 같은 줄에 선지가 둘이면 칸을 나눈다
+    const pos = [0, 1, 2, 3, 4].map((i) => {
+      const h = hot[i]; if (!h) return '';
+      const row = hot.map((x, j) => [x, j]).filter(([x]) => x && Math.abs(x[1] - h[1]) < 0.012).map(([, j]) => j);
+      const k = row.indexOf(i), cnt = row.length;
+      return `--t:${(h[1] + h[3] / 2) * 100}%;--l:${(k / cnt) * 100}%;--w:${100 / cnt}%`;
+    });
+    const firstY = aligned ? Math.min(...hot.map((h) => h[1])) : 0;
     return `
-      <aside class="q-memo${has ? ' has' : ''}">
+      <aside class="q-memo${has ? ' has' : ''}${aligned ? ' aligned' : ''}" style="--qh:${firstY * 100}%">
         <p class="q-memo-h">메모 <small>자동 저장</small></p>
         <label class="q-memo-q"><span>문제·지문</span><textarea data-memo="q" rows="3" placeholder="단서, 떠오른 사건·인물…">${escH(m.q)}</textarea></label>
-        ${[0, 1, 2, 3, 4].map((i) => `<label class="q-memo-o"><span>${NUMS[i]}</span><input data-memo="${i}" value="${escH(m.o[i] || '')}" placeholder="${NUMS[i]} 선지 메모"></label>`).join('')}
+        ${[0, 1, 2, 3, 4].map((i) => `<label class="q-memo-o" style="${pos[i]}"><span>${NUMS[i]}</span><input data-memo="${i}" value="${escH(m.o[i] || '')}" placeholder="${NUMS[i]} 메모"></label>`).join('')}
       </aside>`;
   }
   let memoTimer = null;

@@ -869,3 +869,17 @@ a.brand-mark { text-decoration: none; }
 .rq-memo li b { color: var(--muted); margin-right: 4px; }
 .r-del { padding: 3px 10px; border-radius: 999px; border: 1px solid var(--line); background: none; color: var(--muted); font-size: 12px; }
 .r-del:hover { border-color: #c62828; color: #c62828; }
+
+/* 선지 메모를 각 선지 바로 옆에 (넓은 화면) */
+@media (min-width: 901px) {
+  .q-body { display: flex; justify-content: center; align-items: stretch; gap: 10px; }
+  .q-body .q-imgwrap { margin: 0; flex: 0 1 auto; }
+  .q-memo.aligned { position: relative; flex: 0 0 260px; padding: 0; border: 0; background: none; top: auto; }
+  .q-memo.aligned .q-memo-h { position: absolute; top: 0; left: 0; right: 0; }
+  .q-memo.aligned .q-memo-q { position: absolute; top: 22px; left: 0; right: 0; height: max(70px, calc(var(--qh) - 30px)); }
+  .q-memo.aligned .q-memo-q textarea { flex: 1; height: 100%; resize: none; }
+  .q-memo.aligned .q-memo-o { position: absolute; top: var(--t); left: var(--l); width: var(--w); transform: translateY(-50%); padding-right: 4px; }
+  .q-memo.aligned .q-memo-o > span { width: 18px; padding-top: 0; align-self: center; font-size: 13px; }
+  .q-memo.aligned .q-memo-o input { padding: 3px 6px; font-size: 12.5px; background: #fffef8; border-color: #e3dccb; }
+  .q-memo.aligned.has .q-memo-o input:not(:placeholder-shown) { border-color: var(--accent); background: #fff6f2; }
+}
