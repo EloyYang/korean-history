@@ -60,6 +60,27 @@
       return { x, sub: inMain < toks.length, score: inMain * 100 + x.stars * 10 };
     }).filter(Boolean).sort((a, b) => b.score - a.score).slice(0, 12).map((r) => ({ ...r.x, sub: r.sub }));
   }
+  // 관련 문제 검색용: 모든 회차 문항 (주제·정답 선지·풀이 단서)
+  const SOLVE_ALL = window.SOLVE || {};
+  const myWrong = new Set(LOG.flatMap((l) => l.wrong.map((n) => `${l.round}-${n}`)));
+  const Q_INDEX = Object.entries(EXAM).flatMap(([r, rows]) => rows.map((row) => {
+    const id = `${r}-${row[0]}`; const sv = SOLVE_ALL[id];
+    return { id, round: +r, num: row[0], theme: row[2], ans: row[5] || '', pt: row[7] >= 0 ? `${row[6]}#${row[7]}` : '',
+      hay: norm([row[2], row[5], row[8], sv ? sv.clue.join(' ') + strip(sv.how) : ''].join(' ')), head: norm(row[2] + (row[5] || '')) };
+  }));
+  function searchQs(q) {
+    const m = q.trim().match(/^(\d{2})\s*회?\s*(\d{1,2})?\s*번?$/);
+    if (m) return Q_INDEX.filter((x) => x.round === +m[1] && (!m[2] || x.num === +m[2])).slice(0, 50);
+    const toks = q.trim().split(/\s+/).map(norm).filter(Boolean);
+    if (!toks.length) return [];
+    return Q_INDEX.filter((x) => toks.every((t) => x.hay.includes(t)))
+      .map((x) => ({ x, score: toks.filter((t) => x.head.includes(t)).length * 100 + (myWrong.has(x.id) ? 50 : 0) + x.round }))
+      .sort((a, b) => b.score - a.score).slice(0, 15).map((r) => r.x);
+  }
+  const qLabel = (id) => { const [r, n] = id.split('-'); return `${r}회 ${n}번`; };
+  const WMKEY = window.ATTEMPTS.key('weakMemo');
+  const weakMemo = () => window.UserStore.get(WMKEY, {}) || {};
+  let memoOpen = null; // 메모 편집 중인 틀린 개념 key
   const hlTok = (html, q) => q.trim().split(/\s+/).filter(Boolean).reduce((h, t) => h.split(/(<[^>]+>)/).map((seg) => (seg.startsWith('<') ? seg : seg.split(t).join(`<u>${t}</u>`))).join(''), html);
 
   // 문항 정보 → 객체
@@ -131,10 +152,22 @@
   }
 
   function render() {
-    const others = wrongs.filter((q) => !q.target);
-    const list = state.scope === 'all' ? wrongs : state.scope === 'other' ? others : targets;
+    // 보기 범위: 전체 / 날짜별(d:YYYY-MM-DD) / 회차별(79)
+    const dates = [...new Set(LOG.map((l) => l.date).filter(Boolean))].sort().reverse();
+    const eraRounds = LOG.map((l) => l.round).sort((a, b) => b - a);
+    const V = String(state.eraRound);
+    if (V !== 'all' && !(V.startsWith('d:') ? dates.includes(V.slice(2)) : eraRounds.includes(+V))) state.eraRound = 'all';
+    const view = String(state.eraRound);
+    const inView = (l) => view === 'all' || (view.startsWith('d:') ? l.date === view.slice(2) : l.round === +view);
+    const FLOG = LOG.filter(inView);
+    const viewName = view === 'all' ? '전체 기록' : view.startsWith('d:') ? `${view.slice(2)}에 푼 ${FLOG.map((l) => l.round + '회').join('·')}` : `${view}회`;
+    const vWrongs = wrongs.filter((q) => FLOG.some((l) => l.round === q.round));
+    const vTargets = vWrongs.filter((q) => q.target);
+    const others = vWrongs.filter((q) => !q.target);
+    const list = state.scope === 'all' ? vWrongs : state.scope === 'other' ? others : vTargets;
     const shown = state.hideDone ? list.filter((q) => !mastered.has(q.id)) : list;
     const doneN = targets.filter((q) => mastered.has(q.id)).length;
+    const othersAll = wrongs.filter((q) => !q.target);
 
     // 회차 기록
     const rounds = LOG.map((l) => {
@@ -142,8 +175,8 @@
       const lost = qs.reduce((a, q) => a + (q.pt || (QKEY[l.round] ? QKEY[l.round].pt[q.num - 1] : 0)), 0);
       const unknown = qs.some((q) => !q.pt);
       const tg = qs.filter((q) => q.target).map((q) => q.num);
-      return `<tr>
-        <th>${l.round}회</th><td>${esc(l.date || '')}</td>
+      return `<tr class="${inView(l) && view !== 'all' ? 'in-view' : ''}">
+        <th><button type="button" class="r-link" data-era-round="${l.round}" title="${l.round}회만 보기">${l.round}회</button></th><td>${l.date ? `<button type="button" class="r-link" data-era-round="d:${esc(l.date)}" title="이 날 푼 기록만 보기">${esc(l.date)}</button>` : ''}</td>
         <td><b>${l.wrong.length}</b> / 50</td>
         <td>${l.score != null ? `<b>${l.score}</b>점` : `${unknown ? '약 ' : ''}<b>${100 - lost}</b>점`}${l.src === 'claude' ? ' <small class="src">Claude 기록</small>' : l.answers ? ' <small class="src">기출 풀기</small>' : ''}</td>
         <td>${l.total ? mmss(l.total) : '-'}</td>
@@ -153,10 +186,8 @@
     }).join('');
 
     // 시대별 약점: 푼 회차의 전체 문항을 시대별로 → 출제 수 · 틀린 수
-    const eraRounds = LOG.map((l) => l.round).sort((a, b) => b - a);
-    if (state.eraRound !== 'all' && !eraRounds.includes(+state.eraRound)) state.eraRound = 'all';
     const byEra = new Map();
-    LOG.filter((l) => state.eraRound === 'all' || l.round === +state.eraRound).forEach((l) => {
+    FLOG.forEach((l) => {
       const wr = new Set(l.wrong);
       const rows = EXAM[l.round] || (QKEY[l.round] ? QKEY[l.round].ans.map((_, i) => [i + 1, '']) : []);
       rows.forEach((row) => {
@@ -174,12 +205,17 @@
       <li class="${v.all >= 2 && v.wr / v.all >= 0.5 ? 'weak' : ''}"><span class="bar-name" title="${esc(periodTip(e))}">${esc(periodName(e))}</span>
         <span class="bar-track"><span class="bar-all" style="width:${(v.all / maxAll) * 100}%"></span><span class="bar-wr" style="width:${(v.wr / maxAll) * 100}%"></span><span class="bar-tg" style="width:${(v.tg / maxAll) * 100}%"></span></span>
         <span class="bar-n">출제 ${v.all} · 틀림 <b>${v.wr}</b> <i>${pct(v.wr, v.all)}%</i></span></li>`).join('');
-    const eraSeg = eraRounds.length ? `<div class="r-tools"><span class="seg">${['all', ...eraRounds].map((r) => `<button data-era-round="${r}" aria-pressed="${String(state.eraRound) === String(r)}">${r === 'all' ? `전체 회차 (${eraRounds.length})` : `${r}회`}</button>`).join('')}</span>
-      <p class="r-scope-note">${state.eraRound === 'all' ? `푼 ${eraRounds.length}개 회차` : `${state.eraRound}회`} 전체 ${sumAll}문항 중 <b>${sumWr}</b>문항 틀림 (오답률 ${pct(sumWr, sumAll)}%)</p></div>` : '';
+    const btn = (v, label, n) => `<button data-era-round="${esc(v)}" aria-pressed="${view === v}">${label}${n ? ` <small>${n}</small>` : ''}</button>`;
+    const eraSeg = eraRounds.length ? `<section class="r-view">
+      <div class="r-view-row"><span class="r-view-lab">전체</span><span class="r-chips">${btn('all', `전체 기록`, `${eraRounds.length}회차`)}</span></div>
+      ${dates.length ? `<div class="r-view-row"><span class="r-view-lab">날짜별</span><span class="r-chips">${dates.map((d) => { const ls = LOG.filter((l) => l.date === d); return btn('d:' + d, d.replace(/^\d{4}-/, '').replace('-', '/'), `${ls.map((l) => l.round + '회').join('·')} · 틀림 ${ls.reduce((a, l) => a + l.wrong.length, 0)}`); }).join('')}</span></div>` : ''}
+      <div class="r-view-row"><span class="r-view-lab">회차별</span><span class="r-chips">${eraRounds.map((r) => btn(String(r), `${r}회`)).join('')}</span></div>
+      <p class="r-view-sum"><b>${esc(viewName)}</b> — ${FLOG.length}개 회차 ${sumAll}문항 중 <b>${sumWr}</b>문항 틀림 (오답률 ${pct(sumWr, sumAll)}%) · 복습 대상 ${vTargets.length} · 어렵거나 빈도 낮음 ${others.length}</p>
+    </section>` : '';
 
     // 내가 약한 개념: 같은 기출 포인트(없으면 주제)끼리 묶어 출제 수 대비 틀린 수
     const byPt = new Map();
-    LOG.filter((l) => state.eraRound === 'all' || l.round === +state.eraRound).forEach((l) => {
+    FLOG.forEach((l) => {
       const wr = new Set(l.wrong);
       (EXAM[l.round] || []).forEach((row) => {
         const q = Q(l.round, row[0]);
@@ -199,22 +235,33 @@
         <label>시대<select name="era"><option value="">선택 안 함</option>${PERIODS.map(([n]) => `<option${editing.era === n ? ' selected' : ''}>${esc(n)}</option>`).join('')}<option${editing.era === '기타' ? ' selected' : ''}>기타</option></select></label>
         <label class="wide wk-search">약한 개념 <small>— 키워드로 기출 포인트 검색 (예: 신민회, 별무반, 독립 협회 · 띄어쓰기 상관없음)</small><input name="text" required maxlength="200" autocomplete="off" placeholder="키워드를 입력하면 기출 포인트를 찾아 줘요" value="${esc(editing.text || '')}"><input type="hidden" name="pt" value="${esc(editing.pt || '')}"><span class="wk-linked"${editing.pt ? '' : ' hidden'}>✓ 기출 포인트와 연결됨</span><ul class="wk-sug" hidden></ul></label>
         <label class="wide">메모 <small>(헷갈리는 점, 외우는 요령 등)</small><textarea name="memo" rows="2" maxlength="500" placeholder="예) 신간회(1927)와 헷갈림 — 신민회는 1907년 비밀 결사">${esc(editing.memo || '')}</textarea></label>
-        <label>관련 문제 <small>(선택)</small><input name="ref" maxlength="60" placeholder="예) 79회 37번" value="${esc(editing.ref || '')}"></label>
+        <div class="wide wk-search wk-refs"><span class="wk-lab">관련 문제 <small>— 키워드나 회차로 검색 (예: 신민회, 79회, 79 37)</small></span>
+          <span class="wk-chips">${(editing.refs || []).map((id) => `<button type="button" class="wk-chip" data-ref-del="${id}">${qLabel(id)} ✕</button>`).join('')}</span>
+          <input name="qsearch" autocomplete="off" placeholder="문제 검색 — 골라서 여러 개 넣을 수 있어요"><input type="hidden" name="refs" value="${esc((editing.refs || []).join(','))}">
+          <span class="wk-ptqs"></span>
+          <ul class="wk-sug wk-qsug" hidden></ul>${editing.ref ? `<small class="wk-old">예전 메모: ${esc(editing.ref)}</small>` : ''}</div>
         <div class="wk-form-btns"><button type="submit" class="primary">${weakForm ? '수정 저장' : '추가'}</button><button type="button" data-wk="cancel">취소</button></div>
       </form>`;
     const mineHtml = mine.map((w) => `<li class="wk mine${w.done ? ' done' : ''}">
         <span class="wk-era">${esc(w.era || '직접 추가')}</span>
         <span class="wk-t">${w.pt && ptOf(w.pt) ? `<span class="rp-freq">${starTxt(ptOf(w.pt).stars)}</span>${ptOf(w.pt).html}` : esc(w.text)}${w.memo ? `<span class="wk-memo">${esc(w.memo)}</span>` : ''}</span>
-        <span class="wk-n"><span class="wk-mine">내가 추가</span>${w.ref ? ` · ${esc(w.ref)}` : ''}${w.pt && byPt.has(w.pt) ? ` · 출제 ${byPt.get(w.pt).all} · 틀림 <b>${byPt.get(w.pt).wrongs.length}</b>` : ''}</span>
+        <span class="wk-n"><span class="wk-mine">내가 추가</span>${w.ref && !(w.refs || []).length ? ` · ${esc(w.ref)}` : ''}${w.pt && byPt.has(w.pt) ? ` · 출제 ${byPt.get(w.pt).all} · 틀림 <b>${byPt.get(w.pt).wrongs.length}</b>` : ''}</span>
+        ${(w.refs || []).length ? `<span class="wk-qs">${w.refs.map((id) => `<button type="button" data-qview="${id}" class="${myWrong.has(id) ? 'wr' : ''}${mastered.has(id) ? ' m' : ''}" title="${myWrong.has(id) ? '내가 틀린 문제' : '문제 보기'}">${qLabel(id)}${myWrong.has(id) ? ' ✗' : ''}</button>`).join('')}</span>` : ''}
         <span class="wk-qs wk-act"><label class="chip-check"><input type="checkbox" data-wk-done="${w.id}" ${w.done ? 'checked' : ''}> 외웠어요</label><button type="button" data-wk-edit="${w.id}">수정</button><button type="button" data-wk-del="${w.id}">삭제</button></span></li>`).join('');
     const weakHtml = weak.map((v) => {
       const { q } = v; const p = q.pIdx >= 0 && GICHUL[q.pEra] ? GICHUL[q.pEra].pts[q.pIdx] : null;
       const per = periodName(periodOf(q.pIdx >= 0 ? q.pEra : q.era));
+      const ck = q.pIdx >= 0 ? `${q.pEra}#${q.pIdx}` : `t#${q.theme}`;
+      const memo = weakMemo()[ck] || '';
+      const memoUi = memoOpen === ck
+        ? `<span class="wk-memo-edit"><textarea data-wm-text="${esc(ck)}" rows="2" maxlength="500" placeholder="헷갈리는 점, 외우는 요령 등">${esc(memo)}</textarea><span><button type="button" class="primary" data-wm-save="${esc(ck)}">저장</button><button type="button" data-wm-cancel>취소</button></span></span>`
+        : memo ? `<span class="wk-memo">${esc(memo)}</span>` : '';
       return `<li class="wk${v.done ? ' done' : ''}">
         <span class="wk-era">${esc(per)}</span>
         <span class="wk-t">${p ? `<span class="rp-freq">${starTxt(Math.min(p[0], 3))}</span>${p[1]}` : `${esc(q.theme)} <small class="rp-none">기출 포인트 외</small>`}</span>
         <span class="wk-n">틀림 <b>${v.wrongs.length}</b> / 출제 ${v.all}${v.done ? ' · ✓ 외움' : ''}</span>
-        <span class="wk-qs">${v.wrongs.map((w) => `<button type="button" data-goto="${w.id}" class="${mastered.has(w.id) ? 'm' : ''}${w.target ? '' : ' off'}">${w.round}회 ${w.num}번</button>`).join('')}</span></li>`;
+        ${memoUi ? `<span class="wk-memo-row">${memoUi}</span>` : ''}
+        <span class="wk-qs">${v.wrongs.map((w) => `<button type="button" data-goto="${w.id}" class="${mastered.has(w.id) ? 'm' : ''}${w.target ? '' : ' off'}">${w.round}회 ${w.num}번</button>`).join('')}${memoOpen === ck ? '' : `<button type="button" class="wk-memo-btn" data-wm-open="${esc(ck)}">${memo ? '✎ 메모 수정' : '＋ 메모'}</button>`}</span></li>`;
     }).join('');
 
     // 암기 부족 포인트: 시대 → 기출 포인트 → 틀린 문항
@@ -251,7 +298,7 @@
         <div><b>${LOG.length}</b><span>푼 회차</span></div>
         <div><b>${wrongs.length}</b><span>틀린 문항</span></div>
         <div class="hl"><b>${targets.length}</b><span>복습 대상<br><small>★★ 이상 · 난이도 하·중</small></span></div>
-        <div><b>${others.length}</b><span>어렵거나 빈도 낮음<br><small>★ 또는 난이도 중상 이상</small></span></div>
+        <div><b>${othersAll.length}</b><span>어렵거나 빈도 낮음<br><small>★ 또는 난이도 중상 이상</small></span></div>
         <div><b>${doneN} / ${targets.length}</b><span>외운 문항</span></div>
       </section>
 
@@ -261,24 +308,26 @@
         <tbody>${rounds || '<tr><td colspan="7">아직 기록이 없어요</td></tr>'}</tbody>
       </table></div>
 
-      <h2 class="r-h">시대별 약점 <small>연한 막대 = 출제 문항, 중간 = 틀린 문항, 진한 막대 = 그중 복습 대상</small></h2>
+      <h2 class="r-h">보기 범위 <small>날짜·회차를 고르면 아래 시대별 약점·약한 개념·틀린 문제가 모두 그 범위로 바뀌어요</small></h2>
       ${eraSeg}
+
+      <h2 class="r-h">시대별 약점 <small>${esc(viewName)} · 연한 막대 = 출제 문항, 중간 = 틀린 문항, 진한 막대 = 그중 복습 대상</small></h2>
       <ul class="r-bars">${bars || '<li class="r-empty">아직 푼 회차가 없어요</li>'}</ul>
 
-      <h2 class="r-h">내가 약한 개념 <small>${state.eraRound === 'all' ? '푼 회차 전체' : state.eraRound + '회'} 기준 · 많이 틀린 순 · 번호를 누르면 문제로 이동</small></h2>
+      <h2 class="r-h">내가 약한 개념 <small>${esc(viewName)} 기준 · 많이 틀린 순 · 번호를 누르면 문제로 이동</small></h2>
       <div class="r-tools"><button type="button" class="wk-add" data-wk="add">＋ 약한 개념 직접 추가</button>${myWeak().length ? `<small class="r-scope-note">직접 추가 ${myWeak().length}개 · 기출 문제에서 찾은 개념 ${weak.length}개</small>` : ''}</div>
       ${formHtml}
       <ol class="r-weak">${mineHtml}${weakHtml || (mineHtml ? '' : '<li class="r-empty">틀린 개념이 없어요 🎉</li>')}</ol>
 
-      <h2 class="r-h">암기가 부족한 기출 포인트</h2>
+      <h2 class="r-h">암기가 부족한 기출 포인트 <small>${esc(viewName)}</small></h2>
       <div class="r-tools">
-        <span class="seg"><button data-scope="target" aria-pressed="${state.scope === 'target'}">복습 대상만 (${targets.length})</button><button data-scope="other" aria-pressed="${state.scope === 'other'}" title="출제빈도 ★ 또는 난이도 중상·상·특">어렵거나 빈도 낮은 문제 (${others.length})</button><button data-scope="all" aria-pressed="${state.scope === 'all'}">틀린 문제 전체 (${wrongs.length})</button></span>
+        <span class="seg"><button data-scope="target" aria-pressed="${state.scope === 'target'}">복습 대상만 (${vTargets.length})</button><button data-scope="other" aria-pressed="${state.scope === 'other'}" title="출제빈도 ★ 또는 난이도 중상·상·특">어렵거나 빈도 낮은 문제 (${others.length})</button><button data-scope="all" aria-pressed="${state.scope === 'all'}">틀린 문제 전체 (${vWrongs.length})</button></span>
         ${state.scope === 'other' ? `<p class="r-scope-note">복습 대상(★★ 이상·난이도 하·중)에서 빠진 문제예요. 난이도가 높은 문제 ${others.filter((q) => !EASY.includes(q.diff)).length}개, 출제빈도가 낮은 문제(★) ${others.filter((q) => q.stars < MIN_STARS).length}개 (겹치는 문제 포함)</p>` : ''}
         <label class="chip-check"><input type="checkbox" id="hide-done" ${state.hideDone ? 'checked' : ''}> 외운 문항 숨기기</label>
         <label class="chip-check"><input type="checkbox" id="open-all" ${state.openAll ? 'checked' : ''}> 정답 도출 포인트 모두 펼치기</label>
       </div>
       ${pointsHtml || '<p class="r-empty">모두 외웠어요! 🎉</p>'}
-      <p class="r-note">정답 선지·지문은 국사편찬위원회 한국사능력검정시험 심화 문항에서 발췌했어요. 새 회차를 풀면 Claude에게 회차와 틀린 번호를 알려 주세요. ‘외웠어요’ 표시는 이 브라우저에만 저장돼요.</p>`;
+      <p class="r-note">정답 선지·지문은 국사편찬위원회 한국사능력검정시험 심화 문항에서 발췌했어요. 새 회차를 풀면 Claude에게 회차와 틀린 번호를 알려 주세요. 로그인하면 풀이 기록·메모·‘외웠어요’ 표시가 계정에 저장돼요.</p>`;
   }
 
   document.addEventListener('click', (e) => {
@@ -293,7 +342,12 @@
     const im = e.target.closest('[data-import]');
     if (im) { if (im.dataset.import === 'yes') window.ATTEMPTS.importMyLog(); else window.ATTEMPTS.dismissImport(); location.reload(); return; }
     const er = e.target.closest('button[data-era-round]');
-    if (er) { state.eraRound = er.dataset.eraRound; store.set('reviewEraRound', state.eraRound); const y = window.scrollY; render(); window.scrollTo(0, y); return; }
+    if (er) {
+      const fromTable = !!er.closest('.r-table');
+      state.eraRound = er.dataset.eraRound; store.set('reviewEraRound', state.eraRound); rerender();
+      if (fromTable) document.querySelector('.r-view')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      return;
+    }
     const wk = e.target.closest('[data-wk], [data-wk-edit], [data-wk-del]');
     if (wk) {
       if (wk.dataset.wk === 'add') weakForm = '';
@@ -305,9 +359,25 @@
         saveWeak(myWeak().filter((x) => x.id !== w.id)); if (weakForm === w.id) weakForm = null;
       }
       const y = window.scrollY; render(); window.scrollTo(0, y);
-      const f = document.querySelector('#wk-form [name="text"]'); if (f) f.focus({ preventScroll: true });
+      const f = document.querySelector('#wk-form [name="text"]'); if (f) { showPtQs(f.form); f.focus({ preventScroll: true }); }
       return;
     }
+    const qv = e.target.closest('[data-qview]');
+    if (qv) { openQView(qv.dataset.qview); return; }
+    if (e.target.closest('.qv-x') || e.target.classList.contains('qv')) { closeQView(); return; }
+    const wo = e.target.closest('[data-wm-open]');
+    if (wo) { memoOpen = wo.dataset.wmOpen; rerender(); const t = document.querySelector('[data-wm-text]'); if (t) t.focus(); return; }
+    const ws = e.target.closest('[data-wm-save]');
+    if (ws) {
+      const k = ws.dataset.wmSave; const t = document.querySelector('[data-wm-text]').value.trim();
+      const m = weakMemo(); if (t) m[k] = t; else delete m[k]; window.UserStore.set(WMKEY, m);
+      memoOpen = null; rerender(); return;
+    }
+    if (e.target.closest('[data-wm-cancel]')) { memoOpen = null; rerender(); return; }
+    const rd = e.target.closest('[data-ref-del]');
+    if (rd) { setRefs(rd.closest('form'), getRefs(rd.closest('form')).filter((x) => x !== rd.dataset.refDel)); return; }
+    const ra = e.target.closest('[data-ref-add]');
+    if (ra) { const f = ra.closest('form'); setRefs(f, [...new Set([...getRefs(f), ra.dataset.refAdd])]); return; }
     const go = e.target.closest('button[data-goto]');
     if (go) {
       const sel = `.rq[data-id="${go.dataset.goto}"]`;
@@ -328,6 +398,39 @@
       t.textContent = on ? '정답·도출 포인트 접기 ▴' : '정답·도출 포인트 보기 ▾';
     }
   });
+  const rerender = () => { const y = window.scrollY; render(); window.scrollTo(0, y); };
+  // 문제 미리보기 창
+  function openQView(id) {
+    const [r, n] = id.split('-').map(Number);
+    let box = document.getElementById('qv');
+    if (!box) { box = document.createElement('div'); box.id = 'qv'; box.className = 'qv'; document.body.appendChild(box); }
+    openSet.add(id);
+    box.innerHTML = `<div class="qv-box"><button type="button" class="qv-x" aria-label="닫기">✕</button>${myWrong.has(id) ? '<p class="qv-tag">내가 틀린 문제</p>' : ''}<ol class="rq-list">${qCard({ ...Q(r, n), target: true })}</ol></div>`;
+    box.hidden = false; document.body.classList.add('qv-on');
+  }
+  function closeQView() { const b = document.getElementById('qv'); if (b) b.hidden = true; document.body.classList.remove('qv-on'); }
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !document.getElementById('qv')?.hidden) closeQView(); });
+  // 관련 문제 선택
+  const getRefs = (f) => String(f.refs.value || '').split(',').filter(Boolean);
+  function setRefs(f, ids) {
+    f.refs.value = ids.join(',');
+    f.querySelector('.wk-chips').innerHTML = ids.map((id) => `<button type="button" class="wk-chip" data-ref-del="${id}">${qLabel(id)} ✕</button>`).join('');
+    showPtQs(f);
+    if (f.qsearch.value.trim()) showQSug(f.qsearch);
+  }
+  // 연결된 기출 포인트가 나온 문제를 바로 넣을 수 있게
+  function showPtQs(f) {
+    const pt = f.pt.value; const have = new Set(getRefs(f));
+    const qs = pt ? Q_INDEX.filter((x) => x.pt === pt && !have.has(x.id)).sort((a, b) => b.round - a.round) : [];
+    f.querySelector('.wk-ptqs').innerHTML = qs.length ? `<small>이 기출 포인트가 나온 문제:</small> ${qs.map((x) => `<button type="button" class="wk-chip add${myWrong.has(x.id) ? ' wr' : ''}" data-ref-add="${x.id}">＋ ${qLabel(x.id)}${myWrong.has(x.id) ? ' ✗' : ''}</button>`).join('')}` : '';
+  }
+  function showQSug(inp) {
+    const f = inp.form; const ul = f.querySelector('.wk-qsug'); const have = new Set(getRefs(f));
+    const res = searchQs(inp.value); sugIdx = -1;
+    ul.innerHTML = res.length ? res.map((x) => `<li data-q="${x.id}"><span class="wk-sug-era">${qLabel(x.id)}</span>${hlTok(esc(x.theme), inp.value)}${x.ans ? ` <small class="wk-have">· ${hlTok(esc(x.ans), inp.value)}</small>` : ''}${myWrong.has(x.id) ? ' <small class="wk-wr">✗ 내가 틀림</small>' : ''}${have.has(x.id) ? ' <small class="wk-have">· 추가됨</small>' : ''}</li>`).join('')
+      : inp.value.trim() ? '<li class="none">찾는 문제가 없어요</li>' : '';
+    ul.hidden = !ul.innerHTML;
+  }
   // 약한 개념 검색 자동완성
   let sugIdx = -1;
   function showSug(inp) {
@@ -341,33 +444,42 @@
   function pickSug(form, key) {
     const x = ptOf(key); if (!x) return;
     form.text.value = x.plain; form.pt.value = key; form.era.value = periodName(periodOf(x.e));
-    form.querySelector('.wk-linked').hidden = false; form.querySelector('.wk-sug').hidden = true;
+    form.querySelector('.wk-linked').hidden = false; form.querySelector('.wk-sug').hidden = true; showPtQs(form);
     form.memo.focus();
   }
   document.addEventListener('input', (e) => {
+    if (e.target.name === 'qsearch' && e.target.closest('#wk-form')) { showQSug(e.target); return; }
     if (e.target.name !== 'text' || !e.target.closest('#wk-form')) return;
     const f = e.target.form; f.pt.value = ''; f.querySelector('.wk-linked').hidden = true; showSug(e.target);
   });
   document.addEventListener('keydown', (e) => {
-    if (e.target.name !== 'text' || !e.target.closest('#wk-form')) return;
-    const ul = e.target.form.querySelector('.wk-sug'); const items = [...ul.querySelectorAll('li[data-pt]')];
+    const isQ = e.target.name === 'qsearch';
+    if (!(e.target.name === 'text' || isQ) || !e.target.closest('#wk-form')) return;
+    const ul = e.target.form.querySelector(isQ ? '.wk-qsug' : '.wk-sug'); const items = [...ul.querySelectorAll(isQ ? 'li[data-q]' : 'li[data-pt]')];
+    if (isQ && e.key === 'Enter') e.preventDefault();
     if (ul.hidden || !items.length) return;
     if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
       e.preventDefault(); sugIdx = (sugIdx + (e.key === 'ArrowDown' ? 1 : -1) + items.length) % items.length;
       items.forEach((li, i) => li.classList.toggle('on', i === sugIdx)); items[sugIdx].scrollIntoView({ block: 'nearest' });
-    } else if (e.key === 'Enter') { e.preventDefault(); pickSug(e.target.form, items[Math.max(0, sugIdx)].dataset.pt); }
+    } else if (e.key === 'Enter') {
+      e.preventDefault(); const it = items[Math.max(0, sugIdx)];
+      if (isQ) { const f = e.target.form; setRefs(f, [...new Set([...getRefs(f), it.dataset.q])]); } else pickSug(e.target.form, it.dataset.pt);
+    }
     else if (e.key === 'Escape') ul.hidden = true;
   });
   document.addEventListener('mousedown', (e) => {
+    const lq = e.target.closest('.wk-qsug li[data-q]');
+    if (lq) { e.preventDefault(); const f = lq.closest('form'); setRefs(f, [...new Set([...getRefs(f), lq.dataset.q])]); return; }
     const li = e.target.closest('.wk-sug li[data-pt]');
     if (li) { e.preventDefault(); pickSug(li.closest('form'), li.dataset.pt); return; }
-    document.querySelectorAll('.wk-sug').forEach((ul) => { if (!e.target.closest('.wk-search')) ul.hidden = true; });
+    document.querySelectorAll('.wk-sug').forEach((ul) => { if (e.target.closest('.wk-search') !== ul.closest('.wk-search')) ul.hidden = true; });
   });
   document.addEventListener('submit', (e) => {
     if (e.target.id !== 'wk-form') return;
     e.preventDefault();
     const fd = new FormData(e.target);
-    const v = { era: fd.get('era'), text: String(fd.get('text')).trim(), memo: String(fd.get('memo')).trim(), ref: String(fd.get('ref')).trim(), pt: fd.get('pt') || '' };
+    const v = { era: fd.get('era'), text: String(fd.get('text')).trim(), memo: String(fd.get('memo')).trim(), pt: fd.get('pt') || '', refs: String(fd.get('refs') || '').split(',').filter(Boolean) };
+    if (v.refs.length) v.ref = '';
     if (!v.text) return;
     const list = myWeak();
     if (weakForm) saveWeak(list.map((w) => (w.id === weakForm ? { ...w, ...v } : w)));

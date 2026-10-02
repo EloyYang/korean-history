@@ -934,3 +934,43 @@ a.brand-mark { text-decoration: none; }
 .r-bars li.r-empty { display: block; }
 .wk-sug-era { display: inline-block; font-size: 11px; color: var(--muted); border: 1px solid var(--line); border-radius: 999px; padding: 0 6px; margin-right: 6px; }
 .wk-have { color: var(--muted); }
+.wk-refs { display: flex; flex-direction: column; gap: 5px; font-size: 12.5px; color: var(--muted); }
+.wk-refs input[name="qsearch"] { font: inherit; font-size: 14px; color: var(--text); background: var(--surface-2); border: 1px solid var(--line); border-radius: 8px; padding: 6px 9px; }
+.wk-chips, .wk-ptqs { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; }
+.wk-chips:empty, .wk-ptqs:empty { display: none; }
+.wk-chip { font-size: 12px; padding: 2px 9px; border-radius: 999px; border: 1px solid var(--accent); background: var(--accent); color: #fff; cursor: pointer; }
+.wk-chip.add { background: transparent; color: var(--accent); border-style: dashed; }
+.wk-chip.add:hover { background: var(--accent-soft); }
+.wk-old { font-size: 11.5px; }
+.wk-wr { color: var(--accent); font-weight: 700; }
+.wk-qs button.wr { background: var(--accent-soft); }
+.wk-memo-row { grid-column: 2 / -1; }
+.wk-memo-row .wk-memo { margin: 0; padding: 6px 9px; border-radius: 8px; background: var(--surface-2); color: var(--text); }
+.wk-memo-edit { display: flex; flex-direction: column; gap: 6px; }
+.wk-memo-edit textarea { font: inherit; font-size: 13.5px; color: var(--text); background: var(--surface-2); border: 1px solid var(--accent); border-radius: 8px; padding: 6px 9px; resize: vertical; }
+.wk-memo-edit span { display: flex; gap: 6px; justify-content: flex-end; }
+.wk-memo-edit button { font-size: 12.5px; padding: 4px 12px; border-radius: 999px; border: 1px solid var(--line); background: var(--surface-2); color: var(--text); cursor: pointer; }
+.wk-memo-edit .primary { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 700; }
+.wk-qs .wk-memo-btn { border-color: var(--line); color: var(--muted); }
+.wk-qs .wk-memo-btn:hover { background: var(--surface-2); color: var(--text); }
+.qv { position: fixed; inset: 0; z-index: 1000; background: rgba(20, 15, 10, .55); display: flex; justify-content: center; align-items: flex-start; padding: 24px 16px; overflow-y: auto; }
+.qv[hidden] { display: none; }
+.qv-box { position: relative; width: min(760px, 100%); background: var(--bg); border-radius: var(--radius); padding: 14px; box-shadow: var(--shadow); }
+.qv-box .rq-done { display: none; }
+.qv-x { position: absolute; top: 8px; right: 8px; z-index: 2; width: 32px; height: 32px; border-radius: 50%; border: 1px solid var(--line); background: var(--surface); color: var(--text); font-size: 15px; cursor: pointer; }
+.qv-tag { margin: 0 0 6px; font-size: 12px; font-weight: 700; color: var(--accent); }
+body.qv-on { overflow: hidden; }
+@media (max-width: 600px) { .wk-memo-row { grid-column: 1 / -1; } .qv { padding: 10px 8px; } }
+.r-view { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 10px 12px; display: grid; gap: 8px; }
+.r-view-row { display: grid; grid-template-columns: 56px minmax(0, 1fr); gap: 8px; align-items: start; }
+.r-view-lab { font-size: 12px; color: var(--muted); padding-top: 5px; }
+.r-chips { display: flex; flex-wrap: wrap; gap: 5px; }
+.r-chips button { font-size: 12.5px; padding: 4px 11px; border-radius: 999px; border: 1px solid var(--line); background: var(--surface-2); color: var(--text); cursor: pointer; }
+.r-chips button small { color: var(--muted); font-size: 11px; margin-left: 2px; }
+.r-chips button[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: #fff; }
+.r-chips button[aria-pressed="true"] small { color: rgba(255, 255, 255, .8); }
+.r-view-sum { margin: 2px 0 0; font-size: 13px; color: var(--muted); }
+.r-view-sum b { color: var(--accent); }
+.r-link { font: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: pointer; text-decoration: underline dotted; text-underline-offset: 3px; }
+.r-link:hover { color: var(--accent); }
+.r-table tr.in-view th, .r-table tr.in-view td { background: var(--accent-soft); }
