@@ -38,6 +38,29 @@
   const myWeak = () => window.UserStore.get(WKEY, []) || [];
   const saveWeak = (list) => window.UserStore.set(WKEY, list);
   let weakForm = null; // null = 닫힘, '' = 새로 추가, id = 수정 중
+  // 직접 추가 검색용: 모든 기출 포인트
+  const strip = (h) => String(h).replace(/<[^>]+>/g, '').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>');
+  const PT_INDEX = Object.entries(GICHUL).flatMap(([e, g]) => (g.pts || []).map((p, i) => ({
+    key: `${e}#${i}`, e, i, html: p[1], plain: strip(p[1]), stars: Math.min(p[0], 3), era: eraName(e),
+  })));
+  const ptOf = (key) => PT_INDEX.find((x) => x.key === key);
+  // 기출 문장(정답 선지·주제)도 검색되게: 해당 포인트에 붙여 둔다
+  Object.values(EXAM).forEach((rows) => rows.forEach((r) => {
+    if (!(r[7] >= 0)) return; const x = ptOf(`${r[6]}#${r[7]}`); if (x) x.extra = (x.extra || '') + ' ' + r[2] + ' ' + (r[8] || '') + ' ' + (r[5] || '');
+  }));
+  const norm = (t) => t.toLowerCase().replace(/[\s·.,()〈〉<>'"‘’“”\-–—:/]/g, '');
+  function searchPts(q) {
+    const toks = q.trim().split(/\s+/).map(norm).filter(Boolean);
+    if (!toks.length) return [];
+    return PT_INDEX.map((x) => {
+      const main = norm(x.plain + x.era + periodName(periodOf(x.e)));
+      const hay = main + norm(x.extra || '');
+      if (!toks.every((t) => hay.includes(t))) return null;
+      const inMain = toks.filter((t) => main.includes(t)).length;
+      return { x, sub: inMain < toks.length, score: inMain * 100 + x.stars * 10 };
+    }).filter(Boolean).sort((a, b) => b.score - a.score).slice(0, 12).map((r) => ({ ...r.x, sub: r.sub }));
+  }
+  const hlTok = (html, q) => q.trim().split(/\s+/).filter(Boolean).reduce((h, t) => h.split(/(<[^>]+>)/).map((seg) => (seg.startsWith('<') ? seg : seg.split(t).join(`<u>${t}</u>`))).join(''), html);
 
   // 문항 정보 → 객체
   const Q = (round, num) => {
@@ -174,15 +197,15 @@
     const editing = weakForm ? myWeak().find((w) => w.id === weakForm) || {} : {};
     const formHtml = weakForm == null ? '' : `<form class="wk-form" id="wk-form">
         <label>시대<select name="era"><option value="">선택 안 함</option>${PERIODS.map(([n]) => `<option${editing.era === n ? ' selected' : ''}>${esc(n)}</option>`).join('')}<option${editing.era === '기타' ? ' selected' : ''}>기타</option></select></label>
-        <label class="wide">약한 개념<input name="text" required maxlength="200" placeholder="예) 신민회: 대성 학교·오산 학교, 105인 사건으로 해체" value="${esc(editing.text || '')}"></label>
+        <label class="wide wk-search">약한 개념 <small>— 키워드로 기출 포인트 검색 (예: 신민회, 별무반, 독립 협회 · 띄어쓰기 상관없음)</small><input name="text" required maxlength="200" autocomplete="off" placeholder="키워드를 입력하면 기출 포인트를 찾아 줘요" value="${esc(editing.text || '')}"><input type="hidden" name="pt" value="${esc(editing.pt || '')}"><span class="wk-linked"${editing.pt ? '' : ' hidden'}>✓ 기출 포인트와 연결됨</span><ul class="wk-sug" hidden></ul></label>
         <label class="wide">메모 <small>(헷갈리는 점, 외우는 요령 등)</small><textarea name="memo" rows="2" maxlength="500" placeholder="예) 신간회(1927)와 헷갈림 — 신민회는 1907년 비밀 결사">${esc(editing.memo || '')}</textarea></label>
         <label>관련 문제 <small>(선택)</small><input name="ref" maxlength="60" placeholder="예) 79회 37번" value="${esc(editing.ref || '')}"></label>
         <div class="wk-form-btns"><button type="submit" class="primary">${weakForm ? '수정 저장' : '추가'}</button><button type="button" data-wk="cancel">취소</button></div>
       </form>`;
     const mineHtml = mine.map((w) => `<li class="wk mine${w.done ? ' done' : ''}">
         <span class="wk-era">${esc(w.era || '직접 추가')}</span>
-        <span class="wk-t">${esc(w.text)}${w.memo ? `<span class="wk-memo">${esc(w.memo)}</span>` : ''}</span>
-        <span class="wk-n"><span class="wk-mine">내가 추가</span>${w.ref ? ` · ${esc(w.ref)}` : ''}</span>
+        <span class="wk-t">${w.pt && ptOf(w.pt) ? `<span class="rp-freq">${starTxt(ptOf(w.pt).stars)}</span>${ptOf(w.pt).html}` : esc(w.text)}${w.memo ? `<span class="wk-memo">${esc(w.memo)}</span>` : ''}</span>
+        <span class="wk-n"><span class="wk-mine">내가 추가</span>${w.ref ? ` · ${esc(w.ref)}` : ''}${w.pt && byPt.has(w.pt) ? ` · 출제 ${byPt.get(w.pt).all} · 틀림 <b>${byPt.get(w.pt).wrongs.length}</b>` : ''}</span>
         <span class="wk-qs wk-act"><label class="chip-check"><input type="checkbox" data-wk-done="${w.id}" ${w.done ? 'checked' : ''}> 외웠어요</label><button type="button" data-wk-edit="${w.id}">수정</button><button type="button" data-wk-del="${w.id}">삭제</button></span></li>`).join('');
     const weakHtml = weak.map((v) => {
       const { q } = v; const p = q.pIdx >= 0 && GICHUL[q.pEra] ? GICHUL[q.pEra].pts[q.pIdx] : null;
@@ -305,11 +328,46 @@
       t.textContent = on ? '정답·도출 포인트 접기 ▴' : '정답·도출 포인트 보기 ▾';
     }
   });
+  // 약한 개념 검색 자동완성
+  let sugIdx = -1;
+  function showSug(inp) {
+    const form = inp.form; const ul = form.querySelector('.wk-sug');
+    const res = searchPts(inp.value); sugIdx = -1;
+    const have = new Set(myWeak().filter((w) => w.id !== weakForm).map((w) => w.pt).filter(Boolean));
+    ul.innerHTML = res.length ? res.map((x) => `<li data-pt="${x.key}"><span class="wk-sug-era">${esc(periodName(periodOf(x.e)))}</span><span class="rp-freq">${starTxt(x.stars)}</span>${hlTok(x.html, inp.value)}${x.sub ? ' <small class="wk-have">· 기출 문장에서 찾음</small>' : ''}${have.has(x.key) ? ' <small class="wk-have">이미 추가됨</small>' : ''}</li>`).join('')
+      : inp.value.trim() ? '<li class="none">일치하는 기출 포인트가 없어요 — 입력한 내용 그대로 추가돼요</li>' : '';
+    ul.hidden = !ul.innerHTML;
+  }
+  function pickSug(form, key) {
+    const x = ptOf(key); if (!x) return;
+    form.text.value = x.plain; form.pt.value = key; form.era.value = periodName(periodOf(x.e));
+    form.querySelector('.wk-linked').hidden = false; form.querySelector('.wk-sug').hidden = true;
+    form.memo.focus();
+  }
+  document.addEventListener('input', (e) => {
+    if (e.target.name !== 'text' || !e.target.closest('#wk-form')) return;
+    const f = e.target.form; f.pt.value = ''; f.querySelector('.wk-linked').hidden = true; showSug(e.target);
+  });
+  document.addEventListener('keydown', (e) => {
+    if (e.target.name !== 'text' || !e.target.closest('#wk-form')) return;
+    const ul = e.target.form.querySelector('.wk-sug'); const items = [...ul.querySelectorAll('li[data-pt]')];
+    if (ul.hidden || !items.length) return;
+    if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+      e.preventDefault(); sugIdx = (sugIdx + (e.key === 'ArrowDown' ? 1 : -1) + items.length) % items.length;
+      items.forEach((li, i) => li.classList.toggle('on', i === sugIdx)); items[sugIdx].scrollIntoView({ block: 'nearest' });
+    } else if (e.key === 'Enter') { e.preventDefault(); pickSug(e.target.form, items[Math.max(0, sugIdx)].dataset.pt); }
+    else if (e.key === 'Escape') ul.hidden = true;
+  });
+  document.addEventListener('mousedown', (e) => {
+    const li = e.target.closest('.wk-sug li[data-pt]');
+    if (li) { e.preventDefault(); pickSug(li.closest('form'), li.dataset.pt); return; }
+    document.querySelectorAll('.wk-sug').forEach((ul) => { if (!e.target.closest('.wk-search')) ul.hidden = true; });
+  });
   document.addEventListener('submit', (e) => {
     if (e.target.id !== 'wk-form') return;
     e.preventDefault();
     const fd = new FormData(e.target);
-    const v = { era: fd.get('era'), text: String(fd.get('text')).trim(), memo: String(fd.get('memo')).trim(), ref: String(fd.get('ref')).trim() };
+    const v = { era: fd.get('era'), text: String(fd.get('text')).trim(), memo: String(fd.get('memo')).trim(), ref: String(fd.get('ref')).trim(), pt: fd.get('pt') || '' };
     if (!v.text) return;
     const list = myWeak();
     if (weakForm) saveWeak(list.map((w) => (w.id === weakForm ? { ...w, ...v } : w)));
