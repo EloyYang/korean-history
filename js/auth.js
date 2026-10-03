@@ -33,11 +33,11 @@ function renderBox(state) {
   el.innerHTML = `
     <button type="button" class="auth-me" aria-haspopup="true" title="${esc(u.email)}">
       ${u.photo ? `<img src="${esc(u.photo)}" alt="" referrerpolicy="no-referrer">` : `<span class="auth-ini">${initial}</span>`}
-      <span class="auth-name">${esc(u.name || u.email)}</span><span class="auth-sync" title="동기화됨">☁︎</span>
+      <span class="auth-name">${esc(u.name || u.email)}</span>${S.syncError ? '<span class="auth-sync err" title="동기화 실패">⚠</span>' : '<span class="auth-sync" title="동기화됨">☁︎</span>'}
     </button>
     <div class="auth-menu" hidden>
       <p>${esc(u.email)}</p>
-      <p class="auth-note">풀이 기록·오답·외운 문항이 이 계정에 저장돼요.</p>
+      ${S.syncError ? `<p class="auth-err"><b>계정에 저장하지 못하고 있어요</b><br>${esc(S.syncError)}<br><small>지금은 이 브라우저에만 저장돼요. 문제가 해결되면 다음 접속 때 자동으로 올라가요.</small></p>` : '<p class="auth-note">풀이 기록·오답·외운 문항이 이 계정에 저장돼요. 다른 기기에서는 접속(새로고침)할 때 맞춰져요.</p>'}
       <button type="button" class="auth-out">로그아웃</button>
     </div>`;
 }
@@ -84,28 +84,46 @@ if (!cfg || !cfg.apiKey) {
     localStorage.setItem('userstore.uid', u.uid);
 
     const col = F.collection(db, 'users', u.uid, 'data');
-    const push = (k, v, t) => F.setDoc(F.doc(col, docId(k)), { k, v: v == null ? null : v, t }).catch((err) => console.warn('동기화 실패', k, err));
+    const explain = (err) => {
+      const m = String((err && (err.message || err.code)) || err);
+      if (/not been used|disabled|does not exist|NOT_FOUND/i.test(m)) return 'Firebase 콘솔에서 Firestore 데이터베이스가 아직 만들어지지 않았어요.';
+      if (/permission|insufficient/i.test(m)) return 'Firestore 보안 규칙이 저장을 막고 있어요.';
+      return m.slice(0, 160);
+    };
+    const fail = (err) => { console.warn('동기화 실패', err); const msg = explain(err); if (S.syncError !== msg) { S.syncError = msg; renderBox('ready'); } };
+    const push = (k, v, t) => F.setDoc(F.doc(col, docId(k)), { k, v: v == null ? null : v, t })
+      .then(() => { S.setBase(k, t); if (S.syncError) { S.syncError = null; renderBox('ready'); } })
+      .catch(fail);
+    S.syncError = null;
     S.cloud = { push };
     renderBox('ready');
 
-    // 처음 맞추기: 더 최근 쪽을 남긴다
+    // 처음 맞추기: 한쪽만 바뀌었으면 최근 쪽을, 두 기기에서 모두 바뀌었으면 합친다
     let changed = false;
     try {
       const snap = await F.getDocs(col);
       const remote = {};
       snap.forEach((d) => { const x = d.data(); if (x && x.k) remote[x.k] = x; });
-      const m = S.meta();
-      Object.values(remote).forEach((r) => {
-        if (!m[r.k] || r.t > m[r.k]) {
-          if (S.getItem(r.k) !== r.v) changed = true;
-          S._applyRemote(r.k, r.v, r.t);
-        }
+      const m = S.meta(), b = S.base();
+      const keys = new Set([...S.syncedKeys(), ...Object.keys(m).filter(S.isSynced), ...Object.keys(remote)]);
+      keys.forEach((k) => {
+        const r = remote[k]; const lv = S.getItem(k); const lt = m[k] || (lv != null ? 1 : 0);
+        if (!r) { if (lv != null) push(k, lv, lt || Date.now()); return; }
+        if (r.v === lv) { S.setBase(k, Math.max(r.t, lt)); return; }
+        const localChanged = lv != null && lt > (b[k] || 0);
+        const remoteChanged = r.t > (b[k] || 0);
+        if (localChanged && remoteChanged && lv != null && r.v != null) {
+          const v = lt >= r.t ? S.merge(k, lv, r.v) : S.merge(k, r.v, lv);
+          const t = Date.now();
+          if (v !== lv) changed = true;
+          S._applyRemote(k, v, t); push(k, v, t);
+        } else if (r.t > lt) {
+          if (lv !== r.v) changed = true;
+          S._applyRemote(k, r.v, r.t); S.setBase(k, r.t);
+        } else push(k, lv, lt);
       });
-      const m2 = S.meta();
-      const keys = new Set([...S.syncedKeys(), ...Object.keys(m2).filter(S.isSynced)]);
-      keys.forEach((k) => { const r = remote[k]; if (!r || (m2[k] || 0) > r.t) push(k, S.getItem(k), m2[k] || Date.now()); });
     } catch (err) {
-      console.warn('기록을 불러오지 못했어요', err);
+      fail(err);
     }
     S._emit('sync');
     // 서버 기록으로 바뀐 게 있으면 화면을 한 번 새로 그린다

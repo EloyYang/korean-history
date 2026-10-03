@@ -1008,3 +1008,7 @@ body.qv-on { overflow: hidden; }
 .rq-slow-pt b { color: var(--accent); }
 .r-tools .seg { flex-wrap: wrap; gap: 4px; }
 .r-tools .seg button, .r-tools .seg button:first-child, .r-tools .seg button:last-child { border-radius: 999px; margin-left: 0; }
+.auth-sync.err { color: #e65100; font-weight: 900; }
+.auth-err { margin: 6px 0; padding: 8px 10px; border-radius: 8px; background: #fff3e0; color: #7a3d00; font-size: 12.5px; line-height: 1.5; }
+.auth-err small { color: #8a5a2b; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .auth-err { background: #3a2a14; color: #ffcc80; } :root:not([data-theme="light"]) .auth-err small { color: #d9a66a; } }
