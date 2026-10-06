@@ -1012,3 +1012,10 @@ body.qv-on { overflow: hidden; }
 .auth-err { margin: 6px 0; padding: 8px 10px; border-radius: 8px; background: #fff3e0; color: #7a3d00; font-size: 12.5px; line-height: 1.5; }
 .auth-err small { color: #8a5a2b; }
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .auth-err { background: #3a2a14; color: #ffcc80; } :root:not([data-theme="light"]) .auth-err small { color: #d9a66a; } }
+.sv-opts.ox li { padding: 5px 0; border-top: 1px dashed var(--line); font-weight: 500; color: var(--text); }
+.sv-opts.ox li:first-child { border-top: 0; }
+.sv-opts.ox b { font-weight: 700; }
+.sv-opts.ox small { font-size: 12.5px; line-height: 1.55; color: var(--muted); margin-top: 1px; }
+.sv-opts.ox li.ans b, .sv-opts.ox li.ans .n { color: var(--accent); }
+.sv-opts.ox li.ans small { color: var(--text); }
+.sv-opts.ox em { font-style: normal; font-size: 11px; font-weight: 700; padding: 0 6px; border-radius: 999px; background: var(--accent); color: #fff; vertical-align: 1px; }

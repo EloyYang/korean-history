@@ -121,6 +121,14 @@
     return `<div class="rq-memo"><p class="sv-h">내 메모</p>${m.q ? `<p class="m-q">${esc(m.q)}</p>` : ''}${m.o.some(Boolean) ? `<ul>${m.o.map((t, i) => (t ? `<li><b>${NUMS[i]}</b> ${esc(t)}</li>` : '')).join('')}</ul>` : ''}</div>`;
   }
 
+  // 선지별 포인트: 자세한 설명(OPTX) 우선, 없으면 예전 짧은 정리
+  const OPTX = window.OPTX || {};
+  function optList(q, sv, f, img) {
+    const ox = OPTX[q.id]; const right = QKEY[q.round] ? QKEY[q.round].ans[q.num - 1] : f ? f.ans + 1 : 0;
+    if (ox) return `<p class="sv-h">선지별 포인트</p><ol class="sv-opts ox">${ox.map((o, i) => { const [t, e] = o.split('|'); return `<li class="${i + 1 === right ? 'ans' : ''}"><span class="n">${NUMS[i]}</span><span><b>${esc(t)}</b>${i + 1 === right ? ' <em>정답</em>' : ''}<small>${esc(e || '')}</small></span></li>`; }).join('')}</ol>`;
+    if (img && f) return `<p class="sv-h">선지별 정리</p><ol class="sv-opts">${f.opts.map((o, i) => `<li class="${i === f.ans ? 'ans' : ''}"><span class="n">${NUMS[i]}</span><span>${esc(o)}<small>${sv.opts ? sv.opts[i] : ''}</small></span></li>`).join('')}</ol>`;
+    return img && sv.opts ? `<p class="sv-h">선지별 정리</p><ol class="sv-opts">${sv.opts.map((o, i) => `<li class="${i + 1 === right ? 'ans' : ''}"><span class="n">${NUMS[i]}</span><span>${o}</span></li>`).join('')}</ol>` : '';
+  }
   function qCard(q) {
     const done = mastered.has(q.id);
     const f = FULL[q.id];
@@ -155,7 +163,7 @@
             <p class="sv-clue">${sv.clue.map((c) => `<mark class="clue">${esc(c)}</mark>`).join(' ')}</p>
             <p class="sv-h">정답까지 생각의 순서</p>
             <p class="sv-how">${sv.how}</p>
-            ${img && f ? `<p class="sv-h">선지별 정리</p><ol class="sv-opts">${f.opts.map((o, i) => `<li class="${i === f.ans ? 'ans' : ''}"><span class="n">${NUMS[i]}</span><span>${esc(o)}<small>${sv.opts ? sv.opts[i] : ''}</small></span></li>`).join('')}</ol>` : ''}
+            ${optList(q, sv, f, img)}
           </div></div>` : ''}
         ${memoView(q)}
         ${q.target || q.flagOnly ? '' : `<p class="rq-why">복습 대상 제외 — ${why(q)}</p>`}

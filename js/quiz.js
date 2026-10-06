@@ -147,6 +147,13 @@
 
   // ── 채점 후: 정답·도출 포인트
   const SOLVES = (window.SOLVES || {})[EX.id] || (EX.id === 'history' ? window.SOLVE || {} : {});
+  // 선지별 포인트: 자세한 설명(OPTX)이 있으면 그걸, 없으면 짧은 정리(sv.opts)
+  const OPTX = window.OPTX || {};
+  function optList(id, sv, right) {
+    const ox = OPTX[id];
+    if (ox) return `<p class="sv-h">선지별 포인트</p><ol class="sv-opts ox">${ox.map((o, i) => { const [t, e] = o.split('|'); return `<li class="${i + 1 === right ? 'ans' : ''}"><span class="n">${NUMS[i]}</span><span><b>${escH(t)}</b>${i + 1 === right ? ' <em>정답</em>' : ''}<small>${escH(e || '')}</small></span></li>`; }).join('')}</ol>`;
+    return sv.opts ? `<p class="sv-h">선지별 정리</p><ol class="sv-opts">${sv.opts.map((o, i) => `<li class="${i + 1 === right ? 'ans' : ''}"><span class="n">${NUMS[i]}</span><span>${o}</span></li>`).join('')}</ol>` : '';
+  }
   function solvePanel(r, n) {
     const sv = SOLVES[`${r}-${n}`];
     if (!sv) return `<div class="q-solve"><p class="sv-h">정답·도출 포인트</p><p class="sv-how">아직 정리 전이에요.</p></div>`;
@@ -157,7 +164,7 @@
         <p class="sv-clue">${sv.clue.map((c) => `<mark class="clue">${escH(c)}</mark>`).join(' ')}</p>
         <p class="sv-h">정답까지 생각의 순서</p>
         <p class="sv-how">${sv.how}</p>
-        ${sv.opts ? `<p class="sv-h">선지별 정리</p><ol class="sv-opts">${sv.opts.map((o, i) => `<li class="${i + 1 === right ? 'ans' : ''}"><span class="n">${NUMS[i]}</span><span>${o}</span></li>`).join('')}</ol>` : ''}
+        ${optList(`${r}-${n}`, sv, right)}
       </div>`;
   }
 
