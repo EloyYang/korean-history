@@ -149,10 +149,20 @@
   const SOLVES = (window.SOLVES || {})[EX.id] || (EX.id === 'history' ? window.SOLVE || {} : {});
   // 선지별 포인트: 자세한 설명(OPTX)이 있으면 그걸, 없으면 짧은 정리(sv.opts)
   const OPTX = window.OPTX || {};
-  function optList(id, sv, right) {
-    const ox = OPTX[id];
-    if (ox) return `<p class="sv-h">선지별 포인트</p><ol class="sv-opts ox">${ox.map((o, i) => { const [t, e] = o.split('|'); return `<li class="${i + 1 === right ? 'ans' : ''}"><span class="n">${NUMS[i]}</span><span><b>${escH(t)}</b>${i + 1 === right ? ' <em>정답</em>' : ''}<small>${escH(e || '')}</small></span></li>`; }).join('')}</ol>`;
-    return sv.opts ? `<p class="sv-h">선지별 정리</p><ol class="sv-opts">${sv.opts.map((o, i) => `<li class="${i + 1 === right ? 'ans' : ''}"><span class="n">${NUMS[i]}</span><span>${o}</span></li>`).join('')}</ol>` : '';
+  function optList(id, sv, right, picked) {
+    const ox = OPTX[id]; const E = escH;
+    // 내가 고른 답: 틀렸으면 무엇을 골랐고 왜 아닌지 먼저 보여 준다
+    const pickBox = () => {
+      if (picked == null) return '';
+      if (!picked) return `<div class="sv-pick none"><p><b>내가 고른 답</b> 고르지 않음 <span>→ 정답 ${NUMS[right - 1]}</span></p></div>`;
+      if (picked === right) return `<div class="sv-pick ok"><p><b>내가 고른 답</b> ${NUMS[picked - 1]} <span>정답을 골랐어요</span></p></div>`;
+      const mine = ox ? ox[picked - 1].split('|') : null, ans = ox ? ox[right - 1].split('|') : null;
+      return `<div class="sv-pick"><p><b>내가 고른 답</b> ${NUMS[picked - 1]}${mine ? ' ' + E(mine[0]) : ''} <span>→ 정답 ${NUMS[right - 1]}${ans ? ' ' + E(ans[0]) : ''}</span></p>${mine ? `<p class="why"><b>왜 아닌가</b> ${E(mine[1] || '')}</p>` : ''}</div>`;
+    };
+    const cls = (i) => (i + 1 === right ? 'ans' : '') + (picked && i + 1 === picked && picked !== right ? ' mine' : '');
+    const tag = (i) => (i + 1 === right ? ' <em>정답</em>' : '') + (picked && i + 1 === picked && picked !== right ? ' <em class="mine">내가 고름</em>' : '');
+    if (ox) return `${pickBox()}<p class="sv-h">선지별 포인트</p><ol class="sv-opts ox">${ox.map((o, i) => { const [t, e] = o.split('|'); return `<li class="${cls(i)}"><span class="n">${NUMS[i]}</span><span><b>${E(t)}</b>${tag(i)}<small>${E(e || '')}</small></span></li>`; }).join('')}</ol>`;
+    return pickBox() + (sv.opts ? `<p class="sv-h">선지별 정리</p><ol class="sv-opts">${sv.opts.map((o, i) => `<li class="${cls(i)}"><span class="n">${NUMS[i]}</span><span>${o}${tag(i)}</span></li>`).join('')}</ol>` : '');
   }
   // 시기·나라·왕(정부) 한 줄 요약
   const QMETA = window.QMETA || {};
@@ -173,7 +183,7 @@
         <p class="sv-clue">${sv.clue.map((c) => `<mark class="clue">${escH(c)}</mark>`).join(' ')}</p>
         <p class="sv-h">정답까지 생각의 순서</p>
         <p class="sv-how">${sv.how}</p>
-        ${optList(`${r}-${n}`, sv, right)}
+        ${optList(`${r}-${n}`, sv, right, state.graded ? (state.answers[n] || 0) : null)}
       </div>`;
   }
 
