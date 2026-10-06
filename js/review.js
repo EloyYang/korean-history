@@ -129,6 +129,14 @@
     if (img && f) return `<p class="sv-h">선지별 정리</p><ol class="sv-opts">${f.opts.map((o, i) => `<li class="${i === f.ans ? 'ans' : ''}"><span class="n">${NUMS[i]}</span><span>${esc(o)}<small>${sv.opts ? sv.opts[i] : ''}</small></span></li>`).join('')}</ol>`;
     return img && sv.opts ? `<p class="sv-h">선지별 정리</p><ol class="sv-opts">${sv.opts.map((o, i) => `<li class="${i + 1 === right ? 'ans' : ''}"><span class="n">${NUMS[i]}</span><span>${o}</span></li>`).join('')}</ol>` : '';
   }
+  // 시기·나라·왕(정부) 한 줄 요약
+  const QMETA = window.QMETA || {};
+  function metaHtml(r, n) {
+    const m = (QMETA[r] || [])[n - 1]; if (!m) return '';
+    const [when, state, king] = m.split('|');
+    const cell = (k, v) => (v ? `<div><dt>${k}</dt><dd>${esc(v)}</dd></div>` : '');
+    return `<dl class="sv-meta">${cell('시기', when)}${cell('나라', state)}${cell('왕·정부', king)}</dl>`;
+  }
   function qCard(q) {
     const done = mastered.has(q.id);
     const f = FULL[q.id];
@@ -159,6 +167,7 @@
         ${sv ? `<div class="rq-solve">
           <button class="rq-toggle" type="button">${open ? '정답·도출 포인트 접기 ▴' : '정답·도출 포인트 보기 ▾'}</button>
           <div class="rq-solve-body">
+            ${metaHtml(q.round, q.num)}
             <p class="sv-h">지문에서 잡을 단서</p>
             <p class="sv-clue">${sv.clue.map((c) => `<mark class="clue">${esc(c)}</mark>`).join(' ')}</p>
             <p class="sv-h">정답까지 생각의 순서</p>

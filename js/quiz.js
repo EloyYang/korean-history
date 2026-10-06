@@ -154,12 +154,21 @@
     if (ox) return `<p class="sv-h">선지별 포인트</p><ol class="sv-opts ox">${ox.map((o, i) => { const [t, e] = o.split('|'); return `<li class="${i + 1 === right ? 'ans' : ''}"><span class="n">${NUMS[i]}</span><span><b>${escH(t)}</b>${i + 1 === right ? ' <em>정답</em>' : ''}<small>${escH(e || '')}</small></span></li>`; }).join('')}</ol>`;
     return sv.opts ? `<p class="sv-h">선지별 정리</p><ol class="sv-opts">${sv.opts.map((o, i) => `<li class="${i + 1 === right ? 'ans' : ''}"><span class="n">${NUMS[i]}</span><span>${o}</span></li>`).join('')}</ol>` : '';
   }
+  // 시기·나라·왕(정부) 한 줄 요약
+  const QMETA = window.QMETA || {};
+  function metaHtml(r, n) {
+    const m = (QMETA[r] || [])[n - 1]; if (!m) return '';
+    const [when, state, king] = m.split('|');
+    const cell = (k, v) => (v ? `<div><dt>${k}</dt><dd>${escH(v)}</dd></div>` : '');
+    return `<dl class="sv-meta">${cell('시기', when)}${cell('나라', state)}${cell('왕·정부', king)}</dl>`;
+  }
   function solvePanel(r, n) {
     const sv = SOLVES[`${r}-${n}`];
-    if (!sv) return `<div class="q-solve"><p class="sv-h">정답·도출 포인트</p><p class="sv-how">아직 정리 전이에요.</p></div>`;
+    if (!sv) return `<div class="q-solve">${metaHtml(r, n)}<p class="sv-h">정답·도출 포인트</p><p class="sv-how">아직 정리 전이에요.</p></div>`;
     const right = KEY[r].ans[n - 1];
     return `
       <div class="q-solve">
+        ${metaHtml(r, n)}
         <p class="sv-h">지문에서 잡을 단서</p>
         <p class="sv-clue">${sv.clue.map((c) => `<mark class="clue">${escH(c)}</mark>`).join(' ')}</p>
         <p class="sv-h">정답까지 생각의 순서</p>

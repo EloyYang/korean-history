@@ -1019,3 +1019,10 @@ body.qv-on { overflow: hidden; }
 .sv-opts.ox li.ans b, .sv-opts.ox li.ans .n { color: var(--accent); }
 .sv-opts.ox li.ans small { color: var(--text); }
 .sv-opts.ox em { font-style: normal; font-size: 11px; font-weight: 700; padding: 0 6px; border-radius: 999px; background: var(--accent); color: #fff; vertical-align: 1px; }
+.sv-meta { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; margin: 0 0 10px; }
+.sv-meta > div { padding: 6px 9px; border-radius: 8px; border: 1px solid var(--line); background: var(--surface); min-width: 0; }
+.sv-meta dt { font-size: 11px; font-weight: 700; color: var(--accent); margin-bottom: 1px; }
+.sv-meta dd { margin: 0; font-size: 13px; line-height: 1.45; color: var(--text); word-break: keep-all; }
+@media (max-width: 600px) { .sv-meta { grid-template-columns: minmax(0, 1fr); } .sv-meta > div { display: grid; grid-template-columns: 58px minmax(0, 1fr); align-items: baseline; gap: 6px; } }
+.q-solve .sv-meta > div { background: #fff; border-color: #e6d8cf; }
+.q-solve .sv-meta dd { color: #2a2620; }
