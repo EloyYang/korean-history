@@ -30,6 +30,13 @@
     set(k, v) { try { localStorage.setItem('khmap.' + k, JSON.stringify(v)); } catch (e) { /* 무시 */ } },
   };
   const state = { scope: store.get('reviewScope', 'target'), hideDone: store.get('reviewHideDone', false), openAll: store.get('reviewOpenAll', false), eraRound: store.get('reviewEraRound', 'all'), period: store.get('reviewPeriod', 'all'), weakAll: false };
+  // 필터는 모두 여러 개 선택 가능 (누르면 선택, 다시 누르면 해제 / 아무것도 없으면 전체)
+  const asSet = (v, legacyAll) => new Set(Array.isArray(v) ? v.map(String) : v == null || v === legacyAll ? [] : [String(v)]);
+  state.views = asSet(store.get('reviewViews', store.get('reviewEraRound', 'all')), 'all');
+  state.periods = asSet(store.get('reviewPeriods', store.get('reviewPeriod', 'all')), 'all');
+  state.scopes = asSet(store.get('reviewScopes', (() => { const o = store.get('reviewScope', 'target'); return o === 'all' ? ['target', 'other'] : o; })()), null);
+  const toggle = (set, v) => { v = String(v); if (set.has(v)) set.delete(v); else set.add(v); };
+  const saveFilters = () => { store.set('reviewViews', [...state.views]); store.set('reviewPeriods', [...state.periods]); store.set('reviewScopes', [...state.scopes]); };
   const WEAK_TOP = 10;
   const openSet = new Set();
   const MKEY = window.ATTEMPTS.key('mastered');
@@ -207,34 +214,39 @@
     // 보기 범위: 전체 / 날짜별(d:YYYY-MM-DD) / 회차별(79)
     const dates = [...new Set(LOG.map((l) => l.date).filter(Boolean))].sort().reverse();
     const eraRounds = LOG.map((l) => l.round).sort((a, b) => b - a);
-    const V = String(state.eraRound);
-    if (V !== 'all' && !(V.startsWith('d:') ? dates.includes(V.slice(2)) : eraRounds.includes(+V))) state.eraRound = 'all';
-    const view = String(state.eraRound);
-    const inView = (l) => view === 'all' || (view.startsWith('d:') ? l.date === view.slice(2) : l.round === +view);
+    [...state.views].forEach((v) => { if (!(v.startsWith('d:') ? dates.includes(v.slice(2)) : eraRounds.includes(+v))) state.views.delete(v); });
+    const anyView = state.views.size > 0;
+    const inView = (l) => !anyView || state.views.has('d:' + l.date) || state.views.has(String(l.round));
     const FLOG = LOG.filter(inView);
-    const viewName = view === 'all' ? '전체 기록' : view.startsWith('d:') ? `${view.slice(2)}에 푼 ${FLOG.map((l) => l.round + '회').join('·')}` : `${view}회`;
+    const shortDate = (d) => d.replace(/^\d{4}-/, '').replace('-', '/');
+    const viewName = !anyView ? '전체 기록' : [...dates.filter((d) => state.views.has('d:' + d)).map(shortDate), ...eraRounds.filter((r) => state.views.has(String(r))).map((r) => r + '회')].join(' + ');
     const vWrongs = wrongs.filter((q) => FLOG.some((l) => l.round === q.round));
     const vTargets = vWrongs.filter((q) => q.target);
     const others = vWrongs.filter((q) => !q.target);
     const allFlags = flagged();
     const vSlow = slowOf(FLOG);
     const timedN = FLOG.filter((l) => l.times && Object.keys(l.times).length).length;
-    const vFlags = view === 'all' ? allFlags : allFlags.filter((q) => FLOG.some((l) => l.round === q.round));
+    const vFlags = !anyView ? allFlags : allFlags.filter((q) => FLOG.some((l) => l.round === q.round));
     // 시기 필터 (약한 개념·문제 목록에 적용)
     const perOfQ = (q) => periodOf(q.pIdx >= 0 ? q.pEra : q.era);
     const perOfW = (w) => (w.pt && ptOf(w.pt) ? periodOf(ptOf(w.pt).e) : PERIODS.findIndex((p) => p[0] === w.era));
-    const PER = String(state.period);
-    const inP = (i) => PER === 'all' || i === +PER;
+    const inP = (i) => !state.periods.size || state.periods.has(String(i));
     const pq = (arr) => arr.filter((q) => inP(perOfQ(q)));
     const perCnt = new Map();
     [...vWrongs, ...vFlags.filter((q) => q.flagOnly)].forEach((q) => { const i = perOfQ(q); perCnt.set(i, (perCnt.get(i) || 0) + 1); });
     myWeak().forEach((w) => { const i = perOfW(w); if (i >= 0 && !perCnt.has(i)) perCnt.set(i, 0); });
-    if (PER !== 'all' && !perCnt.has(+PER)) state.period = 'all';
-    const pBtn = (v, label, n) => `<button data-period="${v}" aria-pressed="${String(state.period) === String(v)}">${label}${n != null ? ` <small>${n}</small>` : ''}</button>`;
+    [...state.periods].forEach((v) => { if (!perCnt.has(+v)) state.periods.delete(v); });
+    const pBtn = (v, label, n) => `<button data-period="${v}" aria-pressed="${v === 'all' ? !state.periods.size : state.periods.has(String(v))}">${label}${n != null ? ` <small>${n}</small>` : ''}</button>`;
     const perRow = perCnt.size ? `<div class="r-view-row"><span class="r-view-lab">시기별</span><span class="r-chips">${pBtn('all', '모든 시기')}${[...perCnt.entries()].sort((a, b) => a[0] - b[0]).map(([i, n]) => pBtn(i, periodName(i), n || null)).join('')}</span></div>` : '';
-    const perName = String(state.period) === 'all' ? '' : ` · ${periodName(+state.period)}`;
+    const perName = !state.periods.size ? '' : ` · ${[...state.periods].map(Number).sort((a, b) => a - b).map(periodName).join(' + ')}`;
     const pTargets = pq(vTargets), pOthers = pq(others), pWrongs = pq(vWrongs), pFlags = pq(vFlags), pSlow = pq(vSlow);
-    const list = state.scope === 'slow' ? pSlow : state.scope === 'flag' ? pFlags : state.scope === 'all' ? pWrongs : state.scope === 'other' ? pOthers : pTargets;
+    // 문제 종류: 고른 것들의 합집합 (같은 문제는 한 번만)
+    const SC = state.scopes; const has = (k) => !SC.size || SC.has(k);
+    const onlySlow = SC.size === 1 && SC.has('slow');
+    const merged = new Map();
+    const put = (arr) => arr.forEach((q) => { const o = merged.get(q.id); merged.set(q.id, o ? { ...q, ...o, time: o.time || q.time, avg: o.avg || q.avg, slowSt: o.slowSt || q.slowSt, flagSt: o.flagSt || q.flagSt, flagOnly: !!(o.flagOnly && q.flagOnly) } : q); });
+    if (has('target')) put(pTargets); if (has('other')) put(pOthers); if (has('flag')) put(pFlags); if (has('slow')) put(pSlow);
+    const list = onlySlow ? pSlow : [...merged.values()];
     const shown = state.hideDone ? list.filter((q) => !mastered.has(q.id)) : list;
     const doneN = targets.filter((q) => mastered.has(q.id)).length;
     const othersAll = wrongs.filter((q) => !q.target);
@@ -245,8 +257,8 @@
       const lost = qs.reduce((a, q) => a + (q.pt || (QKEY[l.round] ? QKEY[l.round].pt[q.num - 1] : 0)), 0);
       const unknown = qs.some((q) => !q.pt);
       const tg = qs.filter((q) => q.target).map((q) => q.num);
-      return `<tr class="${inView(l) && view !== 'all' ? 'in-view' : ''}">
-        <th><button type="button" class="r-link" data-era-round="${l.round}" title="${l.round}회만 보기">${l.round}회</button></th><td>${l.date ? `<button type="button" class="r-link" data-era-round="d:${esc(l.date)}" title="이 날 푼 기록만 보기">${esc(l.date)}</button>` : ''}</td>
+      return `<tr class="${inView(l) && anyView ? 'in-view' : ''}">
+        <th><button type="button" class="r-link" data-era-round="${l.round}" title="${l.round}회 선택/해제">${l.round}회</button></th><td>${l.date ? `<button type="button" class="r-link" data-era-round="d:${esc(l.date)}" title="이 날 푼 기록 선택/해제">${esc(l.date)}</button>` : ''}</td>
         <td><b>${l.wrong.length}</b> / 50</td>
         <td>${l.score != null ? `<b>${l.score}</b>점` : `${unknown ? '약 ' : ''}<b>${100 - lost}</b>점`}${l.src === 'claude' ? ' <small class="src">Claude 기록</small>' : l.answers ? ' <small class="src">기출 풀기</small>' : ''}</td>
         <td>${l.total ? mmss(l.total) : '-'}</td>
@@ -272,10 +284,10 @@
     const sumWr = [...byEra.values()].reduce((a, v) => a + v.wr, 0);
     const pct = (a, b) => (b ? Math.round((a / b) * 100) : 0);
     const bars = [...byEra.entries()].sort((a, b) => a[0] - b[0]).map(([e, v]) => `
-      <li class="${v.all >= 2 && v.wr / v.all >= 0.5 ? 'weak' : ''}"><button type="button" class="bar-name r-link" data-period="${e}" title="${esc(periodTip(e))} — 눌러서 이 시기만 보기">${esc(periodName(e))}</button>
+      <li class="${v.all >= 2 && v.wr / v.all >= 0.5 ? 'weak' : ''}"><button type="button" class="bar-name r-link" data-period="${e}" title="${esc(periodTip(e))} — 눌러서 이 시기 선택/해제">${esc(periodName(e))}</button>
         <span class="bar-track"><span class="bar-all" style="width:${(v.all / maxAll) * 100}%"></span><span class="bar-wr" style="width:${(v.wr / maxAll) * 100}%"></span><span class="bar-tg" style="width:${(v.tg / maxAll) * 100}%"></span></span>
         <span class="bar-n">출제 ${v.all} · 틀림 <b>${v.wr}</b> <i>${pct(v.wr, v.all)}%</i></span></li>`).join('');
-    const btn = (v, label, n) => `<button data-era-round="${esc(v)}" aria-pressed="${view === v}">${label}${n ? ` <small>${n}</small>` : ''}</button>`;
+    const btn = (v, label, n) => `<button data-era-round="${esc(v)}" aria-pressed="${v === 'all' ? !anyView : state.views.has(v)}">${label}${n ? ` <small>${n}</small>` : ''}</button>`;
     const eraSeg = eraRounds.length ? `<section class="r-view">
       <div class="r-view-row"><span class="r-view-lab">전체</span><span class="r-chips">${btn('all', `전체 기록`, `${eraRounds.length}회차`)}</span></div>
       ${dates.length ? `<div class="r-view-row"><span class="r-view-lab">날짜별</span><span class="r-chips">${dates.map((d) => { const ls = LOG.filter((l) => l.date === d); return btn('d:' + d, d.replace(/^\d{4}-/, '').replace('-', '/'), `${ls.map((l) => l.round + '회').join('·')} · 틀림 ${ls.reduce((a, l) => a + l.wrong.length, 0)}`); }).join('')}</span></div>` : ''}
@@ -359,7 +371,7 @@
             return `
               <div class="rp-point">
                 <div class="rp-title">${p ? `<span class="rp-freq">${starTxt(Math.min(p[0], 3))}</span>${p[1]}` : '<span class="rp-none">기출 포인트에 아직 없는 내용</span>'}
-                  <span class="rp-cnt">${state.scope === 'flag' ? '헷갈림' : '오답'} ${qs.length}</span></div>
+                  <span class="rp-cnt">${SC.size === 1 && SC.has('flag') ? '헷갈림' : SC.size && !SC.has('flag') && !SC.has('slow') ? '오답' : '문항'} ${qs.length}</span></div>
                 <ol class="rq-list">${qs.map(qCard).join('')}</ol>
               </div>`;
           }).join('')}
@@ -367,7 +379,7 @@
     }).join('');
 
     // 오래 고민한 문제는 시기로 묶지 않고 오래 걸린 순으로
-    const slowHtml = state.scope === 'slow' && shown.length ? `<ol class="rq-list rq-slow">${shown.map((q) => {
+    const slowHtml = onlySlow && shown.length ? `<ol class="rq-list rq-slow">${shown.map((q) => {
       const p = q.pIdx >= 0 && GICHUL[q.pEra] ? GICHUL[q.pEra].pts[q.pIdx] : null;
       return `<li class="rq-slow-pt"><span class="wk-era">${esc(periodName(perOfQ(q)))}</span> ${p ? `<span class="rp-freq">${starTxt(Math.min(p[0], 3))}</span>${p[1]}` : esc(q.theme)}</li>${qCard(q)}`;
     }).join('')}</ol>` : '';
@@ -389,7 +401,7 @@
         <tbody>${rounds || '<tr><td colspan="7">아직 기록이 없어요</td></tr>'}</tbody>
       </table></div>
 
-      <h2 class="r-h">보기 범위 <small>날짜·회차를 고르면 아래가 모두 그 범위로, 시기를 고르면 약한 개념·문제 목록이 그 시기로 좁혀져요</small></h2>
+      <h2 class="r-h">보기 범위 <small>여러 개를 함께 고를 수 있어요 (누르면 선택, 다시 누르면 해제) · 날짜·회차는 아래 전체에, 시기는 약한 개념·문제 목록에 적용돼요</small></h2>
       ${eraSeg}
 
       <h2 class="r-h">시대별 약점 <small>${esc(viewName)} · 연한 막대 = 출제 문항, 중간 = 틀린 문항, 진한 막대 = 그중 복습 대상</small></h2>
@@ -403,14 +415,15 @@
 
       <h2 class="r-h">암기가 부족한 기출 포인트 <small>${esc(viewName + perName)}</small></h2>
       <div class="r-tools">
-        <span class="seg"><button data-scope="target" aria-pressed="${state.scope === 'target'}">복습 대상만 (${pTargets.length})</button><button data-scope="other" aria-pressed="${state.scope === 'other'}" title="출제빈도 ★ 또는 난이도 중상·상·특">어렵거나 빈도 낮은 문제 (${pOthers.length})</button><button data-scope="all" aria-pressed="${state.scope === 'all'}">틀린 문제 전체 (${pWrongs.length})</button><button data-scope="flag" aria-pressed="${state.scope === 'flag'}" title="기출 풀기에서 🏳 헷갈림 표시한 문제 (맞힌 문제 포함)">🚩 헷갈린 문제 (${pFlags.length})</button><button data-scope="slow" aria-pressed="${state.scope === 'slow'}" title="회차 평균의 ${SLOW_X}배 이상(1분 초과) 또는 3분 이상 걸린 문제">⏱ 오래 고민한 문제 (${pSlow.length})</button></span>
-        ${state.scope === 'slow' ? `<p class="r-scope-note">${timedN ? `기출 풀기로 시간을 잰 ${timedN}개 회차에서 그 회차 평균의 ${SLOW_X}배 이상(1분 초과) 또는 3분 이상 걸린 문제예요. 오래 걸린 순 — 맞힘 ${pSlow.filter((q) => q.slowSt === 'right').length} · 틀림 ${pSlow.filter((q) => q.slowSt === 'wrong').length}` : '시간 기록이 있는 회차가 없어요. 기출 풀기에서 풀면 문제별 시간이 기록돼요 (채팅으로 알려 준 기록은 시간이 없어요).'}</p>` : ''}
-        ${state.scope === 'flag' ? `<p class="r-scope-note">기출 풀기에서 헷갈림 표시한 문제예요. 맞혔어도 확실히 알지 못한 문제라 같이 복습하면 좋아요 — 맞힘 ${pFlags.filter((q) => q.flagSt === 'right').length} · 틀림 ${pFlags.filter((q) => q.flagSt === 'wrong').length} · 채점 전 ${pFlags.filter((q) => q.flagSt === 'none').length}</p>` : ''}
-        ${state.scope === 'other' ? `<p class="r-scope-note">복습 대상(★★ 이상·난이도 하·중)에서 빠진 문제예요. 난이도가 높은 문제 ${pOthers.filter((q) => !EASY.includes(q.diff)).length}개, 출제빈도가 낮은 문제(★) ${pOthers.filter((q) => q.stars < MIN_STARS).length}개 (겹치는 문제 포함)</p>` : ''}
+        <span class="seg">${[['target', '복습 대상', pTargets.length, '★★ 이상 · 난이도 하·중인 틀린 문제'], ['other', '어렵거나 빈도 낮은 문제', pOthers.length, '출제빈도 ★ 또는 난이도 중상·상·특인 틀린 문제'], ['flag', '🚩 헷갈린 문제', pFlags.length, '기출 풀기에서 헷갈림 표시한 문제 (맞힌 문제 포함)'], ['slow', '⏱ 오래 고민한 문제', pSlow.length, `회차 평균의 ${SLOW_X}배 이상(1분 초과) 또는 3분 이상 걸린 문제`]].map(([k, label, n, tip]) => `<button data-scope="${k}" aria-pressed="${SC.has(k)}" title="${tip}">${label} (${n})</button>`).join('')}</span>
+        <p class="r-scope-note">여러 개를 함께 고를 수 있어요 (다시 누르면 해제). ${SC.size ? `지금 <b>${shown.length}</b>문항` : `아무것도 고르지 않아 전부 보여요 — <b>${shown.length}</b>문항`}${SC.has('target') && SC.has('other') ? ' · 복습 대상 + 어렵거나 빈도 낮은 문제 = 틀린 문제 전체' : ''}</p>
+        ${SC.has('slow') ? `<p class="r-scope-note">${timedN ? `기출 풀기로 시간을 잰 ${timedN}개 회차에서 그 회차 평균의 ${SLOW_X}배 이상(1분 초과) 또는 3분 이상 걸린 문제예요. 오래 걸린 순 — 맞힘 ${pSlow.filter((q) => q.slowSt === 'right').length} · 틀림 ${pSlow.filter((q) => q.slowSt === 'wrong').length}` : '시간 기록이 있는 회차가 없어요. 기출 풀기에서 풀면 문제별 시간이 기록돼요 (채팅으로 알려 준 기록은 시간이 없어요).'}</p>` : ''}
+        ${SC.has('flag') ? `<p class="r-scope-note">기출 풀기에서 헷갈림 표시한 문제예요. 맞혔어도 확실히 알지 못한 문제라 같이 복습하면 좋아요 — 맞힘 ${pFlags.filter((q) => q.flagSt === 'right').length} · 틀림 ${pFlags.filter((q) => q.flagSt === 'wrong').length} · 채점 전 ${pFlags.filter((q) => q.flagSt === 'none').length}</p>` : ''}
+        ${SC.has('other') ? `<p class="r-scope-note">복습 대상(★★ 이상·난이도 하·중)에서 빠진 문제예요. 난이도가 높은 문제 ${pOthers.filter((q) => !EASY.includes(q.diff)).length}개, 출제빈도가 낮은 문제(★) ${pOthers.filter((q) => q.stars < MIN_STARS).length}개 (겹치는 문제 포함)</p>` : ''}
         <label class="chip-check"><input type="checkbox" id="hide-done" ${state.hideDone ? 'checked' : ''}> 외운 문항 숨기기</label>
         <label class="chip-check"><input type="checkbox" id="open-all" ${state.openAll ? 'checked' : ''}> 정답 도출 포인트 모두 펼치기</label>
       </div>
-      ${(state.scope === 'slow' ? slowHtml : pointsHtml) || `<p class="r-empty">${state.scope === 'slow' ? '오래 고민한 문제가 없어요' : '모두 외웠어요! 🎉'}</p>`}
+      ${(onlySlow ? slowHtml : pointsHtml) || `<p class="r-empty">${onlySlow ? '오래 고민한 문제가 없어요' : list.length ? '모두 외웠어요! 🎉' : '고른 조건에 맞는 문제가 없어요'}</p>`}
       <p class="r-note">정답 선지·지문은 국사편찬위원회 한국사능력검정시험 심화 문항에서 발췌했어요. 새 회차를 풀면 Claude에게 회차와 틀린 번호를 알려 주세요. 로그인하면 풀이 기록·메모·‘외웠어요’ 표시가 계정에 저장돼요.</p>`;
   }
 
@@ -428,7 +441,8 @@
     const er = e.target.closest('button[data-era-round]');
     if (er) {
       const fromTable = !!er.closest('.r-table');
-      state.eraRound = er.dataset.eraRound; store.set('reviewEraRound', state.eraRound); rerender();
+      if (er.dataset.eraRound === 'all') state.views.clear(); else toggle(state.views, er.dataset.eraRound);
+      saveFilters(); rerender();
       if (fromTable) document.querySelector('.r-view')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
       return;
     }
@@ -449,7 +463,8 @@
     const pd = e.target.closest('[data-period]');
     if (pd) {
       const fromBar = !!pd.closest('.r-bars');
-      state.period = pd.dataset.period; state.weakAll = false; store.set('reviewPeriod', state.period); rerender();
+      if (pd.dataset.period === 'all') state.periods.clear(); else toggle(state.periods, pd.dataset.period);
+      state.weakAll = false; saveFilters(); rerender();
       if (fromBar) document.getElementById('weak-h')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
       return;
     }
@@ -494,7 +509,8 @@
     const go = e.target.closest('button[data-goto]');
     if (go) {
       const sel = `.rq[data-id="${go.dataset.goto}"]`;
-      if (!document.querySelector(sel)) { state.scope = 'all'; state.hideDone = false; store.set('reviewScope', 'all'); store.set('reviewHideDone', false); render(); }
+      if (!document.querySelector(sel)) { state.scopes.clear(); state.hideDone = false; store.set('reviewHideDone', false); saveFilters(); render(); }
+      if (!document.querySelector(sel)) { state.periods.clear(); state.views.clear(); saveFilters(); render(); }
       const li = document.querySelector(sel); if (!li) return;
       li.classList.add('open', 'flash'); openSet.add(li.dataset.id);
       const tg = li.querySelector('.rq-toggle'); if (tg) tg.textContent = '정답·도출 포인트 접기 ▴';
@@ -503,7 +519,7 @@
       return;
     }
     const s = e.target.closest('button[data-scope]');
-    if (s) { state.scope = s.dataset.scope; store.set('reviewScope', state.scope); render(); return; }
+    if (s) { toggle(state.scopes, s.dataset.scope); saveFilters(); rerender(); return; }
     const t = e.target.closest('.rq-toggle');
     if (t) {
       const li = t.closest('.rq'); const on = !li.classList.contains('open');
