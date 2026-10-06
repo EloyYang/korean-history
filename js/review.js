@@ -124,8 +124,11 @@
   // 기출 풀기에서 남긴 메모
   function memoView(q) {
     const m = (window.UserStore.get(window.ATTEMPTS.key('memo.' + q.round), {}) || {})[q.num];
-    if (!m || !(m.q || m.o.some(Boolean))) return '';
-    return `<div class="rq-memo"><p class="sv-h">내 메모</p>${m.q ? `<p class="m-q">${esc(m.q)}</p>` : ''}${m.o.some(Boolean) ? `<ul>${m.o.map((t, i) => (t ? `<li><b>${NUMS[i]}</b> ${esc(t)}</li>` : '')).join('')}</ul>` : ''}</div>`;
+    const block = (m2) => `${m2.q ? `<p class="m-q">${esc(m2.q)}</p>` : ''}${(m2.o || []).some(Boolean) ? `<ul>${m2.o.map((t, i) => (t ? `<li><b>${NUMS[i]}</b> ${esc(t)}</li>` : '')).join('')}</ul>` : ''}`;
+    const has = (m2) => m2 && (m2.q || (m2.o || []).some(Boolean));
+    const olds = (window.UserStore.get(window.ATTEMPTS.key('memoOld.' + q.round), []) || []).filter((x) => x.memos && has(x.memos[q.num])).reverse();
+    if (!has(m) && !olds.length) return '';
+    return `<div class="rq-memo">${has(m) ? `<p class="sv-h">내 메모 <small>최근 풀이</small></p>${block(m)}` : ''}${olds.length ? `<details class="rq-oldmemo"${has(m) ? '' : ' open'}><summary>이전 풀이 메모 ${olds.length}개</summary>${olds.map((x) => `<div class="q-oldmemo-item"><p class="d">${esc(x.date || '')}${x.score != null ? ` · ${x.score}점 때` : ''}</p>${block(x.memos[q.num])}</div>`).join('')}</details>` : ''}</div>`;
   }
 
   // 내가 고른 번호: 기출 풀기로 채점한 기록에만 있다 (null = 기록 없음, 0 = 고르지 않음)

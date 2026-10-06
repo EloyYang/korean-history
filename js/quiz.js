@@ -105,6 +105,7 @@
           </div>
           ${memoHtml(r, n)}
         </div>
+        ${oldMemoHtml(r, n)}
         ${missing ? `<div class="q-opts">${[1, 2, 3, 4, 5].map((i) => `<button type="button" class="q-spot-btn${a === i ? ' pick' : ''}" data-i="${i}" ${state.graded ? 'disabled' : ''}>${NUMS[i - 1]}</button>`).join('')}</div>` : ''}
         ${state.graded ? solvePanel(r, n) : ''}
       </div>`;
@@ -113,6 +114,21 @@
   // ── 메모: 문제(지문)와 선지 ①~⑤ 각각 — 회차별로 저장, 로그인하면 계정에 동기화
   const memoKey = (r) => window.ATTEMPTS.key('memo.' + r);
   const memoOf = (r, n) => (S.get(memoKey(r), {}) || {})[n] || { q: '', o: ['', '', '', '', ''] };
+  // 다시 풀면 지금까지의 메모는 '이전 풀이 메모'로 따로 보관하고, 새 풀이는 빈 메모로 시작한다
+  const oldKey = (r) => window.ATTEMPTS.key('memoOld.' + r);
+  const oldMemos = (r) => S.get(oldKey(r), []) || [];
+  function archiveMemo(r) {
+    const cur = S.get(memoKey(r), {}) || {};
+    if (!Object.keys(cur).length) return;
+    const a = lastAttempt(r);
+    S.set(oldKey(r), [...oldMemos(r), { t: Date.now(), date: (a && a.date) || today(), score: a && a.score != null ? a.score : null, memos: cur }]);
+    S.set(memoKey(r), {});
+  }
+  function oldMemoHtml(r, n) {
+    const list = oldMemos(r).filter((x) => x.memos && x.memos[n]).reverse();
+    if (!list.length) return '';
+    return `<details class="q-oldmemo"><summary>이전 풀이 메모 ${list.length}개 보기</summary>${list.map((x) => { const m = x.memos[n]; return `<div class="q-oldmemo-item"><p class="d">${escH(x.date || '')}${x.score != null ? ` · ${x.score}점 때` : ''}</p>${m.q ? `<p class="m-q">${escH(m.q)}</p>` : ''}${(m.o || []).some(Boolean) ? `<ul>${m.o.map((t, i) => (t ? `<li><b>${NUMS[i]}</b> ${escH(t)}</li>` : '')).join('')}</ul>` : ''}</div>`; }).join('')}</details>`;
+  }
   function memoHtml(r, n) {
     const m = memoOf(r, n);
     const has = m.q || m.o.some(Boolean);
@@ -298,6 +314,7 @@
     } else if (a && a.answers) {
       state.answers = a.answers; state.times = a.times || {}; state.cur = 1; state.graded = true; renderResult();
     } else {
+      if (a) archiveMemo(r); // 채팅으로 기록만 넣어 둔 회차를 처음 푸는 경우
       state.answers = {}; state.times = {}; state.cur = 1; state.graded = false; renderSolve();
     }
     window.scrollTo(0, 0);
@@ -325,7 +342,8 @@
     if (e.target.closest('.q-review-wrong')) { state.onlyFlag = false; state.onlyWrong = true; go(score(state.round, state.answers).wrong[0]); return; }
     if (e.target.closest('.q-review-all')) { state.onlyWrong = false; state.onlyFlag = false; go(1); return; }
     if (e.target.closest('.q-retry')) {
-      if (!confirm('답과 시간을 모두 지우고 처음부터 다시 풀까요? (오답 노트 기록은 다시 채점할 때 바뀌어요)')) return;
+      if (!confirm('답과 시간을 모두 지우고 처음부터 다시 풀까요?\n(오답 노트 기록은 다시 채점할 때 바뀌어요. 지금까지 쓴 메모는 ‘이전 풀이 메모’로 따로 보관되고, 새 메모는 빈칸에서 시작해요)')) return;
+      archiveMemo(state.round);
       state.answers = {}; state.times = {}; state.cur = 1; state.graded = false; state.onlyWrong = false; state.onlyFlag = false; state.paused = false; renderSolve(); window.scrollTo(0, 0);
     }
   });

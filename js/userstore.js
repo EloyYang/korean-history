@@ -5,7 +5,7 @@
  *   - 화면 설정(탭·배치 등)은 동기화하지 않고, 아래 SYNC 에 맞는 학습 기록만 동기화한다.
  */
 (function () {
-  const SYNC = [/^khmap\.quizLog$/, /^khmap\.quizDraft\.\d+$/, /^khmap\.mastered$/, /^khmap\.memo\.\d+$/, /^khmap\.myLogImported$/, /^khmap\.myWeak$/, /^khmap\.weakMemo$/, /^khmap\.flag\.\d+$/, /^study\./];
+  const SYNC = [/^khmap\.quizLog$/, /^khmap\.quizDraft\.\d+$/, /^khmap\.mastered$/, /^khmap\.memo\.\d+$/, /^khmap\.memoOld\.\d+$/, /^khmap\.myLogImported$/, /^khmap\.myWeak$/, /^khmap\.weakMemo$/, /^khmap\.flag\.\d+$/, /^study\./];
   const META = 'userstore.meta'; // { 키: 마지막 수정 시각(ms) }
   const BASE = 'userstore.base'; // { 키: 마지막으로 서버와 맞춘 시각 } — 양쪽이 모두 바뀌었는지 판단용
   const listeners = [];
@@ -30,6 +30,10 @@
     if (name === 'quizLog' && Array.isArray(a) && Array.isArray(b)) {
       const out = [...a]; b.forEach((x) => { if (!out.some((y) => y.round === x.round)) out.push(x); });
       return JSON.stringify(out);
+    }
+    if (/^memoOld\./.test(name) && Array.isArray(a) && Array.isArray(b)) {
+      const out = [...a]; b.forEach((x) => { if (!out.some((y) => y.t === x.t)) out.push(x); });
+      return JSON.stringify(out.sort((x, y) => x.t - y.t));
     }
     if (name === 'myWeak' && Array.isArray(a) && Array.isArray(b)) {
       const out = [...a]; b.forEach((x) => { if (!out.some((y) => y.id === x.id)) out.push(x); });
