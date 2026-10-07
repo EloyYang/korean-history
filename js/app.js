@@ -603,13 +603,23 @@
   // ── 패널 ─────────────────────────────
   // 기출 분석 시험 포인트 (70~79회)
   // 오답 노트(review.html)의 복습 대상 문항이 걸린 기출 포인트: '시대:번호' → 개수
-  const MY_WRONG = new Map();
-  (window.ATTEMPTS ? window.ATTEMPTS.all() : window.MY_LOG || []).forEach((l) => l.wrong.forEach((n) => {
-    const row = ((window.EXAM || {})[l.round] || []).find((x) => x[0] === n);
-    if (!row || row[7] < 0 || row[3] < 2 || !['하', '중'].includes(row[4])) return;
-    const k = row[6] + ':' + row[7];
-    MY_WRONG.set(k, (MY_WRONG.get(k) || 0) + 1);
-  }));
+  // 내가 틀린 문항 중 이 기출 포인트에 걸린 것들 ('회차-번호' 목록) — 누르면 문제 창이 뜬다
+  function myWrongIds(eraId, idx) {
+    const out = [];
+    (window.ATTEMPTS ? window.ATTEMPTS.all() : window.MY_LOG || []).forEach((l) => l.wrong.forEach((n) => {
+      const row = ((window.EXAM || {})[l.round] || []).find((x) => x[0] === n);
+      if (row && row[6] === eraId && row[7] === idx) out.push(`${l.round}-${n}`);
+    }));
+    return out;
+  }
+  // 기출 문장의 회차 표시: 그 문장이 실제로 나온 문항을 알면 누를 수 있는 버튼으로
+  function roundsHtml(t, rs) {
+    const ids = (window.EX_WHERE || {})[t] || [];
+    return rs.map((r) => {
+      const at = ids.findIndex((id) => id.startsWith(r + '-'));
+      return at < 0 ? `${r}회` : `<button type="button" class="ex-r" data-qv="${ids.join(',')}" data-qv-start="${at}" data-qv-title="기출 문장" data-qv-note="${esc(t)}" title="${r}회 문제 보기">${r}회</button>`;
+    }).join(' ');
+  }
 
   function gichulHtml(era) {
     const g = (window.GICHUL || {})[era.id];
@@ -618,8 +628,8 @@
     const star = (n) => (n >= 3 ? '★★★' : n === 2 ? '★★' : '★');
     const exHtml = (x) => {
       if (!x || (!x.o.length && !x.q.length)) return '';
-      const o = x.o.map(([t, c, k, rs]) => `<li><q>${esc(t)}</q><span class="ex-meta">${c > 1 ? `<b>${c}회</b> 출제` : '1회 출제'}${k ? ` · 정답 ${k}회` : ''} · ${rs.join('·')}회</span></li>`).join('');
-      const q = x.q.map(([t, r, num, ans]) => `<li><blockquote>${esc(t)}</blockquote><span class="ex-meta">${r}회 ${num}번${ans ? ` → 정답 <q>${esc(ans)}</q>` : ''}</span></li>`).join('');
+      const o = x.o.map(([t, c, k, rs]) => `<li><q>${esc(t)}</q><span class="ex-meta">${c > 1 ? `<b>${c}회</b> 출제` : '1회 출제'}${k ? ` · 정답 ${k}회` : ''} · ${roundsHtml(t, rs)}</span></li>`).join('');
+      const q = x.q.map(([t, r, num, ans]) => `<li><blockquote>${esc(t)}</blockquote><span class="ex-meta"><button type="button" class="ex-r" data-qv="${r}-${num}" data-qv-title="기출 지문" title="문제 보기">${r}회 ${num}번</button>${ans ? ` → 정답 <q>${esc(ans)}</q>` : ''}</span></li>`).join('');
       return `<div class="ex-box">${o ? `<p class="ex-h">선택지에 이렇게 나와요</p><ul class="ex-o">${o}</ul>` : ''}${q ? `<p class="ex-h">지문(자료)에 이렇게 나와요</p><ul class="ex-q">${q}</ul>` : ''}</div>`;
     };
     const any = ex.some((x) => x && (x.o.length || x.q.length));
@@ -628,10 +638,10 @@
       <p class="gichul-top">자주 나온 주제: ${esc(g.top)}</p>
       <ul class="points gichul">${g.pts.map(([n, t], i) => {
         const e = exHtml(ex[i]);
-        const mw = MY_WRONG.get(era.id + ':' + i);
-        return `<li class="f${Math.min(n, 3)}${e && state.exAll ? ' ex-open' : ''}"><span class="freq">${star(n)}</span>${t}${mw ? `<a class="my-wrong" href="review.html" title="오답 노트의 복습 대상 문항">내 오답 ${mw}</a>` : ''}${e ? `<button class="ex-btn" type="button">기출 문장</button>${e}` : ''}</li>`;
+        const mw = myWrongIds(era.id, i);
+        return `<li class="f${Math.min(n, 3)}${e && state.exAll ? ' ex-open' : ''}"><span class="freq">${star(n)}</span>${t}${mw.length ? `<button type="button" class="my-wrong" data-qv="${mw.join(',')}" data-qv-title="내 오답" data-qv-note="${esc(String(t).replace(/<[^>]+>/g, ''))}" data-qv-open="1" title="내가 틀린 문제 보기">내 오답 ${mw.length}</button>` : ''}${e ? `<button class="ex-btn" type="button">기출 문장</button>${e}` : ''}</li>`;
       }).join('')}</ul>
-      <p class="gichul-legend">★★★ 3회 이상 · ★★ 2회 · ★ 1회(정답) 출제 · <b>기출 문장</b>을 누르면 실제 시험의 선택지·지문 표현을 볼 수 있어요 (국사편찬위원회 출제 문항 발췌)</p>`;
+      <p class="gichul-legend">★★★ 3회 이상 · ★★ 2회 · ★ 1회(정답) 출제 · <b>기출 문장</b>을 누르면 실제 시험의 선택지·지문 표현을, <b>회차</b>나 <b>내 오답</b>을 누르면 그 문제를 바로 볼 수 있어요 (국사편찬위원회 출제 문항 발췌)</p>`;
   }
 
   // 시대별 기출 문장 모아 보기: 많이 나온 순 / 정답으로 많이 나온 순
@@ -652,7 +662,7 @@
       </div>
       <ol class="top-list">${shown.map(([t, c, k, rs], i) => `
         <li class="${k ? 'has-k' : ''}"><span class="top-rank">${i + 1}</span><div><q>${esc(t)}</q>
-          <span class="ex-meta"><b>${c}회</b> 출제 · ${k ? `<em>정답 ${k}회 (${Math.round((k / c) * 100)}%)</em>` : '정답 0회'} · ${rs.join('·')}회</span></div></li>`).join('')}</ol>
+          <span class="ex-meta"><b>${c}회</b> 출제 · ${k ? `<em>정답 ${k}회 (${Math.round((k / c) * 100)}%)</em>` : '정답 0회'} · ${roundsHtml(t, rs)}</span></div></li>`).join('')}</ol>
       ${rows.length > LIMIT ? `<button class="top-more" type="button">${state.topMore ? '접기' : `더 보기 (${rows.length - LIMIT}개 더)`}</button>` : ''}`;
   }
 
@@ -1116,6 +1126,11 @@
     if (tb || e.target.closest('.top-more')) {
       if (tb) { state.topSort = tb.dataset.top; store.set('topSort', state.topSort); } else state.topMore = !state.topMore;
       $('#top-box').innerHTML = topHtml(ERAS[state.era]);
+      return;
+    }
+    const qv = e.target.closest('[data-qv]');
+    if (qv && window.QView) {
+      window.QView.open(qv.dataset.qv.split(','), { start: +(qv.dataset.qvStart || 0), title: qv.dataset.qvTitle, note: esc(qv.dataset.qvNote || ''), showAnswer: !!qv.dataset.qvOpen });
       return;
     }
     const xb = e.target.closest('.ex-btn');
