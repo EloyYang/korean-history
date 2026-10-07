@@ -135,16 +135,17 @@
   const pickedOf = (r, n) => { const l = LOG.find((x) => x.round === r); return l && l.answers ? (l.answers[n] || 0) : null; };
   // 선지별 포인트: 자세한 설명(OPTX) 우선, 없으면 예전 짧은 정리
   const OPTX = window.OPTX || {};
-  function optList(q, sv, f, img) {
+  function optList(q, sv, f, img, now) {
     const ox = OPTX[q.id]; const E = esc; const right = QKEY[q.round] ? QKEY[q.round].ans[q.num - 1] : f ? f.ans + 1 : 0;
-    const picked = pickedOf(q.round, q.num);
+    const picked = now !== undefined ? now : pickedOf(q.round, q.num);
+    const PL = now !== undefined ? '이번에 고른 답' : '내가 고른 답', NONE = now !== undefined ? '모르겠어요' : '고르지 않음';
     // 내가 고른 답: 틀렸으면 무엇을 골랐고 왜 아닌지 먼저 보여 준다
     const pickBox = () => {
       if (picked == null) return '';
-      if (!picked) return `<div class="sv-pick none"><p><b>내가 고른 답</b> 고르지 않음 <span>→ 정답 ${NUMS[right - 1]}</span></p></div>`;
-      if (picked === right) return `<div class="sv-pick ok"><p><b>내가 고른 답</b> ${NUMS[picked - 1]} <span>정답을 골랐어요</span></p></div>`;
+      if (!picked) return `<div class="sv-pick none"><p><b>${PL}</b> ${NONE} <span>→ 정답 ${NUMS[right - 1]}</span></p></div>`;
+      if (picked === right) return `<div class="sv-pick ok"><p><b>${PL}</b> ${NUMS[picked - 1]} <span>정답을 골랐어요</span></p></div>`;
       const mine = ox ? ox[picked - 1].split('|') : null, ans = ox ? ox[right - 1].split('|') : null;
-      return `<div class="sv-pick"><p><b>내가 고른 답</b> ${NUMS[picked - 1]}${mine ? ' ' + E(mine[0]) : ''} <span>→ 정답 ${NUMS[right - 1]}${ans ? ' ' + E(ans[0]) : ''}</span></p>${mine ? `<p class="why"><b>왜 아닌가</b> ${E(mine[1] || '')}</p>` : ''}</div>`;
+      return `<div class="sv-pick"><p><b>${PL}</b> ${NUMS[picked - 1]}${mine ? ' ' + E(mine[0]) : ''} <span>→ 정답 ${NUMS[right - 1]}${ans ? ' ' + E(ans[0]) : ''}</span></p>${mine ? `<p class="why"><b>왜 아닌가</b> ${E(mine[1] || '')}</p>` : ''}</div>`;
     };
     const cls = (i) => (i + 1 === right ? 'ans' : '') + (picked && i + 1 === picked && picked !== right ? ' mine' : '');
     const tag = (i) => (i + 1 === right ? ' <em>정답</em>' : '') + (picked && i + 1 === picked && picked !== right ? ' <em class="mine">내가 고름</em>' : '');
@@ -160,6 +161,70 @@
     const cell = (k, v) => (v ? `<div><dt>${k}</dt><dd>${esc(v)}</dd></div>` : '');
     return `<dl class="sv-meta">${cell('시기', when)}${cell('나라', state)}${cell('왕·정부', king)}</dl>`;
   }
+  // ── 다시 풀기: 정답을 가린 채 한 문제씩 풀고 바로 채점. 결과는 {id: {ok, no, last, t}} 로 남긴다
+  const RKEY = window.ATTEMPTS.key('retry');
+  const retryLog = () => window.UserStore.get(RKEY, {}) || {};
+  const retryBadge = (id) => { const x = retryLog()[id]; return x ? `<span class="rq-retry ${x.last}" title="다시 풀기 기록 — 마지막에는 ${x.last === 'ok' ? '맞힘' : '틀림'}">다시 풀기 ✓${x.ok || 0} ✗${x.no || 0}</span>` : ''; };
+  let rt = null; // { ids, i, picks: {id: 고른 번호(0 = 모르겠어요)}, title, end }
+  let lastShown = [];
+  const rtRight = (id) => { const [r, n] = id.split('-').map(Number); return QKEY[r] ? QKEY[r].ans[n - 1] : 0; };
+  function startRetry(ids, title, shuffle) {
+    ids = [...new Set(ids)].filter(rtRight); if (!ids.length) return;
+    if (shuffle) for (let i = ids.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [ids[i], ids[j]] = [ids[j], ids[i]]; }
+    closeQView();
+    rt = { ids, i: 0, picks: {}, title: title || '', end: false };
+    let box = document.getElementById('rt');
+    if (!box) { box = document.createElement('div'); box.id = 'rt'; box.className = 'qv rt'; document.body.appendChild(box); }
+    box.hidden = false; document.body.classList.add('qv-on'); renderRetry(); box.scrollTop = 0;
+  }
+  function closeRetry() { rt = null; const b = document.getElementById('rt'); if (b) { b.hidden = true; b.innerHTML = ''; } document.body.classList.remove('qv-on'); rerender(); }
+  function rtPick(n) {
+    const id = rt.ids[rt.i]; if (id in rt.picks) return;
+    rt.picks[id] = n; const ok = n === rtRight(id);
+    const L = retryLog(); const o = L[id] || { ok: 0, no: 0 };
+    if (ok) o.ok = (o.ok || 0) + 1; else o.no = (o.no || 0) + 1;
+    o.last = ok ? 'ok' : 'no'; o.t = Date.now(); L[id] = o; window.UserStore.set(RKEY, L);
+    renderRetry(); document.querySelector('#rt .rt-res')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+  function rtNext() {
+    if (!(rt.ids[rt.i] in rt.picks)) return;
+    if (rt.i < rt.ids.length - 1) rt.i++; else rt.end = true;
+    renderRetry(); document.getElementById('rt').scrollTop = 0;
+  }
+  function renderRetry() {
+    const box = document.getElementById('rt'); if (!box || !rt) return;
+    const okIds = rt.ids.filter((id) => id in rt.picks && rt.picks[id] === rtRight(id));
+    const noIds = rt.ids.filter((id) => id in rt.picks && rt.picks[id] !== rtRight(id));
+    const top = (sub) => `<div class="qv-top"><div class="qv-ttl"><b>다시 풀기${rt.title ? ' · ' + esc(rt.title) : ''}</b><span>${sub}</span></div><button type="button" class="qv-x" data-rt-close aria-label="닫기">✕</button></div>`;
+    if (rt.end) {
+      const row = (id) => { const q = Q(...id.split('-').map(Number)); return `<li><button type="button" data-rt-goto="${id}">${qLabel(id)}</button> ${esc(q.theme)}</li>`; };
+      box.innerHTML = `<div class="qv-box rt-box">${top(`${rt.ids.length}문항을 모두 풀었어요`)}
+        <div class="rt-score"><b>${okIds.length}</b> / ${rt.ids.length} <span>맞힘 · 정답률 ${Math.round((okIds.length / rt.ids.length) * 100)}%</span></div>
+        ${noIds.length ? `<p class="sv-h">또 틀린 문제 ${noIds.length}개 <small>— 번호를 누르면 오답 노트의 그 문제로 가요</small></p><ul class="rt-list no">${noIds.map(row).join('')}</ul>` : '<p class="rt-all">전부 맞혔어요 🎉</p>'}
+        ${okIds.length ? `<p class="sv-h">이번에 맞힌 문제 ${okIds.length}개</p><ul class="rt-list">${okIds.map(row).join('')}</ul>` : ''}
+        <div class="rt-btns">${noIds.length ? `<button type="button" class="rt-go" data-rt-again>↻ 또 틀린 ${noIds.length}문항만 다시</button>` : ''}
+          ${okIds.some((id) => !mastered.has(id)) ? `<button type="button" data-rt-master>맞힌 ${okIds.length}문항 ‘외웠어요’로 표시</button>` : ''}
+          <button type="button" data-rt-close>닫기</button></div></div>`;
+      return;
+    }
+    const id = rt.ids[rt.i]; const [r, n] = id.split('-').map(Number); const q = Q(r, n);
+    const right = rtRight(id); const answered = id in rt.picks; const pk = rt.picks[id];
+    const sv = SOLVE[id]; const prev = retryLog()[id]; const first = pickedOf(r, n);
+    const optBtn = (i) => `<button type="button" data-rt-pick="${i}" ${answered ? 'disabled' : ''} class="${answered && i === right ? 'ans' : ''}${answered && i === pk && pk !== right ? ' mine' : ''}">${NUMS[i - 1]}</button>`;
+    box.innerHTML = `<div class="qv-box rt-box">${top(`${rt.i + 1} / ${rt.ids.length} · 맞힘 ${okIds.length} · 틀림 ${noIds.length}`)}
+      <div class="rt-bar"><span style="width:${((rt.i + (answered ? 1 : 0)) / rt.ids.length) * 100}%"></span></div>
+      <div class="rq open">
+        <div class="rq-head"><span class="rq-no">${r}회 ${n}번</span>${q.pt ? `<span class="rq-pt">${q.pt}점</span>` : ''}${answered ? `<span class="rq-tag">${esc(q.theme)}</span>` : ''}${!answered && prev ? retryBadge(id) : ''}</div>
+        <img class="rq-img" src="${imgOf(r, n)}" alt="${r}회 ${n}번 문제">
+        <div class="rt-opts">${[1, 2, 3, 4, 5].map(optBtn).join('')}<button type="button" class="dk" data-rt-pick="0" ${answered ? 'disabled' : ''}>모르겠어요</button></div>
+        ${answered ? `<div class="rt-res ${pk === right ? 'ok' : 'no'}"><b>${pk === right ? '정답이에요 ✓' : pk ? '틀렸어요 ✗' : '정답 확인'}</b> 정답 ${NUMS[right - 1]}${q.ans ? ' ' + esc(q.ans) : ''}${first != null && first !== right ? ` <small>· 처음 풀 때 고른 답 ${first ? NUMS[first - 1] : '없음'}</small>` : ''}
+            <button type="button" class="rt-go" data-rt-next>${rt.i < rt.ids.length - 1 ? '다음 문제 ▶' : '결과 보기 ▶'}</button></div>
+          <div class="rq-solve"><div class="rq-solve-body">${metaHtml(r, n)}
+            ${sv ? `<p class="sv-h">지문에서 잡을 단서</p><p class="sv-clue">${sv.clue.map((c) => `<mark class="clue">${esc(c)}</mark>`).join(' ')}</p><p class="sv-h">정답까지 생각의 순서</p><p class="sv-how">${sv.how}</p>${optList(q, sv, FULL[id], true, pk)}` : ''}</div></div>
+          ${memoView(q)}` : `<p class="rt-hint">번호를 누르면 바로 채점돼요 · 키보드 1~5, 모르겠으면 0</p>`}
+      </div></div>`;
+  }
+
   function qCard(q) {
     const done = mastered.has(q.id);
     const f = FULL[q.id];
@@ -182,6 +247,8 @@
           ${q.pt ? `<span class="rq-pt">${q.pt}점</span>` : ''}
           ${q.time ? `<span class="rq-time${q.slowSt ? ' slow' : ''}">${q.slowSt ? '⏱ ' : '풀이 '}${mmss(q.time)}${q.slowSt && q.avg ? ` <small>(평균 ${mmss(q.avg)}의 ${(q.time / q.avg).toFixed(1)}배${q.slowSt === 'right' ? ' · 맞힘' : ' · 틀림'})</small>` : ''}</span>` : ''}
           ${FLAGS.has(q.id) ? `<button type="button" class="rq-flag" data-unflag="${q.id}" title="헷갈림 표시 지우기">🚩 헷갈림${q.flagSt === 'right' ? ' · 맞힘' : q.flagSt === 'none' ? ' · 채점 전' : ''} ✕</button>` : ''}
+          ${retryBadge(q.id)}
+          ${QKEY[q.round] ? `<button type="button" class="rq-again" data-retry="${q.id}" title="정답을 가리고 이 문제만 다시 풀기">↻ 다시 풀기</button>` : ''}
           <label class="rq-done"><input type="checkbox" ${done ? 'checked' : ''}> 외웠어요</label>
         </div>
         ${img || `${f && f.stem ? `<p class="rq-stem">${esc(f.stem)}</p>` : ''}<div class="rq-body">${body}</div>`}
@@ -251,6 +318,8 @@
     if (has('target')) put(pTargets); if (has('other')) put(pOthers); if (has('flag')) put(pFlags); if (has('slow')) put(pSlow);
     const list = onlySlow ? pSlow : [...merged.values()];
     const shown = state.hideDone ? list.filter((q) => !mastered.has(q.id)) : list;
+    lastShown = shown.filter((q) => QKEY[q.round]).map((q) => q.id);
+    const RL = retryLog(); const againIds = lastShown.filter((id) => RL[id] && RL[id].last === 'no');
     const doneN = targets.filter((q) => mastered.has(q.id)).length;
     const othersAll = wrongs.filter((q) => !q.target);
 
@@ -347,7 +416,7 @@
         <span class="wk-t">${p ? `<span class="rp-freq">${starTxt(Math.min(p[0], 3))}</span>${p[1]}` : `${esc(q.theme)} <small class="rp-none">기출 포인트 외</small>`}</span>
         <span class="wk-n">틀림 <b>${v.wrongs.length}</b> / 출제 ${v.all}${v.done ? ' · ✓ 외움' : ''}</span>
         ${memoUi ? `<span class="wk-memo-row">${memoUi}</span>` : ''}
-        <span class="wk-qs">${v.wrongs.map((w) => `<button type="button" data-goto="${w.id}" class="${mastered.has(w.id) ? 'm' : ''}${w.target ? '' : ' off'}">${w.round}회 ${w.num}번${FLAGS.has(w.id) ? ' 🚩' : ''}</button>`).join('')}${memoOpen === ck ? '' : `<button type="button" class="wk-memo-btn" data-wm-open="${esc(ck)}">${memo ? '✎ 메모 수정' : '＋ 메모'}</button>`}</span></li>`;
+        <span class="wk-qs">${v.wrongs.map((w) => `<button type="button" data-goto="${w.id}" class="${mastered.has(w.id) ? 'm' : ''}${w.target ? '' : ' off'}">${w.round}회 ${w.num}번${FLAGS.has(w.id) ? ' 🚩' : ''}</button>`).join('')}${memoOpen === ck ? '' : `<button type="button" class="wk-memo-btn" data-wm-open="${esc(ck)}">${memo ? '✎ 메모 수정' : '＋ 메모'}</button>`}<button type="button" class="wk-memo-btn" data-retry="${v.wrongs.map((w) => w.id).join(',')}" title="이 개념에서 틀린 문제만 다시 풀기">↻ 다시 풀기</button></span></li>`;
     });
     // 상위 10개만, 나머지는 펼치기
     const weakAllItems = [...mineItems, ...weakItems];
@@ -423,6 +492,10 @@
         ${SC.has('slow') ? `<p class="r-scope-note">${timedN ? `기출 풀기로 시간을 잰 ${timedN}개 회차에서 그 회차 평균의 ${SLOW_X}배 이상(1분 초과) 또는 3분 이상 걸린 문제예요. 오래 걸린 순 — 맞힘 ${pSlow.filter((q) => q.slowSt === 'right').length} · 틀림 ${pSlow.filter((q) => q.slowSt === 'wrong').length}` : '시간 기록이 있는 회차가 없어요. 기출 풀기에서 풀면 문제별 시간이 기록돼요 (채팅으로 알려 준 기록은 시간이 없어요).'}</p>` : ''}
         ${SC.has('flag') ? `<p class="r-scope-note">기출 풀기에서 헷갈림 표시한 문제예요. 맞혔어도 확실히 알지 못한 문제라 같이 복습하면 좋아요 — 맞힘 ${pFlags.filter((q) => q.flagSt === 'right').length} · 틀림 ${pFlags.filter((q) => q.flagSt === 'wrong').length} · 채점 전 ${pFlags.filter((q) => q.flagSt === 'none').length}</p>` : ''}
         ${SC.has('other') ? `<p class="r-scope-note">복습 대상(★★ 이상·난이도 하·중)에서 빠진 문제예요. 난이도가 높은 문제 ${pOthers.filter((q) => !EASY.includes(q.diff)).length}개, 출제빈도가 낮은 문제(★) ${pOthers.filter((q) => q.stars < MIN_STARS).length}개 (겹치는 문제 포함)</p>` : ''}
+        <div class="rt-launch"><button type="button" class="rt-go" data-retry-list="shown" ${lastShown.length ? '' : 'disabled'}>▶ 지금 보이는 ${lastShown.length}문항 다시 풀기</button>
+          ${againIds.length ? `<button type="button" data-retry-list="again">↻ 다시 풀어 또 틀린 ${againIds.length}문항만</button>` : ''}
+          <label class="chip-check"><input type="checkbox" id="rt-shuffle" ${store.get('retryShuffle', true) ? 'checked' : ''}> 순서 섞기</label>
+          <small>정답을 가린 채 한 문제씩 다시 풀고 바로 채점해요 · 위에서 고른 범위·시기·문제 종류가 그대로 적용돼요</small></div>
         <label class="chip-check"><input type="checkbox" id="hide-done" ${state.hideDone ? 'checked' : ''}> 외운 문항 숨기기</label>
         <label class="chip-check"><input type="checkbox" id="open-all" ${state.openAll ? 'checked' : ''}> 정답 도출 포인트 모두 펼치기</label>
       </div>
@@ -431,6 +504,31 @@
   }
 
   document.addEventListener('click', (e) => {
+    if (rt && e.target.closest('#rt')) {
+      const pk = e.target.closest('[data-rt-pick]');
+      if (pk) { rtPick(+pk.dataset.rtPick); return; }
+      if (e.target.closest('[data-rt-next]')) { rtNext(); return; }
+      if (e.target.closest('[data-rt-again]')) { const ids = rt.ids.filter((id) => rt.picks[id] !== rtRight(id)); startRetry(ids, rt.title, store.get('retryShuffle', true)); return; }
+      if (e.target.closest('[data-rt-master]')) {
+        rt.ids.filter((id) => rt.picks[id] === rtRight(id)).forEach((id) => mastered.add(id));
+        window.UserStore.set(MKEY, [...mastered]); renderRetry(); return;
+      }
+      const g = e.target.closest('[data-rt-goto]');
+      if (g) { const id = g.dataset.rtGoto; closeRetry(); const b = document.createElement('button'); b.dataset.goto = id; b.hidden = true; document.body.appendChild(b); b.click(); b.remove(); return; }
+      if (e.target.closest('[data-rt-close]')) {
+        const left = rt.end ? 0 : rt.ids.length - Object.keys(rt.picks).length;
+        if (left && Object.keys(rt.picks).length && !confirm(`아직 ${left}문항이 남았어요. 그만 풀까요?\n(지금까지 푼 문제의 결과는 남아요)`)) return;
+        closeRetry();
+      }
+      return;
+    }
+    const rl = e.target.closest('[data-retry-list]');
+    if (rl) {
+      const RL = retryLog(); const again = rl.dataset.retryList === 'again';
+      startRetry(again ? lastShown.filter((id) => RL[id] && RL[id].last === 'no') : lastShown, again ? '또 틀린 문제' : '', store.get('retryShuffle', true)); return;
+    }
+    const ry = e.target.closest('[data-retry]');
+    if (ry) { const ids = ry.dataset.retry.split(','); startRetry(ids, ids.length > 1 ? '이 개념에서 틀린 문제' : '', false); return; }
     const del = e.target.closest('[data-del]');
     if (del) {
       const r = +del.dataset.del;
@@ -541,7 +639,16 @@
     box.hidden = false; document.body.classList.add('qv-on');
   }
   function closeQView() { const b = document.getElementById('qv'); if (b) b.hidden = true; document.body.classList.remove('qv-on'); }
-  document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !document.getElementById('qv')?.hidden) closeQView(); });
+  document.addEventListener('keydown', (e) => {
+    if (rt) {
+      if (e.key === 'Escape') document.querySelector('#rt [data-rt-close]')?.click();
+      else if (rt.end) return;
+      else if (/^[0-5]$/.test(e.key)) rtPick(+e.key);
+      else if (e.key === 'Enter' || e.key === 'ArrowRight' || e.key === ' ') { e.preventDefault(); rtNext(); }
+      return;
+    }
+    if (e.key === 'Escape' && !document.getElementById('qv')?.hidden) closeQView();
+  });
   // 관련 문제 선택
   const getRefs = (f) => String(f.refs.value || '').split(',').filter(Boolean);
   function setRefs(f, ids) {
@@ -624,6 +731,7 @@
       saveWeak(myWeak().map((w) => (w.id === e.target.dataset.wkDone ? { ...w, done: e.target.checked } : w)));
       const y = window.scrollY; render(); window.scrollTo(0, y); return;
     }
+    if (e.target.id === 'rt-shuffle') { store.set('retryShuffle', e.target.checked); return; }
     if (e.target.id === 'open-all') { state.openAll = e.target.checked; store.set('reviewOpenAll', state.openAll); openSet.clear(); render(); return; }
     if (e.target.id === 'hide-done') { state.hideDone = e.target.checked; store.set('reviewHideDone', state.hideDone); render(); return; }
     const li = e.target.closest('.rq');
