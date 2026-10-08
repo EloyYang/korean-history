@@ -628,9 +628,9 @@
     const go = e.target.closest('button[data-goto]');
     if (go) {
       const sel = `.rq[data-id="${go.dataset.goto}"]`;
-      if (!document.querySelector(sel)) { state.scopes.clear(); state.hideDone = false; store.set('reviewHideDone', false); saveFilters(); render(); }
-      if (!document.querySelector(sel)) { state.periods.clear(); state.views.clear(); saveFilters(); render(); }
-      const li = document.querySelector(sel); if (!li) return;
+      const li = document.querySelector(`#review ${sel}`);
+      if (!li) { openQView(go.dataset.goto); return; } // 지금 고른 필터 밖의 문제는 필터를 건드리지 않고 창으로
+      showBack(window.scrollY);
       li.classList.add('open', 'flash'); openSet.add(li.dataset.id);
       const tg = li.querySelector('.rq-toggle'); if (tg) tg.textContent = '정답·도출 포인트 접기 ▴';
       li.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -645,6 +645,16 @@
       li.classList.toggle('open', on); if (on) openSet.add(li.dataset.id); else openSet.delete(li.dataset.id);
       t.textContent = on ? '정답·도출 포인트 접기 ▴' : '정답·도출 포인트 보기 ▾';
     }
+  });
+  // 문제로 건너뛴 뒤 보던 자리로 돌아가는 버튼
+  function showBack(y) {
+    let b = document.getElementById('r-back');
+    if (!b) { b = document.createElement('button'); b.id = 'r-back'; b.type = 'button'; b.className = 'r-back'; b.textContent = '↩ 보던 곳으로'; document.body.appendChild(b); }
+    b.dataset.y = y; b.hidden = false;
+  }
+  document.addEventListener('click', (e) => {
+    const b = e.target.closest('#r-back'); if (!b) return;
+    window.scrollTo({ top: +b.dataset.y, behavior: 'smooth' }); b.hidden = true;
   });
   const rerender = () => { const y = window.scrollY; render(); window.scrollTo(0, y); };
   // 문제 미리보기 창
@@ -759,6 +769,37 @@
       const y = window.scrollY; render(); window.scrollTo(0, y);
     }
   });
-  window.UserStore.onChange((t) => { if (t === 'auth' || t === 'sync') render(); });
+  // ── 다른 페이지(기출 풀기·지도 노트)에 다녀와도 보던 자리·펼친 문제를 그대로: 탭 단위(sessionStorage)로 기억
+  const VKEY = 'khmap.reviewView.' + EX.id;
+  const anchors = () => [...document.querySelectorAll('#review .rq[data-id], #review h2.r-h, #review .wk')];
+  function saveView() {
+    const as = anchors(); if (!as.length) return;
+    let i = as.findIndex((el) => el.getBoundingClientRect().bottom > 60); if (i < 0) i = as.length - 1;
+    const el = as[i];
+    const v = { open: [...openSet], weakAll: state.weakAll, y: window.scrollY, off: Math.round(el.getBoundingClientRect().top),
+      id: el.dataset.id || '', idx: i, t: Date.now() };
+    try { sessionStorage.setItem(VKEY, JSON.stringify(v)); } catch (e) { /* 무시 */ }
+  }
+  let keepView = null; // 복원 중인 자리 (문제 이미지가 늦게 떠서 밀리면 다시 맞춘다)
+  function placeView() {
+    if (!keepView) return;
+    const el = (keepView.id && document.querySelector(`#review .rq[data-id="${keepView.id}"]`)) || anchors()[keepView.idx];
+    if (el) window.scrollBy(0, el.getBoundingClientRect().top - keepView.off); else window.scrollTo(0, keepView.y);
+  }
+  function restoreView() {
+    let v = null; try { v = JSON.parse(sessionStorage.getItem(VKEY)); } catch (e) { /* 무시 */ }
+    if (!v || Date.now() - v.t > 12 * 3600e3) return;
+    (v.open || []).forEach((id) => openSet.add(id)); state.weakAll = !!v.weakAll;
+    render(); keepView = v; placeView();
+    const stop = () => { keepView = null; };
+    ['wheel', 'touchstart', 'keydown', 'mousedown'].forEach((ev) => window.addEventListener(ev, stop, { once: true, passive: true }));
+    document.addEventListener('load', (e) => { if (keepView && e.target.tagName === 'IMG') placeView(); }, true);
+    setTimeout(stop, 5000);
+  }
+  if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
+  window.addEventListener('pagehide', saveView);
+  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') saveView(); });
+  window.UserStore.onChange((t) => { if (t === 'auth' || t === 'sync') { rerender(); placeView(); } });
   render();
+  restoreView();
 })();
