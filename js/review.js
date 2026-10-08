@@ -359,6 +359,21 @@
       <li class="${v.all >= 2 && v.wr / v.all >= 0.5 ? 'weak' : ''}"><button type="button" class="bar-name r-link" data-period="${e}" title="${esc(periodTip(e))} — 눌러서 이 시기 선택/해제">${esc(periodName(e))}</button>
         <span class="bar-track"><span class="bar-all" style="width:${(v.all / maxAll) * 100}%"></span><span class="bar-wr" style="width:${(v.wr / maxAll) * 100}%"></span><span class="bar-tg" style="width:${(v.tg / maxAll) * 100}%"></span></span>
         <span class="bar-n">출제 ${v.all} · 틀림 <b>${v.wr}</b> <i>${pct(v.wr, v.all)}%</i></span></li>`).join('');
+    // 배점별: 선택한 범위 합계 + 회차별로 출제 수 · 틀린 수 · 잃은 점수
+    const PTS = [1, 2, 3];
+    const ptRow = (l) => PTS.map((p) => {
+      const k = QKEY[l.round]; if (!k) return null;
+      const nums = k.pt.map((x, i) => (x === p ? i + 1 : 0)).filter(Boolean);
+      return { all: nums.length, wr: nums.filter((n) => l.wrong.includes(n)) };
+    });
+    const ptLogs = FLOG.filter((l) => QKEY[l.round]).sort((x, y) => y.round - x.round).map((l) => ({ l, c: ptRow(l) }));
+    const ptCell = (all, wr, p, nums) => `<td class="${all && wr / all >= 0.3 ? 'weak' : ''}"><b>${wr}</b> / ${all} <i>${pct(wr, all)}%</i><small>−${wr * p}점</small>${nums && nums.length ? `<span class="pt-nums">${nums.map((n) => `<span>${n}</span>`).join('')}</span>` : ''}</td>`;
+    const ptSum = PTS.map((p, i) => ({ all: ptLogs.reduce((a, x) => a + x.c[i].all, 0), wr: ptLogs.reduce((a, x) => a + x.c[i].wr.length, 0) }));
+    const ptTable = ptLogs.length ? `<div class="r-table-wrap"><table class="r-table pt-table">
+        <thead><tr><th>회차</th>${PTS.map((p) => `<th>${p}점 문제 <small>틀림 / 출제</small></th>`).join('')}<th>잃은 점수</th></tr></thead>
+        <tbody><tr class="sum"><th>${ptLogs.length > 1 ? `합계 <small>${ptLogs.length}개 회차</small>` : '합계'}</th>${PTS.map((p, i) => ptCell(ptSum[i].all, ptSum[i].wr, p)).join('')}<td><b>−${PTS.reduce((a, p, i) => a + ptSum[i].wr * p, 0)}</b>점</td></tr>
+        ${ptLogs.length > 1 ? ptLogs.map(({ l, c }) => `<tr><th>${l.round}회</th>${PTS.map((p, i) => ptCell(c[i].all, c[i].wr.length, p, c[i].wr)).join('')}<td><b>−${PTS.reduce((a, p, i) => a + c[i].wr.length * p, 0)}</b>점</td></tr>`).join('') : `<tr><th>틀린 번호</th>${PTS.map((p, i) => `<td><span class="pt-nums">${ptLogs[0].c[i].wr.map((n) => `<span>${n}</span>`).join('') || '-'}</span></td>`).join('')}<td></td></tr>`}</tbody>
+      </table></div>` : '<p class="r-empty">아직 푼 회차가 없어요</p>';
     const btn = (v, label, n) => `<button data-era-round="${esc(v)}" aria-pressed="${v === 'all' ? !anyView : state.views.has(v)}">${label}${n ? ` <small>${n}</small>` : ''}</button>`;
     const eraSeg = eraRounds.length ? `<section class="r-view">
       <div class="r-view-row"><span class="r-view-lab">전체</span><span class="r-chips">${btn('all', `전체 기록`, `${eraRounds.length}회차`)}</span></div>
@@ -478,6 +493,9 @@
 
       <h2 class="r-h">시대별 약점 <small>${esc(viewName)} · 연한 막대 = 출제 문항, 중간 = 틀린 문항, 진한 막대 = 그중 복습 대상</small></h2>
       <ul class="r-bars">${bars || '<li class="r-empty">아직 푼 회차가 없어요</li>'}</ul>
+
+      <h2 class="r-h">배점별 오답 <small>${esc(viewName)} · 1점·2점·3점짜리 문제가 각각 몇 개 나왔고 그중 몇 개를 틀렸는지</small></h2>
+      ${ptTable}
 
       <h2 class="r-h" id="weak-h">내가 약한 개념 <small>${esc(viewName + perName)} 기준 · 많이 틀린 순 · 번호를 누르면 문제로 이동</small></h2>
       <div class="r-tools"><button type="button" class="wk-add" data-wk="add">＋ 약한 개념 직접 추가</button>${myWeak().length ? `<small class="r-scope-note">직접 추가 ${mineItems.length}개 · 기출 문제에서 찾은 개념 ${weakItems.length}개</small>` : ''}</div>

@@ -1112,3 +1112,12 @@ button.rt-go:disabled { opacity: .4; cursor: default; }
 .rt-list.no button { border-color: #c62828; color: #c62828; }
 .rt-btns { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-top: 14px; }
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .rt-res { background: #3b1f1c; color: #ffd9d3; border-color: #7a3a33; } :root:not([data-theme="light"]) .rt-res.ok { background: #1d3320; color: #c8e6c9; border-color: #3d6b42; } :root:not([data-theme="light"]) .rq-retry { background: #1d3320; color: #c8e6c9; border-color: #3d6b42; } :root:not([data-theme="light"]) .rq-retry.no { background: #3b1f1c; color: #ffb4ab; border-color: #7a3a33; } :root:not([data-theme="light"]) .rt-list.no button { color: #ff8a80; border-color: #ff8a80; } }
+
+/* 오답 노트: 배점별 오답 */
+.pt-table td { white-space: normal; vertical-align: top; }
+.pt-table td i { font-style: normal; color: var(--muted); margin-left: 4px; font-variant-numeric: tabular-nums; }
+.pt-table td small, .pt-table th small { margin-left: 6px; font-size: 11.5px; font-weight: 400; color: var(--muted); }
+.pt-table td.weak b, .pt-table td.weak i { color: var(--accent); font-weight: 700; }
+.pt-table tr.sum > * { background: var(--surface-2); font-size: 14.5px; }
+.pt-nums { display: block; margin-top: 3px; }
+.pt-nums span { display: inline-block; min-width: 22px; margin: 1px; padding: 0 4px; border-radius: 4px; text-align: center; font-size: 11.5px; background: var(--surface-2); color: var(--muted); }
