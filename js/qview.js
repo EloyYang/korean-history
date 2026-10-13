@@ -8,14 +8,14 @@
   const EX = window.examById ? window.examById('history') : { img: 'quiz/{r}/{n}.webp' };
   const imgOf = (r, n) => EX.img.replace('{r}', r).replace('{n}', String(n).padStart(2, '0'));
   const ROUNDS = [79, 78, 77, 76, 75, 74, 73, 72, 71, 70];
-  const NEED = ['js/quiz-key.js', 'js/qmeta.js', 'js/solve.js'].concat(ROUNDS.map((r) => `js/solve/${r}.js`), ROUNDS.map((r) => `js/optx/${r}.js`));
+  const NEED = ['js/quiz-key.js', 'js/qmeta.js', 'js/solve.js'].concat(ROUNDS.map((r) => `js/solve/${r}.js`), ROUNDS.map((r) => `js/optx/${r}.js`), ROUNDS.map((r) => `js/optm/${r}.js`), ['js/exam.js', 'js/opt-same.js', 'js/optview.js']);
 
   let loading = null;
   function loadAll() {
-    if (window.QUIZ_KEYS && window.SOLVE && window.OPTX && window.QMETA) return Promise.resolve();
+    if (window.QUIZ_KEYS && window.SOLVE && window.OPTX && window.QMETA && window.optExtra) return Promise.resolve();
     if (!loading) {
       loading = NEED.reduce((p, src) => p.then(() => new Promise((ok) => {
-        if (document.querySelector(`script[src="${src}"]`)) return ok();
+        if (document.querySelector(`script[src="${src}"]`) || (src === 'js/exam.js' && window.EXAM)) return ok();
         const s = document.createElement('script'); s.src = src; s.onload = ok; s.onerror = ok; document.head.appendChild(s);
       })), Promise.resolve());
     }
@@ -46,7 +46,7 @@
     }
     const opts = ox ? `<p class="sv-h">선지별 포인트</p><ol class="sv-opts ox">${ox.map((o, i) => {
       const [t, e] = o.split('|'); const mineWrong = picked && i + 1 === picked && picked !== right;
-      return `<li class="${i + 1 === right ? 'ans' : ''}${mineWrong ? ' mine' : ''}"><span class="n">${NUMS[i]}</span><span><b>${esc(t)}</b>${i + 1 === right ? ' <em>정답</em>' : ''}${mineWrong ? ' <em class="mine">내가 고름</em>' : ''}<small>${esc(e || '')}</small></span></li>`;
+      return `<li class="${i + 1 === right ? 'ans' : ''}${mineWrong ? ' mine' : ''}"><span class="n">${NUMS[i]}</span><span><b>${esc(t)}</b>${i + 1 === right ? ' <em>정답</em>' : ''}${mineWrong ? ' <em class="mine">내가 고름</em>' : ''}<small>${esc(e || '')}</small>${window.optExtra ? window.optExtra(id, i) : ''}</span></li>`;
     }).join('')}</ol>` : '';
     return `${metaHtml}
       ${right ? `<p class="sv-h">정답</p><p class="sv-how"><b>${NUMS[right - 1]}</b></p>` : ''}

@@ -149,7 +149,7 @@
     };
     const cls = (i) => (i + 1 === right ? 'ans' : '') + (picked && i + 1 === picked && picked !== right ? ' mine' : '');
     const tag = (i) => (i + 1 === right ? ' <em>정답</em>' : '') + (picked && i + 1 === picked && picked !== right ? ' <em class="mine">내가 고름</em>' : '');
-    if (ox) return `${pickBox()}<p class="sv-h">선지별 포인트</p><ol class="sv-opts ox">${ox.map((o, i) => { const [t, e] = o.split('|'); return `<li class="${cls(i)}"><span class="n">${NUMS[i]}</span><span><b>${E(t)}</b>${tag(i)}<small>${E(e || '')}</small></span></li>`; }).join('')}</ol>`;
+    if (ox) return `${pickBox()}<p class="sv-h">선지별 포인트</p><ol class="sv-opts ox">${ox.map((o, i) => { const [t, e] = o.split('|'); return `<li class="${cls(i)}"><span class="n">${NUMS[i]}</span><span><b>${E(t)}</b>${tag(i)}<small>${E(e || '')}</small>${window.optExtra ? window.optExtra(q.id, i) : ''}</span></li>`; }).join('')}</ol>`;
     if (img && f) return `${pickBox()}<p class="sv-h">선지별 정리</p><ol class="sv-opts">${f.opts.map((o, i) => `<li class="${cls(i)}"><span class="n">${NUMS[i]}</span><span>${esc(o)}${tag(i)}<small>${sv.opts ? sv.opts[i] : ''}</small></span></li>`).join('')}</ol>`;
     return img && sv.opts ? `${pickBox()}<p class="sv-h">선지별 정리</p><ol class="sv-opts">${sv.opts.map((o, i) => `<li class="${cls(i)}"><span class="n">${NUMS[i]}</span><span>${o}${tag(i)}</span></li>`).join('')}</ol>` : pickBox();
   }

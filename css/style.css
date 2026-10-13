@@ -1125,3 +1125,28 @@ button.rt-go:disabled { opacity: .4; cursor: default; }
 /* 오답 노트: 문제로 건너뛴 뒤 보던 곳으로 돌아가기 */
 .r-back { position: fixed; right: 16px; bottom: 16px; z-index: 900; font: inherit; font-size: 13.5px; font-weight: 700; padding: 9px 16px; border-radius: 999px; border: 0; background: var(--accent); color: #fff; box-shadow: var(--shadow); cursor: pointer; }
 .r-back[hidden] { display: none; }
+
+/* 선지별 포인트: 글씨는 본문과 같은 색 + 선지의 시기·나라·왕 + 다른 회차 출제 */
+.sv-opts li, .sv-opts.ox li, .sv-opts small, .sv-opts.ox small { color: inherit; }
+.sv-opts.ox small { font-size: 13px; }
+.ox-meta { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px; font-weight: 500; }
+.ox-meta > span { font-size: 12px; line-height: 1.5; padding: 0 7px; border-radius: 6px; border: 1px solid color-mix(in srgb, currentColor 22%, transparent); background: color-mix(in srgb, currentColor 5%, transparent); }
+.ox-meta i, .ox-same > i { font-style: normal; font-size: 10.5px; font-weight: 700; color: var(--accent); margin-right: 5px; }
+.ox-same { display: block; margin-top: 5px; padding: 5px 8px; border-radius: 6px; border: 1px dashed color-mix(in srgb, currentColor 30%, transparent); font-size: 12px; font-weight: 500; line-height: 1.5; }
+.ox-same > i { display: block; }
+.ox-same-row { display: flex; flex-wrap: wrap; align-items: center; gap: 2px 6px; padding: 1px 0; }
+.ox-same-row button { font: inherit; font-size: 11.5px; padding: 0 7px; border-radius: 999px; border: 1px solid var(--accent); background: transparent; color: var(--accent); cursor: pointer; }
+.ox-same-row button:hover { background: var(--accent); color: #fff; }
+.ox-same-row b { font-size: 11px; font-weight: 700; padding: 0 6px; border-radius: 999px; }
+.ox-same-row b.a { background: #2e7d32; color: #fff; }
+.ox-same-row b.x { background: color-mix(in srgb, currentColor 14%, transparent); }
+.q-solve .ox-meta i, .q-solve .ox-same > i { color: #8b2e1f; }
+.q-solve .ox-same-row button { border-color: #8b2e1f; color: #8b2e1f; }
+.q-solve .ox-same-row button:hover { background: #8b2e1f; color: #fff; }
+.sv-opts.ox li.ans small { color: inherit; }
+.q-solve .sv-opts.ox li, .q-solve .sv-opts.ox small, .q-solve .sv-opts.ox li.ans small { color: #2a2620; }
+.q-solve .sv-opts.ox li.ans b, .q-solve .sv-opts.ox li.ans .n { color: #8b2e1f; }
+.q-solve .sv-opts.ox em { background: #8b2e1f; }
+.q-solve .sv-opts.ox em.mine { background: #c62828; }
+.sv-opts.ox li .ox-same .ox-same-row b.a { color: #fff; }
+.sv-opts.ox li .ox-same .ox-same-row b.x { color: inherit; }
