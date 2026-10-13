@@ -5,7 +5,7 @@
  *   - 화면 설정(탭·배치 등)은 동기화하지 않고, 아래 SYNC 에 맞는 학습 기록만 동기화한다.
  */
 (function () {
-  const SYNC = [/^khmap\.quizLog$/, /^khmap\.quizDraft\.\d+$/, /^khmap\.mastered$/, /^khmap\.memo\.\d+$/, /^khmap\.memoOld\.\d+$/, /^khmap\.myLogImported$/, /^khmap\.myWeak$/, /^khmap\.weakMemo$/, /^khmap\.flag\.\d+$/, /^khmap\.retry$/, /^study\./];
+  const SYNC = [/^khmap\.quizLog$/, /^khmap\.quizDraft\.\d+$/, /^khmap\.mastered$/, /^khmap\.memo\.\d+$/, /^khmap\.memoOld\.\d+$/, /^khmap\.myLogImported$/, /^khmap\.myWeak$/, /^khmap\.weakMemo$/, /^khmap\.flag\.\d+$/, /^khmap\.retry$/, /^khmap\.retryDraft$/, /^study\./];
   const META = 'userstore.meta'; // { 키: 마지막 수정 시각(ms) }
   const BASE = 'userstore.base'; // { 키: 마지막으로 서버와 맞춘 시각 } — 양쪽이 모두 바뀌었는지 판단용
   const listeners = [];
@@ -40,7 +40,7 @@
       return JSON.stringify(out);
     }
     if (Array.isArray(a) && Array.isArray(b)) return JSON.stringify([...new Set([...b, ...a])].sort((x, y) => (x > y ? 1 : x < y ? -1 : 0)));
-    if (/^quizDraft/.test(name)) return newer;
+    if (/^(quizDraft|retryDraft)/.test(name)) return newer;
     if (typeof a === 'object' && typeof b === 'object') return JSON.stringify({ ...b, ...a });
     return newer;
   }

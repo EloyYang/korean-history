@@ -1150,3 +1150,5 @@ button.rt-go:disabled { opacity: .4; cursor: default; }
 .q-solve .sv-opts.ox em.mine { background: #c62828; }
 .sv-opts.ox li .ox-same .ox-same-row b.a { color: #fff; }
 .sv-opts.ox li .ox-same .ox-same-row b.x { color: inherit; }
+
+.rt-launch.rt-resume { border-color: var(--accent); background: var(--accent-soft); }

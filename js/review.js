@@ -168,14 +168,32 @@
   let rt = null; // { ids, i, picks: {id: 고른 번호(0 = 모르겠어요)}, title, end }
   let lastShown = [];
   const rtRight = (id) => { const [r, n] = id.split('-').map(Number); return QKEY[r] ? QKEY[r].ans[n - 1] : 0; };
+  // 풀다 만 다시 풀기: 문제를 고르거나 넘길 때마다 저장해 두고 나중에 이어서 푼다
+  const RDKEY = window.ATTEMPTS.key('retryDraft');
+  const retryDraft = () => { const d = window.UserStore.get(RDKEY, null); return d && Array.isArray(d.ids) && d.ids.length && Object.keys(d.picks || {}).length < d.ids.length ? d : null; };
+  const saveDraft = () => { if (rt && !rt.end) window.UserStore.set(RDKEY, { ids: rt.ids, i: rt.i, picks: rt.picks, title: rt.title, t: Date.now() }); };
+  const clearDraft = () => { const d = window.UserStore.get(RDKEY, null); if (d && d.ids) window.UserStore.set(RDKEY, { t: Date.now() }); }; // 빈 값으로 덮어써야 다른 기기에도 지워진다
+  function openRetryBox() {
+    let box = document.getElementById('rt');
+    if (!box) { box = document.createElement('div'); box.id = 'rt'; box.className = 'qv rt'; document.body.appendChild(box); }
+    box.hidden = false; document.body.classList.add('qv-on'); renderRetry(); box.scrollTop = 0;
+  }
+  function resumeRetry() {
+    const d = retryDraft(); if (!d) return;
+    closeQView();
+    const ids = d.ids.filter(rtRight); const picks = {}; ids.forEach((id) => { if (id in d.picks) picks[id] = d.picks[id]; });
+    // 풀던 문제부터: 아직 안 푼 첫 문제로
+    let i = ids.findIndex((id) => !(id in picks)); if (i < 0) i = ids.length - 1;
+    rt = { ids, i, picks, title: d.title || '', end: false };
+    openRetryBox();
+  }
   function startRetry(ids, title, shuffle) {
     ids = [...new Set(ids)].filter(rtRight); if (!ids.length) return;
     if (shuffle) for (let i = ids.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [ids[i], ids[j]] = [ids[j], ids[i]]; }
     closeQView();
     rt = { ids, i: 0, picks: {}, title: title || '', end: false };
-    let box = document.getElementById('rt');
-    if (!box) { box = document.createElement('div'); box.id = 'rt'; box.className = 'qv rt'; document.body.appendChild(box); }
-    box.hidden = false; document.body.classList.add('qv-on'); renderRetry(); box.scrollTop = 0;
+    if (ids.length > 1) saveDraft(); else clearDraft();
+    openRetryBox();
   }
   function closeRetry() { rt = null; const b = document.getElementById('rt'); if (b) { b.hidden = true; b.innerHTML = ''; } document.body.classList.remove('qv-on'); rerender(); }
   function rtPick(n) {
@@ -184,11 +202,13 @@
     const L = retryLog(); const o = L[id] || { ok: 0, no: 0 };
     if (ok) o.ok = (o.ok || 0) + 1; else o.no = (o.no || 0) + 1;
     o.last = ok ? 'ok' : 'no'; o.t = Date.now(); L[id] = o; window.UserStore.set(RKEY, L);
+    if (rt.ids.length > 1) saveDraft();
     renderRetry(); document.querySelector('#rt .rt-res')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
   function rtNext() {
     if (!(rt.ids[rt.i] in rt.picks)) return;
     if (rt.i < rt.ids.length - 1) rt.i++; else rt.end = true;
+    if (rt.end) clearDraft(); else if (rt.ids.length > 1) saveDraft();
     renderRetry(); document.getElementById('rt').scrollTop = 0;
   }
   function renderRetry() {
@@ -221,7 +241,7 @@
             <button type="button" class="rt-go" data-rt-next>${rt.i < rt.ids.length - 1 ? '다음 문제 ▶' : '결과 보기 ▶'}</button></div>
           <div class="rq-solve"><div class="rq-solve-body">${metaHtml(r, n)}
             ${sv ? `<p class="sv-h">지문에서 잡을 단서</p><p class="sv-clue">${sv.clue.map((c) => `<mark class="clue">${esc(c)}</mark>`).join(' ')}</p><p class="sv-h">정답까지 생각의 순서</p><p class="sv-how">${sv.how}</p>${optList(q, sv, FULL[id], true, pk)}` : ''}</div></div>
-          ${memoView(q)}` : `<p class="rt-hint">번호를 누르면 바로 채점돼요 · 키보드 1~5, 모르겠으면 0</p>`}
+          ${memoView(q)}` : `<p class="rt-hint">번호를 누르면 바로 채점돼요 · 키보드 1~5, 모르겠으면 0${rt.ids.length > 1 ? ' · 중간에 닫아도 오답 노트에서 이어서 풀 수 있어요' : ''}</p>`}
       </div></div>`;
   }
 
@@ -510,6 +530,8 @@
         ${SC.has('slow') ? `<p class="r-scope-note">${timedN ? `기출 풀기로 시간을 잰 ${timedN}개 회차에서 그 회차 평균의 ${SLOW_X}배 이상(1분 초과) 또는 3분 이상 걸린 문제예요. 오래 걸린 순 — 맞힘 ${pSlow.filter((q) => q.slowSt === 'right').length} · 틀림 ${pSlow.filter((q) => q.slowSt === 'wrong').length}` : '시간 기록이 있는 회차가 없어요. 기출 풀기에서 풀면 문제별 시간이 기록돼요 (채팅으로 알려 준 기록은 시간이 없어요).'}</p>` : ''}
         ${SC.has('flag') ? `<p class="r-scope-note">기출 풀기에서 헷갈림 표시한 문제예요. 맞혔어도 확실히 알지 못한 문제라 같이 복습하면 좋아요 — 맞힘 ${pFlags.filter((q) => q.flagSt === 'right').length} · 틀림 ${pFlags.filter((q) => q.flagSt === 'wrong').length} · 채점 전 ${pFlags.filter((q) => q.flagSt === 'none').length}</p>` : ''}
         ${SC.has('other') ? `<p class="r-scope-note">복습 대상(★★ 이상·난이도 하·중)에서 빠진 문제예요. 난이도가 높은 문제 ${pOthers.filter((q) => !EASY.includes(q.diff)).length}개, 출제빈도가 낮은 문제(★) ${pOthers.filter((q) => q.stars < MIN_STARS).length}개 (겹치는 문제 포함)</p>` : ''}
+        ${(() => { const d = retryDraft(); if (!d) return ''; const n = Object.keys(d.picks).length; const ok = d.ids.filter((id) => d.picks[id] === rtRight(id)).length;
+          return `<div class="rt-launch rt-resume"><button type="button" class="rt-go" data-retry-resume>⏵ 풀던 문제 이어서 풀기 (${n} / ${d.ids.length})</button><button type="button" data-retry-drop>지우기</button><small>${d.title ? esc(d.title) + ' · ' : ''}${d.ids.length}문항 중 ${n}문항 풂 (맞힘 ${ok} · 틀림 ${n - ok}) · 남은 ${d.ids.length - n}문항부터 이어져요${d.t ? ' · ' + (new Date(d.t).getMonth() + 1) + '/' + new Date(d.t).getDate() + ' 저장' : ''}</small></div>`; })()}
         <div class="rt-launch"><button type="button" class="rt-go" data-retry-list="shown" ${lastShown.length ? '' : 'disabled'}>▶ 지금 보이는 ${lastShown.length}문항 다시 풀기</button>
           ${againIds.length ? `<button type="button" data-retry-list="again">↻ 다시 풀어 또 틀린 ${againIds.length}문항만</button>` : ''}
           <label class="chip-check"><input type="checkbox" id="rt-shuffle" ${store.get('retryShuffle', true) ? 'checked' : ''}> 순서 섞기</label>
@@ -534,14 +556,16 @@
       const g = e.target.closest('[data-rt-goto]');
       if (g) { const id = g.dataset.rtGoto; closeRetry(); const b = document.createElement('button'); b.dataset.goto = id; b.hidden = true; document.body.appendChild(b); b.click(); b.remove(); return; }
       if (e.target.closest('[data-rt-close]')) {
-        const left = rt.end ? 0 : rt.ids.length - Object.keys(rt.picks).length;
-        if (left && Object.keys(rt.picks).length && !confirm(`아직 ${left}문항이 남았어요. 그만 풀까요?\n(지금까지 푼 문제의 결과는 남아요)`)) return;
         closeRetry();
       }
       return;
     }
+    if (e.target.closest('[data-retry-resume]')) { resumeRetry(); return; }
+    if (e.target.closest('[data-retry-drop]')) { if (confirm('풀다 만 다시 풀기를 지울까요?\n(이미 푼 문제의 ✓/✗ 기록은 남아요)')) { clearDraft(); rerender(); } return; }
     const rl = e.target.closest('[data-retry-list]');
     if (rl) {
+      const dr = retryDraft();
+      if (dr && !confirm(`풀다 만 다시 풀기(${Object.keys(dr.picks).length}/${dr.ids.length}문항 진행)가 있어요.\n새로 시작하면 이어 풀기는 사라져요. 새로 시작할까요?`)) return;
       const RL = retryLog(); const again = rl.dataset.retryList === 'again';
       startRetry(again ? lastShown.filter((id) => RL[id] && RL[id].last === 'no') : lastShown, again ? '또 틀린 문제' : '', store.get('retryShuffle', true)); return;
     }
