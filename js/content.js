@@ -26,19 +26,30 @@
   const isProtected = (src) => remote && PROTECTED.test(src);
 
   function inject(src, text) {
-    return new Promise((ok) => {
-      const s = document.createElement('script');
-      if (text != null) { s.textContent = text + `\n//# sourceURL=${src}`; document.head.appendChild(s); ok(); return; }
-      s.src = src; s.async = false; s.onload = ok; s.onerror = () => { console.warn('불러오지 못함', src); ok(); };
-      document.head.appendChild(s);
-    });
+    const s = document.createElement('script');
+    s.textContent = text + `\n//# sourceURL=${src}`; document.head.appendChild(s);
   }
-  // 받아 오기는 한꺼번에, 실행은 적힌 순서대로
+  // 여러 파일을 한꺼번에 받고, 실행은 적힌 순서대로 (하나씩 기다리며 받으면 파일 수만큼 느려진다)
   async function load(list) {
     const todo = list.filter((s) => s && !loaded.has(s) && !document.querySelector(`script[src="${s}"]`));
     todo.forEach((s) => loaded.add(s));
-    const texts = todo.map((src) => (isProtected(src) ? blob(src).then((b) => b.text()).catch((e) => { console.warn('콘텐츠 받기 실패', src, e && e.message); return ''; }) : null));
-    for (let i = 0; i < todo.length; i++) await inject(todo[i], texts[i] ? await texts[i] : null);
+    if (!todo.length) return;
+    // 기다리는 동안에도 미리 받아 둔다
+    if (!remote) todo.forEach((src) => { const l = document.createElement('link'); l.rel = 'preload'; l.as = 'script'; l.href = src; document.head.appendChild(l); });
+    // 페이지에 직접 적힌 스크립트(attempts.js 등)가 먼저 실행된 뒤에 돌도록
+    if (document.readyState === 'loading') await new Promise((ok) => document.addEventListener('DOMContentLoaded', ok, { once: true }));
+    if (!remote) {
+      // 브라우저가 동시에 내려받고 async=false 라서 적힌 순서대로 실행된다
+      await Promise.all(todo.map((src) => new Promise((ok) => {
+        const s = document.createElement('script'); s.src = src; s.async = false;
+        s.onload = ok; s.onerror = () => { console.warn('불러오지 못함', src); ok(); };
+        document.head.appendChild(s);
+      })));
+      return;
+    }
+    const texts = todo.map((src) => (isProtected(src) ? blob(src).then((b) => b.text()) : fetch(src).then((r) => r.text()))
+      .catch((e) => { console.warn('콘텐츠 받기 실패', src, e && e.message); return ''; }));
+    for (let i = 0; i < todo.length; i++) inject(todo[i], await texts[i]);
   }
 
   // 보호된 이미지는 Storage 에서 받아 blob 주소로 바꿔 끼운다
