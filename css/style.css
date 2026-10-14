@@ -1186,3 +1186,17 @@ body.pw-on { overflow: hidden; }
 .sub-plan ul { margin: 0; padding-left: 18px; line-height: 1.8; font-size: 14px; color: var(--muted); }
 .sub-todo { color: #c62828; }
 .pw-box .pw-mark { color: #fff; margin: 0 auto 10px; line-height: 1; }
+
+/* 오답 노트: 풀었던 시험 전체 보기 */
+.fx-tools { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 6px; }
+.fx-tools .r-chips button small { font-weight: 400; opacity: .75; }
+.fx-table td, .fx-table th { text-align: center; }
+.fx-table td.fx-theme, .fx-table td.fx-memo { text-align: left; white-space: normal; }
+.fx-table td.fx-memo { min-width: 200px; font-size: 12.5px; color: var(--muted); }
+.fx-row { cursor: pointer; }
+.fx-row:hover > *, .fx-row.on > * { background: var(--surface-2); }
+.fx-row.wr th { color: #c62828; }
+.fx-o { color: #2e7d32; } .fx-x { color: #c62828; }
+.fx-open > td { padding: 6px 10px 14px; text-align: left; white-space: normal; background: var(--bg); }
+.fx-open .rq { border-top: 0; }
+.fx-tools .fx-f { padding-left: 8px; border-left: 1px solid var(--line); }

@@ -289,6 +289,40 @@
       </li>`;
   }
 
+  // ── 풀었던 시험 전체: 회차를 고르면 50문항 모두 — 내가 고른 답 · 정답 · 시간 · 메모
+  const full = { round: store.get('fullRound', null), filter: store.get('fullFilter', 'all'), open: new Set() };
+  const memoOf = (r) => window.UserStore.get(window.ATTEMPTS.key('memo.' + r), {}) || {};
+  const memoText = (m) => (m ? [m.q || '', ...(m.o || []).map((t, i) => (t ? `${NUMS[i]} ${t}` : ''))].filter(Boolean).join(' · ') : '');
+  function fullHtml() {
+    if (!LOG.length) return '';
+    const rounds = LOG.map((l) => l.round);
+    if (!rounds.includes(full.round)) full.round = rounds[0];
+    const l = LOG.find((x) => x.round === full.round); const k = QKEY[l.round];
+    const total = k ? k.ans.length : 50; const memos = memoOf(l.round); const FL = flagSet();
+    const oldN = (window.UserStore.get(window.ATTEMPTS.key('memoOld.' + l.round), []) || []).length;
+    const rows = Array.from({ length: total }, (_, i) => {
+      const n = i + 1; const q = Q(l.round, n); const right = k ? k.ans[i] : 0;
+      const pick = l.answers ? (l.answers[n] || 0) : null; const wrong = l.wrong.includes(n);
+      return { n, q, right, pick, wrong, memo: memoText(memos[n]), flag: FL.has(`${l.round}-${n}`), time: (l.times || {})[n] };
+    });
+    const F = { all: ['전체', () => true], wrong: ['틀린 문제', (x) => x.wrong], right: ['맞힌 문제', (x) => !x.wrong], memo: ['메모 남긴 문제', (x) => x.memo], flag: ['🚩 헷갈림', (x) => x.flag] };
+    if (!F[full.filter]) full.filter = 'all';
+    const shownRows = rows.filter(F[full.filter][1]);
+    const cnt = (key) => rows.filter(F[key][1]).length;
+    return `<h2 class="r-h" id="full-h">풀었던 시험 전체 보기 <small>회차를 고르면 모든 문항의 내가 고른 답 · 정답 · 메모를 볼 수 있어요 · 줄을 누르면 문제가 펼쳐져요</small></h2>
+      <div class="fx-tools"><span class="r-chips">${LOG.map((x) => `<button type="button" data-full-round="${x.round}" aria-pressed="${x.round === l.round}">${x.round}회${x.date ? ` <small>${esc(x.date.replace(/^\d{4}-/, '').replace('-', '/'))}</small>` : ''}</button>`).join('')}</span>
+        <span class="r-chips fx-f">${Object.entries(F).map(([key, [label]]) => `<button type="button" data-full-filter="${key}" aria-pressed="${full.filter === key}">${label} (${cnt(key)})</button>`).join('')}</span></div>
+      <p class="r-scope-note">${l.round}회 · ${l.score != null ? `${l.score}점 · ` : ''}맞힘 ${total - l.wrong.length} · 틀림 ${l.wrong.length}${l.answers ? '' : ' · 채팅으로 알려 준 기록이라 고른 답은 없어요'}${oldN ? ` · 이전 풀이 메모 ${oldN}회분은 문제를 펼치면 보여요` : ''}</p>
+      <div class="r-table-wrap"><table class="r-table fx-table">
+        <thead><tr><th>번호</th><th>주제</th><th>내 답</th><th>정답</th><th>결과</th><th>시간</th><th>메모</th></tr></thead>
+        <tbody>${shownRows.map((x) => `<tr class="fx-row${x.wrong ? ' wr' : ''}${full.open.has(x.n) ? ' on' : ''}" data-full-n="${x.n}" tabindex="0">
+          <th>${x.n}${x.flag ? ' 🚩' : ''}</th><td class="fx-theme">${esc(x.q.theme)}</td>
+          <td>${x.pick == null ? '-' : x.pick ? NUMS[x.pick - 1] : '<small>안 품</small>'}</td><td>${x.right ? NUMS[x.right - 1] : '-'}</td>
+          <td>${x.wrong ? '<b class="fx-x">✗</b>' : '<b class="fx-o">○</b>'}</td><td>${x.time ? mmss(x.time) : '-'}</td>
+          <td class="fx-memo">${x.memo ? esc(x.memo) : ''}</td></tr>${full.open.has(x.n) ? `<tr class="fx-open"><td colspan="7"><ol class="rq-list">${qCard({ ...x.q, target: true, time: x.time })}</ol></td></tr>` : ''}`).join('') || '<tr><td colspan="7">고른 조건에 맞는 문제가 없어요</td></tr>'}</tbody>
+      </table></div>`;
+  }
+
   // 고민 시간이 길었던 문제: 그 회차 평균의 1.8배 이상이면서 1분 넘게, 또는 3분 이상
   const SLOW_X = 1.8, SLOW_MIN = 60, SLOW_ABS = 180;
   const slowOf = (logs) => logs.filter((l) => l.times && Object.keys(l.times).length).flatMap((l) => {
@@ -508,6 +542,8 @@
         <tbody>${rounds || '<tr><td colspan="7">아직 기록이 없어요</td></tr>'}</tbody>
       </table></div>
 
+      ${fullHtml()}
+
       <h2 class="r-h">보기 범위 <small>여러 개를 함께 고를 수 있어요 (누르면 선택, 다시 누르면 해제) · 날짜·회차는 아래 전체에, 시기는 약한 개념·문제 목록에 적용돼요</small></h2>
       ${eraSeg}
 
@@ -622,6 +658,12 @@
       window.UserStore.set(flagKey(r), (window.UserStore.get(flagKey(r), []) || []).filter((x) => x !== n));
       rerender(); return;
     }
+    const fr = e.target.closest('[data-full-round]');
+    if (fr) { full.round = +fr.dataset.fullRound; full.open.clear(); store.set('fullRound', full.round); rerender(); return; }
+    const ff = e.target.closest('[data-full-filter]');
+    if (ff) { full.filter = ff.dataset.fullFilter; store.set('fullFilter', full.filter); rerender(); return; }
+    const fn = e.target.closest('tr[data-full-n]');
+    if (fn) { const n = +fn.dataset.fullN; if (full.open.has(n)) full.open.delete(n); else { full.open.add(n); openSet.add(`${full.round}-${n}`); } rerender(); return; }
     const qv = e.target.closest('[data-qview]');
     if (qv) { openQView(qv.dataset.qview); return; }
     if (e.target.closest('.qv-x') || e.target.classList.contains('qv')) { closeQView(); return; }
