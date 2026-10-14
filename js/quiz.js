@@ -88,7 +88,7 @@
   const periodOfQ = (r, n) => { const row = (EXAMQ[r] || []).find((x) => x[0] === n); if (!row) return -1; const e = row[7] >= 0 ? row[6] : row[1]; return PERIODS.findIndex((p) => p[1].includes(e)); };
   const pname = (i) => (PERIODS[i] ? PERIODS[i][0] : '기타 (통합)');
   const pref = { get: (k, d) => { try { const v = localStorage.getItem('khmap.quizUi.' + k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } }, set: (k, v) => { try { localStorage.setItem('khmap.quizUi.' + k, JSON.stringify(v)); } catch (e) { /* 무시 */ } } };
-  const ui = { tab: pref.get('tab', 'round'), periods: pref.get('periods', []), rounds: pref.get('rounds', []), order: pref.get('order', 'round'), count: pref.get('count', 0), mockRounds: pref.get('mockRounds', []), mockMode: pref.get('mockMode', 'even') };
+  const ui = { tab: pref.get('tab', 'round'), periods: pref.get('periods', []), rounds: pref.get('rounds', []), order: pref.get('order', 'round'), count: pref.get('count', 20), mockRounds: pref.get('mockRounds', []), mockMode: pref.get('mockMode', 'even'), scope: pref.get('scope', 'all') };
   const pool = (sel) => (sel.length ? rounds.filter((r) => sel.includes(r)) : rounds);
   const shuffle = (a) => { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
   const newId = (p) => p + Date.now().toString(36);
@@ -100,16 +100,24 @@
     ids.slice(40).forEach((x) => { if (!load(draftKey(x), null)) delete all[x]; });
     S.set(SETS_KEY, all);
   }
+  // 시대 순서: 시대 묶음 → 그 안의 세부 시대(4세기→5세기…) 순
+  const eraIdx = (r, n) => { const row = (EXAMQ[r] || []).find((x) => x[0] === n); if (!row) return 999; const e = row[7] >= 0 ? row[6] : row[1]; const i = (window.ERAS || []).findIndex((x) => x.id === e); return i < 0 ? 999 : i; };
+  const chrono = (a, b) => ((periodOfQ(...a) + 100) % 100) - ((periodOfQ(...b) + 100) % 100) || eraIdx(...a) - eraIdx(...b);
+  // 범위를 정한 랜덤: 고른 시대·회차 안에서 무작위로 뽑되, 문제는 시대 순서대로 놓는다
   function makePeriodSet() {
-    if (!ui.periods.length) { alert('시대를 하나 이상 골라 주세요.'); return; }
     const ps = ui.periods.map(Number);
     let items = [];
-    pool(ui.rounds).forEach((r) => { for (let n = 1; n <= N(r); n++) if (ps.includes(periodOfQ(r, n))) items.push([r, n]); });
+    pool(ui.rounds).forEach((r) => { for (let n = 1; n <= N(r); n++) if (!ps.length || ps.includes(periodOfQ(r, n))) items.push([r, n]); });
     if (!items.length) { alert('고른 시대·회차에 해당하는 문제가 없어요.'); return; }
-    items = ui.order === 'random' ? shuffle(items) : items.sort((a, b) => (ps.indexOf(periodOfQ(...a)) - ps.indexOf(periodOfQ(...b))) || b[0] - a[0] || a[1] - b[1]);
+    const W = ui.mockMode === 'even' ? new Map() : weakMap();
+    const pri = ([r, n]) => W.get(`${r}-${n}`) || 0;
+    items = shuffle(items).sort((a, b) => pri(b) - pri(a));
     if (ui.count) items = items.slice(0, ui.count);
-    const title = `${ps.sort((a, b) => a - b).map(pname).join('·')} ${items.length}문항${ui.order === 'random' ? ' (랜덤)' : ''}`;
-    const id = newId('P'); saveSet(id, { title, kind: 'period', items, t: Date.now() }); location.hash = id;
+    const weakN = items.filter((x) => pri(x) > 0).length;
+    items.sort(chrono);
+    const scope = `${ps.length ? ps.sort((a, b) => a - b).map(pname).join('·') : '전체 시대'}${ui.rounds.length ? ` · ${pool(ui.rounds).map((r) => r + '회').join('·')}` : ''}`;
+    const title = `${scope} ${items.length}문항${ui.mockMode !== 'even' && weakN ? ` · ${ui.mockMode === 'weakflag' ? '틀림·헷갈림' : '틀린 문제'} ${weakN}문항 포함` : ''}`;
+    const id = newId('P'); saveSet(id, { title, kind: 'period', items, weak: weakN, t: Date.now() }); location.hash = id;
   }
   // 랜덤 모의고사: 기준 회차 하나의 시대 배치·배점을 그대로 두고, 자리마다 같은 시대·같은 배점 문제를 다른 회차에서 무작위로
   // 내가 틀렸던 문제·헷갈린 문제 (외웠어요 표시한 문제는 뺀다) → 우선순위 2·1
@@ -123,7 +131,7 @@
     return w;
   }
   function makeMockSet() {
-    const P = pool(ui.mockRounds);
+    const P = rounds;
     if (!P.length) return;
     const W = ui.mockMode === 'even' ? new Map() : weakMap();
     const pri = ([r, n]) => W.get(`${r}-${n}`) || 0;
@@ -146,10 +154,10 @@
   }
 
   // ── 회차 목록 · 시대별 · 랜덤 모의고사
-  function setsHtml(kind) {
-    const ids = Object.keys(SETS).filter((id) => SETS[id].kind === kind).sort((a, b) => (SETS[b].t || 0) - (SETS[a].t || 0));
+  function setsHtml() {
+    const ids = Object.keys(SETS).sort((a, b) => (SETS[b].t || 0) - (SETS[a].t || 0));
     if (!ids.length) return '';
-    return `<h3 class="r-h">내가 만든 ${kind === 'mock' ? '모의고사' : '시대별 문제'} <small>누르면 이어 풀거나 결과를 볼 수 있어요</small></h3>
+    return `<h3 class="r-h">내가 만든 모의고사 <small>누르면 이어 풀거나 결과를 볼 수 있어요</small></h3>
       <ul class="q-rounds">${ids.map((id) => {
         const a = lastAttempt(id); const dr = load(draftKey(id), null); const dn = dr ? Object.keys(dr.answers || {}).length : 0;
         return `<li><a href="#${id}"><b>${escH(SETS[id].title)}</b>
@@ -161,30 +169,32 @@
   const chip = (attr, v, on, label, extra) => `<button type="button" ${attr}="${v}" aria-pressed="${on}">${label}${extra != null ? ` <small>${extra}</small>` : ''}</button>`;
   function renderList() {
     stopTimer(); bar.hidden = true; state.view = 'list';
-    const tabs = [['round', '회차별'], ['period', '시대별'], ['mock', '랜덤 모의고사']];
+    const tabs = [['round', '회차별'], ['mock', '랜덤 모의고사']];
+    if (ui.tab === 'period') ui.tab = 'mock';
     const head = `<h2 class="r-h">${EX.name}${EX.level ? ` (${EX.level})` : ''} · 기출 풀기</h2>
       <div class="q-tabs" role="tablist">${tabs.map(([k, l]) => `<button type="button" role="tab" data-qtab="${k}" aria-selected="${ui.tab === k}">${l}</button>`).join('')}</div>`;
     let body = '';
-    if (ui.tab === 'period') {
-      const P = pool(ui.rounds); const cnt = {};
+    if (ui.tab === 'mock') {
+      const scoped = ui.scope === 'scope';
+      const P = scoped ? pool(ui.rounds) : rounds; const cnt = {};
       P.forEach((r) => { for (let n = 1; n <= N(r); n++) { const p = periodOfQ(r, n); cnt[p] = (cnt[p] || 0) + 1; } });
-      const ps = ui.periods.map(Number); const total = ps.reduce((a, p) => a + (cnt[p] || 0), 0);
+      const ps = ui.periods.map(Number); const total = ps.length ? ps.reduce((a, p) => a + (cnt[p] || 0), 0) : Object.values(cnt).reduce((a, b) => a + b, 0);
+      const modeRow = `<div class="q-row"><span class="q-lab">문제 구성</span><span class="r-chips">${[['even', '골고루 랜덤'], ['weak', '틀린 문제 위주'], ['weakflag', '틀림 + 헷갈림 위주']].map(([k, l]) => chip('data-qmmode', k, ui.mockMode === k, l, k === 'even' ? null : weakCount(k, P))).join('')}</span></div>`;
       body = `<div class="q-builder">
-        <div class="q-row"><span class="q-lab">시대</span><span class="r-chips">${[...PERIODS.keys(), -1].filter((i) => cnt[i]).map((i) => chip('data-qper', i, ps.includes(i), pname(i), cnt[i])).join('')}</span></div>
+        <div class="q-row"><span class="q-lab">범위</span><span class="r-chips">${chip('data-qscope', 'all', !scoped, '전체 랜덤 (실전형 50문항·100점)')}${chip('data-qscope', 'scope', scoped, '시대·회차를 골라서')}</span></div>
+        ${scoped ? `
+        <div class="q-row"><span class="q-lab">시대</span><span class="r-chips">${chip('data-qper', 'all', !ps.length, '모든 시대')}${[...PERIODS.keys(), -1].filter((i) => cnt[i]).map((i) => chip('data-qper', i, ps.includes(i), pname(i), cnt[i])).join('')}</span></div>
         <div class="q-row"><span class="q-lab">회차</span><span class="r-chips">${chip('data-qround', 'all', !ui.rounds.length, '전체 회차')}${rounds.map((r) => chip('data-qround', r, ui.rounds.includes(r), r + '회')).join('')}</span></div>
-        <div class="q-row"><span class="q-lab">순서</span><span class="r-chips">${chip('data-qorder', 'round', ui.order === 'round', '시대·회차 순')}${chip('data-qorder', 'random', ui.order === 'random', '랜덤으로 섞기')}</span></div>
-        <div class="q-row"><span class="q-lab">문항 수</span><span class="r-chips">${[0, 10, 20, 30].map((c) => chip('data-qcount', c, ui.count === c, c ? `${c}문항` : '전부')).join('')}</span></div>
-        <div class="q-row"><button type="button" class="q-make" data-qmake="period" ${total ? '' : 'disabled'}>▶ ${total ? `${ui.count ? Math.min(ui.count, total) : total}문항 풀기` : '시대를 골라 주세요'}</button></div>
-      </div>${setsHtml('period')}`;
-    } else if (ui.tab === 'mock') {
-      const P = pool(ui.mockRounds);
-      body = `<div class="q-builder">
-        <p class="q-desc">고른 회차들의 문제를 섞어 <b>50문항 · 100점</b> 시험을 만들어요. 실제 시험 한 회차의 <b>시대 배치와 배점을 그대로</b> 두고, 자리마다 같은 시대·같은 배점의 문제를 다른 회차에서 무작위로 가져와요.</p>
-        <div class="q-row"><span class="q-lab">회차</span><span class="r-chips">${chip('data-qmround', 'all', !ui.mockRounds.length, '전체 회차')}${rounds.map((r) => chip('data-qmround', r, ui.mockRounds.includes(r), r + '회')).join('')}</span></div>
-        <div class="q-row"><span class="q-lab">문제 구성</span><span class="r-chips">${[['even', '골고루 랜덤'], ['weak', '틀린 문제 위주'], ['weakflag', '틀림 + 헷갈림 위주']].map(([k, l]) => chip('data-qmmode', k, ui.mockMode === k, l, k === 'even' ? null : weakCount(k, P))).join('')}</span></div>
-        ${ui.mockMode !== 'even' ? `<p class="q-desc">시대·배점 자리는 그대로 두고, 자리마다 <b>내가 틀렸던 문제${ui.mockMode === 'weakflag' ? '·헷갈림 표시한 문제' : ''}</b>를 먼저 넣어요. 그런 문제가 없는 자리는 다른 문제로 채워요. ‘외웠어요’ 표시한 문제는 빼요.</p>` : ''}
-        <div class="q-row"><button type="button" class="q-make" data-qmake="mock" ${P.length >= 2 ? '' : 'disabled'}>▶ 랜덤 모의고사 만들기 <small>(${P.length}개 회차에서)</small></button></div>
-      </div>${setsHtml('mock')}`;
+        <div class="q-row"><span class="q-lab">문항 수</span><span class="r-chips">${[10, 20, 30, 50, 0].map((c) => chip('data-qcount', c, ui.count === c, c ? `${c}문항` : '전부')).join('')}</span></div>
+        ${modeRow}
+        <p class="q-desc">고른 범위 안에서 무작위로 뽑고, 문제는 <b>시대 순서대로</b>(선사 → 광복 이후) 놓아요.</p>
+        <div class="q-row"><button type="button" class="q-make" data-qmake="period" ${total ? '' : 'disabled'}>▶ ${total ? `${ui.count ? Math.min(ui.count, total) : total}문항 만들기` : '고른 범위에 문제가 없어요'}</button></div>`
+        : `
+        <p class="q-desc">10개 회차 전체에서 섞어 <b>50문항 · 100점</b> 시험을 만들어요. 실제 시험 한 회차의 <b>시대 배치와 배점을 그대로</b> 두고, 자리마다 같은 시대·같은 배점의 문제를 다른 회차에서 무작위로 가져와요. 그래서 문제가 시대 순서대로 나와요.</p>
+        ${modeRow}
+        ${ui.mockMode !== 'even' ? `<p class="q-desc">자리마다 <b>내가 틀렸던 문제${ui.mockMode === 'weakflag' ? '·헷갈림 표시한 문제' : ''}</b>를 먼저 넣어요. 그런 문제가 없는 자리는 다른 문제로 채워요. ‘외웠어요’ 표시한 문제는 빼요.</p>` : ''}
+        <div class="q-row"><button type="button" class="q-make" data-qmake="mock">▶ 랜덤 모의고사 만들기</button></div>`}
+      </div>${setsHtml()}`;
     } else {
       body = `<ul class="q-rounds">${rounds.map((r) => {
         const a = lastAttempt(r); const dr = load(draftKey(r), null); const dn = dr ? Object.keys(dr.answers || {}).length : 0;
@@ -194,17 +204,16 @@
       }).join('')}</ul>`;
     }
     box.innerHTML = head + body + `
-      <p class="r-note">문제 이미지의 ①~⑤를 누르면 답이 선택되고 다음 문제로 넘어가요. 문제마다 머문 시간과 총 소요 시간이 기록돼요. 키보드 1~5 · ← → 도 쓸 수 있어요. 헷갈리는 문제는 🏳 헷갈림 표시(F), 잠깐 쉴 땐 ⏸ 일시정지(P).<br>회차별 채점 기록은 오답 노트에 바로 반영돼요. 시대별·랜덤 모의고사 기록은 이 화면의 각 탭에 남고, 메모·헷갈림 표시는 원래 회차 문제에 함께 저장돼요. 문항 사진 등의 저작권은 원저작자에게 있어요.</p>`;
+      <p class="r-note">문제 이미지의 ①~⑤를 누르면 답이 선택되고 다음 문제로 넘어가요. 문제마다 머문 시간과 총 소요 시간이 기록돼요. 키보드 1~5 · ← → 도 쓸 수 있어요. 헷갈리는 문제는 🏳 헷갈림 표시(F), 잠깐 쉴 땐 ⏸ 일시정지(P).<br>회차별 채점 기록은 오답 노트에 바로 반영돼요. 랜덤 모의고사 기록은 그 탭의 ‘내가 만든 모의고사’에 남고, 메모·헷갈림 표시는 원래 회차 문제에 함께 저장돼요. 문항 사진 등의 저작권은 원저작자에게 있어요.</p>`;
   }
   const toggleIn = (arr, v) => (arr.includes(v) ? arr.filter((x) => x !== v) : [...arr, v]);
   document.addEventListener('click', (e) => {
     if (state.view !== 'list') return;
     const t = e.target.closest('[data-qtab]'); if (t) { ui.tab = t.dataset.qtab; pref.set('tab', ui.tab); renderList(); return; }
-    const pe = e.target.closest('[data-qper]'); if (pe) { ui.periods = toggleIn(ui.periods.map(Number), +pe.dataset.qper); pref.set('periods', ui.periods); renderList(); return; }
+    const sc = e.target.closest('[data-qscope]'); if (sc) { ui.scope = sc.dataset.qscope; pref.set('scope', ui.scope); renderList(); return; }
+    const pe = e.target.closest('[data-qper]'); if (pe) { ui.periods = pe.dataset.qper === 'all' ? [] : toggleIn(ui.periods.map(Number), +pe.dataset.qper); pref.set('periods', ui.periods); renderList(); return; }
     const ro = e.target.closest('[data-qround]'); if (ro) { ui.rounds = ro.dataset.qround === 'all' ? [] : toggleIn(ui.rounds, +ro.dataset.qround); pref.set('rounds', ui.rounds); renderList(); return; }
-    const mr = e.target.closest('[data-qmround]'); if (mr) { ui.mockRounds = mr.dataset.qmround === 'all' ? [] : toggleIn(ui.mockRounds, +mr.dataset.qmround); pref.set('mockRounds', ui.mockRounds); renderList(); return; }
     const mm = e.target.closest('[data-qmmode]'); if (mm) { ui.mockMode = mm.dataset.qmmode; pref.set('mockMode', ui.mockMode); renderList(); return; }
-    const od = e.target.closest('[data-qorder]'); if (od) { ui.order = od.dataset.qorder; pref.set('order', ui.order); renderList(); return; }
     const ct = e.target.closest('[data-qcount]'); if (ct) { ui.count = +ct.dataset.qcount; pref.set('count', ui.count); renderList(); return; }
     const mk = e.target.closest('[data-qmake]'); if (mk) { if (mk.dataset.qmake === 'period') makePeriodSet(); else makeMockSet(); return; }
     const del = e.target.closest('[data-setdel]');
@@ -398,7 +407,7 @@
         <span>맞음 ${N(r) - s.wrong.length} · 틀림 ${s.wrong.length}</span>
         <span>총 소요 시간 <b class="tt">${mmss(total)}</b> · 문제당 평균 ${mmss(avg)}</span>
         ${flags(r).length ? `<span>헷갈림 표시 ${flags(r).length}문항 · 그중 맞힘 ${flags(r).filter((n) => state.answers[n] === k.ans[n - 1]).length}</span>` : ''}
-        <span class="q-saved">${isSet(r) ? '풀이 기록에 저장했어요 (기출 풀기 › 시대별·랜덤 탭)' : '오답 노트에 저장했어요'}</span>
+        <span class="q-saved">${isSet(r) ? '풀이 기록에 저장했어요 (기출 풀기 › 랜덤 모의고사 탭)' : '오답 노트에 저장했어요'}</span>
       </div>
       <div class="q-actions">
         <button type="button" class="q-review-wrong" ${s.wrong.length ? '' : 'disabled'}>틀린 문제 다시 보기</button>
