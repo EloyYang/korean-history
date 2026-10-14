@@ -13,10 +13,10 @@ window.EXAMS = [
     level: '심화',
     mark: '史',
     color: '#8b2e1f',
-    desc: '시대별 영토 지도와 판서 노트, 기출 70~79회 풀기와 오답 노트',
+    desc: '시대별 영토 지도와 기출 포인트, 기출 70~79회 풀기와 오답 노트',
     img: 'quiz/{r}/{n}.webp',
     round: '제{r}회',
-    pages: [{ href: 'history.html', label: '지도 노트', note: '시대별 영토·왕·판서·기출 포인트' }],
+    pages: [{ href: 'history.html', label: '지도 노트', note: '시대별 영토·왕·기출 포인트' }],
     ready: true,
   },
 ];

@@ -3,13 +3,13 @@
  *   <script src="js/content.js" data-load="js/qmeta.js js/solve/79.js … js/review.js"></script>
  *   적힌 순서대로 스크립트를 불러온다. PAYWALL.contentFromStorage 가 true 면
  *   보호 대상(풀이·선지·문항 자료)은 Firebase Storage 의 content/… 에서 받아 온다 (구독자만 읽을 수 있음, storage.rules).
- *   문제 이미지(quiz/…)·정리 노트 이미지(notes/img/…)도 같은 방식으로 바꿔 끼운다.
+ *   문제 이미지(quiz/…)도 같은 방식으로 바꿔 끼운다.
  */
 (function () {
   const P = window.PAYWALL || {};
   const remote = !!(P.enabled && P.contentFromStorage);
   const PROTECTED = /^js\/(exam|wrongq|qmeta|solve|opt-same|gichul-ex|ex-where)\.js$|^js\/(solve|optx|optm)\//;
-  const IMG = /^(quiz\/\d+\/\d+\.webp|notes\/img\/)/;
+  const IMG = /^quiz\/\d+\/\d+\.webp$/;
   const loaded = new Set();
 
   let stP = null;

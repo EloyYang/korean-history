@@ -690,12 +690,7 @@
 
     renderRulers();
 
-    const notes = NOTES.filter((n) => noteEras(n).includes(era.id));
-    $('#note-count').textContent = notes.length || '';
-    $('#tab-notes').innerHTML = notes.length
-      ? notes.map(renderNote).join('')
-      : `<div class="empty-notes"><strong>아직 이 시대의 판서 노트가 없어요</strong>판서 사진을 Claude에게 보내면 표로 정리해서 여기에 추가해 드립니다.</div>`;
-    ['#tab-info', '#tab-notes'].forEach((id) => linkArtifacts($(id)));
+    linkArtifacts($('#tab-info'));
   }
 
   function formatCell(src) {
@@ -924,15 +919,13 @@
     store.set('tab', tab);
     document.querySelectorAll('.tab').forEach((b) => b.classList.toggle('active', b.dataset.tab === tab));
     $('#tab-info').hidden = tab !== 'info';
-    $('#tab-notes').hidden = tab !== 'notes';
     $('#tab-rulers').hidden = tab !== 'rulers';
   }
 
   // ── 타임라인 ─────────────────────────────
   function renderTimeline() {
     $('#timeline').innerHTML = ERAS.map((e, i) => {
-      const hasNote = NOTES.some((n) => noteEras(n).includes(e.id));
-      return `<li><button data-i="${i}" title="${esc(e.period)}">${esc(e.name)}${hasNote ? '<span class="dot" title="판서 노트 있음"></span>' : ''}<small>${esc(e.period.split('(')[0].trim())}</small></button></li>`;
+      return `<li><button data-i="${i}" title="${esc(e.period)}">${esc(e.name)}<small>${esc(e.period.split('(')[0].trim())}</small></button></li>`;
     }).join('');
   }
 
@@ -1011,13 +1004,7 @@
   RULER_SEQ.forEach(({ ei, r }, pos) => {
     index.push({ kind: 'ruler', ei, pos, title: `👑 ${r.name} (${r.reign})`, sub: `${ERAS[ei].name} · ${r.state}`, text: [r.state, r.name, r.key, ...r.items].map(stripTags).join(' ') });
   });
-  NOTES.forEach((n) => {
-    const ei = ERAS.findIndex((e) => e.id === noteEras(n)[0]);
-    const tables = [n, n.table].filter((t) => t && t.head);
-    const annos = (n.annos || []).map((a) => [a.title, a.body, a.text].filter(Boolean).join(' '));
-    const text = [n.title, ...annos, ...tables.flatMap((t) => [...t.head.flatMap((r) => [r.label, ...r.cells]), ...t.rows.flatMap((r) => [r.label, ...r.cells])])].filter((c) => c != null).map((c) => stripTags(typeof c === 'object' ? c.html : c)).join(' ');
-    index.push({ kind: 'note', ei, title: '📝 ' + n.title, sub: (ERAS[ei] || {}).name + ' · 판서 노트', text, note: n.id });
-  });
+
 
   let results = [];
   let lastTerms = [];
@@ -1106,7 +1093,6 @@
     state.hlTerms = terms;
     if (r.kind === 'marker') { if (state.era !== r.ei) goEra(r.ei, { fromSearch: true }); setTab('info'); focusMarker(r.name); }
     else if (r.kind === 'ruler') { goEra(r.ei, { fromSearch: true }); state.rulerPos = r.pos; renderRulers(); setTab('rulers'); scrollToCurrentRuler(); }
-    else if (r.kind === 'note') { goEra(r.ei, { fromSearch: true }); setTab('notes'); }
     else { goEra(r.ei, { fromSearch: true }); setTab('info'); }
     const target = r.kind === 'note' ? document.querySelector(`[data-note="${r.note}"]`)
       : r.kind === 'ruler' ? $('#tab-rulers .ruler.current')
@@ -1169,7 +1155,7 @@
     $('#tab-rulers [data-step="1"]').disabled = state.rulerPos >= RULER_SEQ.length - 1;
   });
 
-  $('#tab-notes').addEventListener('click', (e) => {
+  ($('#tab-notes') || document.createElement('div')).addEventListener('click', (e) => {
     const place = e.target.closest('a.place');
     if (place) { focusMarker(place.dataset.place); return; }
     const btn = e.target.closest('button[data-act]');
@@ -1254,7 +1240,7 @@
   setLayout(store.get('layout', 'split'));
   syncGeo();
   renderTimeline();
-  setTab(['notes', 'rulers'].includes(state.tab) ? state.tab : 'info');
+  setTab(state.tab === 'rulers' ? 'rulers' : 'info');
   const eraFromHash = () => ERAS.findIndex((e) => '#' + e.id === location.hash);
   goEra(Math.max(0, eraFromHash()));
   window.addEventListener('hashchange', () => { const i = eraFromHash(); if (i >= 0 && i !== state.era) goEra(i); });
