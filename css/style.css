@@ -1243,3 +1243,13 @@ body.pw-on { overflow: hidden; }
 .fv-res.mine { background: var(--surface-2); color: var(--text); }
 .fv-box .rq-toggle { margin-top: 8px; }
 .q-grid[hidden] { display: none; }
+
+/* 선지별 포인트: 정답 선지는 초록 글씨 */
+.sv-opts li.ans, .sv-opts.ox li.ans b, .sv-opts.ox li.ans .n, .sv-opts.ox li.ans small { color: #2e7d32; }
+.sv-opts li.ans em:not(.mine), .sv-opts.ox li.ans em:not(.mine) { background: #2e7d32; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .sv-opts li.ans, :root:not([data-theme="light"]) .sv-opts.ox li.ans b, :root:not([data-theme="light"]) .sv-opts.ox li.ans .n, :root:not([data-theme="light"]) .sv-opts.ox li.ans small { color: #81c784; }
+}
+:root[data-theme="dark"] .sv-opts li.ans, :root[data-theme="dark"] .sv-opts.ox li.ans b, :root[data-theme="dark"] .sv-opts.ox li.ans .n, :root[data-theme="dark"] .sv-opts.ox li.ans small { color: #81c784; }
+/* 기출 풀기 풀이 칸은 늘 밝은 바탕 */
+.q-solve .sv-opts li.ans, .q-solve .sv-opts.ox li.ans b, .q-solve .sv-opts.ox li.ans .n, .q-solve .sv-opts.ox li.ans small { color: #2e7d32 !important; }
