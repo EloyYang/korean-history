@@ -359,19 +359,10 @@
     if (!F[full.filter]) full.filter = 'all';
     const shownRows = rows.filter(F[full.filter][1]);
     const cnt = (key) => rows.filter(F[key][1]).length;
-    return `<h2 class="r-h" id="full-h">풀었던 시험 전체 보기 <small>기출 풀기의 '전체 문제 보기'처럼 한 문제씩 넘겨 볼 수 있어요 · 표의 줄을 누르면 그 문제부터 열려요</small></h2>
-      <div class="fx-tools"><span class="r-chips">${LOG.map((x) => `<button type="button" data-full-round="${x.round}" aria-pressed="${x.round === l.round}">${x.round}회${x.date ? ` <small>${esc(x.date.replace(/^\d{4}-/, '').replace('-', '/'))}</small>` : ''}</button>`).join('')}</span>
-        <span class="r-chips fx-f">${Object.entries(F).map(([key, [label]]) => `<button type="button" data-full-filter="${key}" aria-pressed="${full.filter === key}">${label} (${cnt(key)})</button>`).join('')}</span></div>
-      <div class="fx-open-btns"><button type="button" class="rt-go" data-fv-open="${l.round}" data-fv-f="all">▶ ${l.round}회 전체 문제 보기</button><button type="button" data-fv-open="${l.round}" data-fv-f="wrong" ${l.wrong.length ? '' : 'disabled'}>틀린 문제 보기</button><button type="button" data-fv-open="${l.round}" data-fv-f="memo" ${cnt('memo') ? '' : 'disabled'}>메모 남긴 문제 보기</button></div>
-      <p class="r-scope-note">${l.round}회 · ${l.score != null ? `${l.score}점 · ` : ''}맞힘 ${total - l.wrong.length} · 틀림 ${l.wrong.length}${l.answers ? '' : ' · 채팅으로 알려 준 기록이라 고른 답은 없어요'}${oldN ? ` · 이전 풀이 메모 ${oldN}회분은 문제를 펼치면 보여요` : ''}</p>
-      <div class="r-table-wrap"><table class="r-table fx-table">
-        <thead><tr><th>번호</th><th>주제</th><th>내 답</th><th>정답</th><th>결과</th><th>시간</th><th>메모</th></tr></thead>
-        <tbody>${shownRows.map((x) => `<tr class="fx-row${x.wrong ? ' wr' : ''}${full.open.has(x.n) ? ' on' : ''}" data-full-n="${x.n}" tabindex="0">
-          <th>${x.n}${x.flag ? ' 🚩' : ''}</th><td class="fx-theme">${esc(x.q.theme)}</td>
-          <td>${x.pick == null ? '-' : x.pick ? NUMS[x.pick - 1] : '<small>안 품</small>'}</td><td>${x.right ? NUMS[x.right - 1] : '-'}</td>
-          <td>${x.wrong ? '<b class="fx-x">✗</b>' : '<b class="fx-o">○</b>'}</td><td>${x.time ? mmss(x.time) : '-'}</td>
-          <td class="fx-memo">${x.memo ? esc(x.memo) : ''}</td></tr>`).join('') || '<tr><td colspan="7">고른 조건에 맞는 문제가 없어요</td></tr>'}</tbody>
-      </table></div>`;
+    return `<h2 class="r-h" id="full-h">풀었던 시험 전체 보기 <small>기출 풀기의 '전체 문제 보기'처럼 한 문제씩 넘겨 보며 내 답·정답·메모를 확인해요</small></h2>
+      <div class="fx-tools"><span class="r-chips">${LOG.map((x) => `<button type="button" data-full-round="${x.round}" aria-pressed="${x.round === l.round}">${x.round}회${x.date ? ` <small>${esc(x.date.replace(/^\d{4}-/, '').replace('-', '/'))}</small>` : ''}</button>`).join('')}</span></div>
+      <div class="fx-open-btns"><button type="button" class="rt-go" data-fv-open="${l.round}" data-fv-f="all">▶ ${l.round}회 전체 문제 보기</button><button type="button" data-fv-open="${l.round}" data-fv-f="wrong" ${l.wrong.length ? '' : 'disabled'}>틀린 문제 보기</button><button type="button" data-fv-open="${l.round}" data-fv-f="flag" ${cnt('flag') ? '' : 'disabled'}>🚩 헷갈린 문제 보기</button><button type="button" data-fv-open="${l.round}" data-fv-f="memo" ${cnt('memo') ? '' : 'disabled'}>메모 남긴 문제 보기</button></div>
+      <p class="r-scope-note">${l.round}회 · ${l.score != null ? `${l.score}점 · ` : ''}맞힘 ${total - l.wrong.length} · 틀림 ${l.wrong.length}${l.answers ? '' : ' · 채팅으로 알려 준 기록이라 고른 답은 없어요'}${oldN ? ` · 이전 풀이 메모 ${oldN}회분도 함께 보여요` : ''}</p>`;
   }
 
   // 고민 시간이 길었던 문제: 그 회차 평균의 1.8배 이상이면서 1분 넘게, 또는 3분 이상
