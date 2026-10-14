@@ -1200,3 +1200,21 @@ body.pw-on { overflow: hidden; }
 .fx-open > td { padding: 6px 10px 14px; text-align: left; white-space: normal; background: var(--bg); }
 .fx-open .rq { border-top: 0; }
 .fx-tools .fx-f { padding-left: 8px; border-left: 1px solid var(--line); }
+
+/* 오답 노트: 풀었던 문제 한 문제씩 보기 */
+.fv-box { width: min(820px, 100%); }
+.fv-filter { margin-bottom: 8px; }
+.fv-head { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; margin: 4px 0 8px; font-size: 13px; color: var(--muted); }
+.fv-head b { font-size: 16px; color: var(--text); }
+.fv-res { font-weight: 700; padding: 1px 10px; border-radius: 999px; }
+.fv-res.ok { background: #2e7d32; color: #fff; }
+.fv-res.ng { background: #c62828; color: #fff; }
+.fv-box .q-imgwrap { background: #fff; border-radius: 8px; overflow: hidden; }
+.fv-box .q-spot { cursor: default; }
+.fv-box .rq { border-top: 0; padding-top: 4px; }
+.fv-box .rq-solve-body { display: block; }
+.fv-note { margin: 8px 0; font-size: 13px; color: var(--muted); }
+.fv-box .q-grid button.memo { text-decoration: underline; }
+.fx-open-btns { display: flex; flex-wrap: wrap; gap: 8px; margin: 8px 0; }
+.fx-open-btns button:not(.rt-go) { font: inherit; font-size: 13px; padding: 6px 14px; border-radius: 999px; border: 1px solid var(--accent); background: transparent; color: var(--accent); cursor: pointer; font-weight: 700; }
+.fx-open-btns button:disabled { opacity: .4; cursor: default; }
