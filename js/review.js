@@ -290,7 +290,7 @@
   }
 
   // ── 풀었던 시험 한 문제씩 넘겨 보기 (기출 풀기의 '전체 문제 보기'와 같은 화면)
-  const fv = { round: null, n: 1, filter: 'all', grid: false };
+  const fv = { round: null, n: 1, filter: 'all', grid: false, shown: false };
   function fvList() {
     const l = LOG.find((x) => x.round === fv.round); if (!l) return [];
     const total = QKEY[l.round] ? QKEY[l.round].ans.length : 50; const memos = memoOf(l.round); const FL = flagSet();
@@ -301,14 +301,14 @@
   }
   function openFv(r, n, filter) {
     closeQView();
-    Object.assign(fv, { round: r, filter: filter || 'all', grid: false });
+    Object.assign(fv, { round: r, filter: filter || 'all', grid: false, shown: false });
     const list = fvList(); fv.n = n && list.includes(n) ? n : list[0];
     let box = document.getElementById('fv');
     if (!box) { box = document.createElement('div'); box.id = 'fv'; box.className = 'qv fv'; document.body.appendChild(box); }
     box.hidden = false; document.body.classList.add('qv-on'); renderFv(); box.scrollTop = 0;
   }
   function closeFv() { fv.round = null; const b = document.getElementById('fv'); if (b) { b.hidden = true; b.innerHTML = ''; } document.body.classList.remove('qv-on'); }
-  function fvGo(n) { fv.n = n; fv.grid = false; renderFv(); document.getElementById('fv').scrollTop = 0; }
+  function fvGo(n) { fv.n = n; fv.grid = false; fv.shown = false; renderFv(); document.getElementById('fv').scrollTop = 0; }
   function fvStep(d) { const list = fvList(); const i = list.indexOf(fv.n); const nx = list[i + d]; if (nx != null) fvGo(nx); }
   function renderFv() {
     const box = document.getElementById('fv'); if (!box || fv.round == null) return;
@@ -317,7 +317,8 @@
     const wrong = l.wrong.includes(n); const t = (l.times || {})[n]; const FL = flagSet(); const memos = memoOf(r);
     const list = fvList(); const pos = list.indexOf(n); const total = k ? k.ans.length : 50;
     const hot = (k && k.hot && k.hot[n - 1]) || []; const full = hot.filter(Boolean).length === 5;
-    const spots = hot.map((h, i) => (h ? `<span class="q-spot${i + 1 === right ? ' ans' : pick === i + 1 && pick !== right ? ' miss' : ''}" style="left:${h[0] * 100}%;top:${h[1] * 100}%;width:${h[2] * 100}%;height:${h[3] * 100}%"></span>` : '')).join('');
+    const sh = fv.shown;
+    const spots = hot.map((h, i) => (h ? `<span class="q-spot${sh ? (i + 1 === right ? ' ans' : pick === i + 1 && pick !== right ? ' miss' : '') : pick === i + 1 ? ' pick' : ''}" style="left:${h[0] * 100}%;top:${h[1] * 100}%;width:${h[2] * 100}%;height:${h[3] * 100}%"></span>` : '')).join('');
     const sv = SOLVE[q.id];
     const FILTERS = [['all', '전체'], ['wrong', '틀린 문제'], ['flag', '🚩 헷갈림'], ['memo', '메모']];
     box.innerHTML = `<div class="qv-box fv-box" role="dialog" aria-modal="true" aria-label="풀었던 문제 보기">
@@ -325,11 +326,11 @@
         <button type="button" class="qv-x" data-fv-close aria-label="닫기">✕</button></div>
       <div class="fv-filter r-chips">${FILTERS.map(([key, label]) => `<button type="button" data-fv-filter="${key}" aria-pressed="${fv.filter === key}">${label}</button>`).join('')}</div>
       <div class="fv-head"><b>${n}번</b>${q.pt ? `<span>${q.pt}점</span>` : ''}
-        <span class="fv-res ${wrong ? 'ng' : 'ok'}">${wrong ? (pick ? `오답 (고른 답 ${NUMS[pick - 1]})` : pick === 0 ? '안 품' : '오답') : '정답'} · 정답 ${right ? NUMS[right - 1] : '-'}</span>
+        ${sh ? `<span class="fv-res ${wrong ? 'ng' : 'ok'}">${wrong ? (pick ? `오답 (고른 답 ${NUMS[pick - 1]})` : pick === 0 ? '안 품' : '오답') : '정답'} · 정답 ${right ? NUMS[right - 1] : '-'}</span>` : `<span class="fv-res mine">내가 고른 답 ${pick ? NUMS[pick - 1] : pick === 0 ? '없음' : '-'}</span>`}
         ${t ? `<span>머문 시간 ${mmss(t)}</span>` : ''}${FL.has(q.id) ? '<span>🚩 헷갈림</span>' : ''}<span class="rq-tag">${esc(q.theme)}</span></div>
       <div class="q-imgwrap"><img src="${imgOf(r, n)}" alt="${r}회 ${n}번 문제">${full ? spots : ''}</div>
-      ${full ? '' : `<p class="fv-note">내가 고른 답 ${pick ? NUMS[pick - 1] : pick === 0 ? '없음' : '-'} · 정답 ${right ? NUMS[right - 1] : '-'}</p>`}
-      <div class="rq open"><div class="rq-solve"><div class="rq-solve-body">${metaHtml(r, n)}
+      ${full || !sh ? '' : `<p class="fv-note">내가 고른 답 ${pick ? NUMS[pick - 1] : pick === 0 ? '없음' : '-'} · 정답 ${right ? NUMS[right - 1] : '-'}</p>`}
+      <div class="rq${sh ? ' open' : ''}"><div class="rq-solve"><button type="button" class="rq-toggle" data-fv-show>${sh ? '정답·도출 포인트 접기 ▴' : '정답·도출 포인트 보기 ▾'}</button><div class="rq-solve-body">${metaHtml(r, n)}
         ${sv ? `<p class="sv-h">지문에서 잡을 단서</p><p class="sv-clue">${sv.clue.map((c) => `<mark class="clue">${esc(c)}</mark>`).join(' ')}</p><p class="sv-h">정답까지 생각의 순서</p><p class="sv-how">${sv.how}</p>${optList(q, sv, FULL[q.id], true)}` : ''}</div></div>
         ${memoView(q) || '<p class="fv-note">이 문제에 남긴 메모가 없어요 <small>(메모는 기출 풀기에서 쓸 수 있어요)</small></p>'}</div>
       <div class="q-nav"><button type="button" data-fv-step="-1" ${pos <= 0 ? 'disabled' : ''}>◀ 이전</button>
@@ -638,7 +639,7 @@
       const g = e.target.closest('[data-fv-go]'); if (g) { if (fv.filter !== 'all' && !fvList().includes(+g.dataset.fvGo)) fv.filter = 'all'; fvGo(+g.dataset.fvGo); return; }
       if (e.target.closest('[data-fv-grid]')) { fv.grid = !fv.grid; document.querySelector('#fv .q-grid').hidden = !fv.grid; return; }
       const fl = e.target.closest('[data-fv-filter]'); if (fl) { fv.filter = fl.dataset.fvFilter; const list = fvList(); if (!list.includes(fv.n)) fv.n = list[0]; renderFv(); return; }
-      const tg = e.target.closest('.rq-toggle'); if (tg) return;
+      if (e.target.closest('[data-fv-show]')) { fv.shown = !fv.shown; const y = document.getElementById('fv').scrollTop; renderFv(); document.getElementById('fv').scrollTop = y; return; }
       return;
     }
     if (rt && e.target.closest('#rt')) {

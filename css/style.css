@@ -1212,7 +1212,6 @@ body.pw-on { overflow: hidden; }
 .fv-box .q-imgwrap { background: #fff; border-radius: 8px; overflow: hidden; }
 .fv-box .q-spot { cursor: default; }
 .fv-box .rq { border-top: 0; padding-top: 4px; }
-.fv-box .rq-solve-body { display: block; }
 .fv-note { margin: 8px 0; font-size: 13px; color: var(--muted); }
 .fv-box .q-grid button.memo { text-decoration: underline; }
 .fx-open-btns { display: flex; flex-wrap: wrap; gap: 8px; margin: 8px 0; }
@@ -1241,3 +1240,6 @@ body.pw-on { overflow: hidden; }
 .q-setdel { position: absolute; top: 8px; right: 8px; width: 24px; height: 24px; border-radius: 50%; border: 1px solid var(--line); background: var(--surface); color: var(--muted); font-size: 11px; cursor: pointer; }
 .q-setdel:hover { color: #c62828; border-color: #c62828; }
 .q-src { padding: 0 7px; border-radius: 999px; background: #eee; color: #444; font-size: 11.5px; }
+.fv-res.mine { background: var(--surface-2); color: var(--text); }
+.fv-box .rq-toggle { margin-top: 8px; }
+.q-grid[hidden] { display: none; }
