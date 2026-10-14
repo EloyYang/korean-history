@@ -426,7 +426,7 @@
       const unknown = qs.some((q) => !q.pt);
       const tg = qs.filter((q) => q.target).map((q) => q.num);
       return `<tr class="${inView(l) && anyView ? 'in-view' : ''}">
-        <th><button type="button" class="r-link" data-era-round="${l.round}" title="${l.round}회 선택/해제">${l.round}회</button></th><td>${l.date ? `<button type="button" class="r-link" data-era-round="d:${esc(l.date)}" title="이 날 푼 기록 선택/해제">${esc(l.date)}</button>` : ''}</td>
+        <th><button type="button" class="r-link" data-era-round="${l.round}" title="${l.round}회 선택/해제">${l.round}회</button></th><td><button type="button" class="r-full" data-fv-open="${l.round}" data-fv-f="all" title="한 문제씩 넘겨 보며 내 답·정답·메모 확인">전체 문제 보기</button></td><td>${l.date ? `<button type="button" class="r-link" data-era-round="d:${esc(l.date)}" title="이 날 푼 기록 선택/해제">${esc(l.date)}</button>` : ''}</td>
         <td><b>${l.wrong.length}</b> / 50</td>
         <td>${l.score != null ? `<b>${l.score}</b>점` : `${unknown ? '약 ' : ''}<b>${100 - lost}</b>점`}${l.src === 'claude' ? ' <small class="src">Claude 기록</small>' : l.answers ? ' <small class="src">기출 풀기</small>' : ''}</td>
         <td>${l.total ? mmss(l.total) : '-'}</td>
@@ -578,13 +578,12 @@
         <div class="fl"><b>${allFlags.length}</b><span>헷갈린 문항<br><small>그중 맞힘 ${allFlags.filter((q) => q.flagSt === 'right').length}</small></span></div>
       </section>
 
-      <h2 class="r-h">회차별 기록</h2>
-      <div class="r-table-wrap"><table class="r-table">
-        <thead><tr><th>회차</th><th>푼 날짜</th><th>틀림</th><th>점수</th><th>소요 시간</th><th>틀린 번호 <small>(<span class="on-sample">색칠</span> = 복습 대상)</small></th><th></th></tr></thead>
-        <tbody>${rounds || '<tr><td colspan="7">아직 기록이 없어요</td></tr>'}</tbody>
+      <h2 class="r-h">회차별 기록${LOG.length > 5 ? ` <small>${LOG.length}개 회차 · 표 안에서 위아래로 넘겨 보세요</small>` : ''}</h2>
+      <div class="r-table-wrap r-rounds"><table class="r-table">
+        <thead><tr><th>회차</th><th></th><th>푼 날짜</th><th>틀림</th><th>점수</th><th>소요 시간</th><th>틀린 번호 <small>(<span class="on-sample">색칠</span> = 복습 대상)</small></th><th></th></tr></thead>
+        <tbody>${rounds || '<tr><td colspan="8">아직 기록이 없어요</td></tr>'}</tbody>
       </table></div>
 
-      ${fullHtml()}
 
       <h2 class="r-h">보기 범위 <small>여러 개를 함께 고를 수 있어요 (누르면 선택, 다시 누르면 해제) · 날짜·회차는 아래 전체에, 시기는 약한 개념·문제 목록에 적용돼요</small></h2>
       ${eraSeg}
@@ -620,6 +619,17 @@
       ${(onlySlow ? slowHtml : pointsHtml) || `<p class="r-empty">${onlySlow ? '오래 고민한 문제가 없어요' : list.length ? '모두 외웠어요! 🎉' : '고른 조건에 맞는 문제가 없어요'}</p>`}
       <p class="r-note">정답 선지·지문은 국사편찬위원회 한국사능력검정시험 심화 문항에서 발췌했어요. 새 회차를 풀면 Claude에게 회차와 틀린 번호를 알려 주세요. 로그인하면 풀이 기록·메모·‘외웠어요’ 표시가 계정에 저장돼요.</p>`;
   }
+
+  // 회차별 기록은 5개까지만 보이고 나머지는 표 안에서 스크롤
+  function fitRounds() {
+    const w = document.querySelector('.r-rounds'); if (!w) return;
+    const rows = w.querySelectorAll('tbody tr');
+    if (rows.length <= 5) { w.style.maxHeight = ''; return; }
+    const head = w.querySelector('thead').offsetHeight;
+    w.style.maxHeight = head + [...rows].slice(0, 5).reduce((a, r) => a + r.offsetHeight, 0) + 2 + 'px';
+  }
+  new MutationObserver(fitRounds).observe(document.getElementById('review'), { childList: true });
+  window.addEventListener('resize', fitRounds);
 
   document.addEventListener('click', (e) => {
     if (fv.round != null && e.target.closest('#fv')) {

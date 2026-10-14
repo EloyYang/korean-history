@@ -1218,3 +1218,8 @@ body.pw-on { overflow: hidden; }
 .fx-open-btns { display: flex; flex-wrap: wrap; gap: 8px; margin: 8px 0; }
 .fx-open-btns button:not(.rt-go) { font: inherit; font-size: 13px; padding: 6px 14px; border-radius: 999px; border: 1px solid var(--accent); background: transparent; color: var(--accent); cursor: pointer; font-weight: 700; }
 .fx-open-btns button:disabled { opacity: .4; cursor: default; }
+.r-table td.r-acts { display: flex; gap: 6px; justify-content: flex-end; }
+.r-full { padding: 3px 12px; border-radius: 999px; border: 1px solid var(--accent); background: var(--accent); color: #fff; font-size: 12px; font-weight: 700; cursor: pointer; white-space: nowrap; }
+.r-full:hover { filter: brightness(1.08); }
+.r-rounds { overflow-y: auto; overscroll-behavior: contain; }
+.r-rounds thead th { position: sticky; top: 0; z-index: 1; }
