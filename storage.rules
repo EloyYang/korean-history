@@ -1,0 +1,11 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    // 유료 콘텐츠: 로그인 + 이용 기간(체험·구독) 안에서만 읽기
+    match /content/{path=**} {
+      allow read: if request.auth != null
+        && firestore.get(/databases/(default)/documents/access/$(request.auth.uid)).data.until > request.time;
+      allow write: if false;
+    }
+  }
+}

@@ -13,6 +13,7 @@
   let loading = null;
   function loadAll() {
     if (window.QUIZ_KEYS && window.SOLVE && window.OPTX && window.QMETA && window.optExtra) return Promise.resolve();
+    if (!loading && window.Content) loading = window.Content.load(NEED);
     if (!loading) {
       loading = NEED.reduce((p, src) => p.then(() => new Promise((ok) => {
         if (document.querySelector(`script[src="${src}"]`) || (src === 'js/exam.js' && window.EXAM)) return ok();

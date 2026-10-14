@@ -57,6 +57,9 @@ if (!cfg || !cfg.apiKey) {
   const auth = A.getAuth(app);
   const db = F.getFirestore(app);
   const docId = (k) => k.replace(/\//g, '_');
+  // 구독(sub.js)·유료 콘텐츠(content.js)가 같은 Firebase 앱을 쓴다
+  window.FB = { app, auth, db, A, F, V };
+  document.dispatchEvent(new Event('fb-ready'));
 
   document.addEventListener('click', async (e) => {
     if (e.target.closest('.auth-in')) {

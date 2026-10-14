@@ -1154,3 +1154,35 @@ button.rt-go:disabled { opacity: .4; cursor: default; }
 .rt-launch.rt-resume { border-color: var(--accent); background: var(--accent-soft); }
 
 .sv-opts.ox li .ox-same .ox-same-row em.lz { background: transparent; color: inherit; opacity: .7; border: 1px dashed currentColor; font-weight: 500; font-size: 10.5px; padding: 0 5px; }
+
+/* 구독: 잠금 화면 · 남은 기간 · 구독 관리 */
+.pw { position: fixed; inset: 0; z-index: 2500; display: grid; place-items: center; padding: 16px; background: color-mix(in srgb, var(--bg) 82%, transparent); backdrop-filter: blur(6px); }
+body.pw-on { overflow: hidden; }
+.pw-box { width: min(440px, 100%); padding: 28px 24px 20px; border-radius: 14px; border: 1px solid var(--line); background: var(--surface); box-shadow: var(--shadow); text-align: center; }
+.pw-mark { width: 52px; height: 52px; margin: 0 auto 10px; display: grid; place-items: center; border-radius: 12px; background: var(--accent); color: #fff; font-size: 26px; font-weight: 900; }
+.pw-box h2 { margin: 0 0 8px; font-size: 19px; }
+.pw-box p { margin: 0 0 16px; line-height: 1.7; color: var(--muted); font-size: 14px; }
+.pw-box p b { color: var(--text); }
+.pw-go { display: inline-block; font: inherit; font-size: 15px; font-weight: 700; padding: 11px 22px; border-radius: 999px; border: 0; background: var(--accent); color: #fff; cursor: pointer; text-decoration: none; }
+.pw-go:hover { filter: brightness(1.08); }
+.pw-home { display: block; margin-top: 14px; font-size: 13px; color: var(--muted); }
+.pw-err { color: #c62828; }
+.sub-badge { font-weight: 700; }
+.sub-badge.warn { border-color: var(--accent); color: var(--accent); }
+.sub-main { max-width: 640px; }
+.sub-card, .sub-plan { margin: 16px 0; padding: 20px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); }
+.sub-card h2 { margin: 0 0 6px; font-size: 19px; }
+.sub-card p { margin: 0 0 12px; line-height: 1.7; }
+.sub-methods { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+.sub-methods .sv-h { flex-basis: 100%; }
+.sub-methods small { flex-basis: 100%; color: var(--muted); font-size: 12.5px; }
+.sub-methods button { flex: 1 1 150px; font: inherit; font-size: 15px; font-weight: 700; padding: 12px 14px; border-radius: 10px; border: 1px solid var(--line); background: var(--surface-2); color: var(--text); cursor: pointer; }
+.sub-methods button:disabled { opacity: .5; cursor: default; }
+.sub-methods .sub-kakaopay { background: #fee500; border-color: #fee500; color: #191919; }
+.sub-methods .sub-naverpay { background: #03c75a; border-color: #03c75a; color: #fff; }
+.sub-methods .danger { flex: 0 1 auto; color: #c62828; background: transparent; }
+.sub-msg { padding: 8px 12px; border-radius: 8px; background: var(--accent-soft); }
+.sub-plan h3 { margin: 0 0 8px; font-size: 15px; }
+.sub-plan ul { margin: 0; padding-left: 18px; line-height: 1.8; font-size: 14px; color: var(--muted); }
+.sub-todo { color: #c62828; }
+.pw-box .pw-mark { color: #fff; margin: 0 auto 10px; line-height: 1; }

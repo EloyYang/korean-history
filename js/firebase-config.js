@@ -11,3 +11,19 @@ window.FIREBASE_CONFIG = {
   messagingSenderId: '241076520650',
   appId: '1:241076520650:web:b1ef550f9e598bf57b1633',
 };
+
+/*
+ * 구독(유료) 설정 — 설정 방법은 PAYMENT.md
+ *   enabled: false 이면 지금처럼 누구나 무료로 쓴다 (서버·결제 설정이 끝나면 true 로)
+ *   contentFromStorage: true 이면 문제 이미지·풀이 자료를 Firebase Storage(구독자만 읽기)에서 불러온다
+ *   channels: PortOne 콘솔 › 결제 연동 › 채널 관리의 채널 키 (테스트 채널 → 심사 뒤 실연동 채널로 교체)
+ */
+window.PAYWALL = {
+  enabled: false,
+  contentFromStorage: false,
+  storeId: '',
+  channels: { card: '', kakaopay: '', naverpay: '' },
+  price: 5000,
+  trialDays: 7,
+  region: 'asia-northeast3',
+};

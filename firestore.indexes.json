@@ -1,0 +1,6 @@
+{
+  "indexes": [
+    { "collectionGroup": "billing", "queryScope": "COLLECTION", "fields": [ { "fieldPath": "status", "order": "ASCENDING" }, { "fieldPath": "nextChargeAt", "order": "ASCENDING" } ] }
+  ],
+  "fieldOverrides": []
+}
