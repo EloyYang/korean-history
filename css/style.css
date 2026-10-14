@@ -1152,3 +1152,5 @@ button.rt-go:disabled { opacity: .4; cursor: default; }
 .sv-opts.ox li .ox-same .ox-same-row b.x { color: inherit; }
 
 .rt-launch.rt-resume { border-color: var(--accent); background: var(--accent-soft); }
+
+.sv-opts.ox li .ox-same .ox-same-row em.lz { background: transparent; color: inherit; opacity: .7; border: 1px dashed currentColor; font-weight: 500; font-size: 10.5px; padding: 0 5px; }

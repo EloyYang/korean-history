@@ -1,6 +1,6 @@
 /*
  * 선지별 포인트에 덧붙이는 정보 (기출 풀기·오답 노트·문제 보기 창 공통)
- *   optExtra('79-1', 0) → 그 선지의 시기·나라·왕(OPTM) + 같은 선지가 나온 다른 회차(OPT_SAME)
+ *   optExtra('79-1', 0) → 그 선지의 시기·나라·왕(OPTM) + 같은 내용을 묻는 선지가 나온 다른 회차(OPT_SAME)
  */
 (function () {
   const NUMS = '①②③④⑤';
@@ -23,14 +23,14 @@
     const refs = (((window.OPT_SAME || {})[id] || [])[i] || '').split(',').filter(Boolean);
     if (!refs.length) return '';
     const rows = refs.map((ref) => {
-      const [r, n, o] = ref.split('-').map(Number);
+      const loose = ref.endsWith('~'); const [r, n, o] = ref.replace('~', '').split('-').map(Number);
       const k = keyOf(r); const isAns = k && k.ans[n - 1] === o;
       const row = ((window.EXAM || {})[r] || []).find((x) => x[0] === n);
       const [when, state] = qmeta(r, n).split('|');
       const about = [row ? row[2] : '', state || when || ''].filter(Boolean).join(' · ');
-      return `<span class="ox-same-row"><button type="button" data-optq="${r}-${n}" title="이 문제 보기">${r}회 ${n}번 ${NUMS[o - 1]}</button><b class="${isAns ? 'a' : 'x'}">${isAns ? '정답 선지' : '오답 선지'}</b>${about ? `<span>${esc(about)} 문제</span>` : ''}</span>`;
+      return `<span class="ox-same-row"><button type="button" data-optq="${r}-${n}" title="이 문제 보기">${r}회 ${n}번 ${NUMS[o - 1]}</button><b class="${isAns ? 'a' : 'x'}">${isAns ? '정답 선지' : '오답 선지'}</b>${loose ? '<em class="lz" title="문장은 다르지만 같은 내용을 묻는 선지">표현 다름</em>' : ''}${about ? `<span>${esc(about)} 문제</span>` : ''}</span>`;
     }).join('');
-    return `<span class="ox-same"><i>다른 회차에도 나온 선지 ${refs.length}회</i>${rows}</span>`;
+    return `<span class="ox-same"><i>같은 내용이 다른 회차에도 나옴 ${refs.length}회</i>${rows}</span>`;
   }
 
   window.optExtra = (id, i) => metaHtml(id, i) + sameHtml(id, i);
@@ -39,6 +39,6 @@
     const b = e.target.closest('[data-optq]');
     if (!b || !window.QView) return;
     e.stopPropagation();
-    window.QView.open([b.dataset.optq], { title: '같은 선지가 나온 문제', showAnswer: true });
+    window.QView.open([b.dataset.optq], { title: '같은 내용의 선지가 나온 문제', showAnswer: true });
   }, true);
 })();
