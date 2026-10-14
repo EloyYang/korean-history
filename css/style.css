@@ -1223,3 +1223,21 @@ body.pw-on { overflow: hidden; }
 .r-full:hover { filter: brightness(1.08); }
 .r-rounds { overflow-y: auto; overscroll-behavior: contain; }
 .r-rounds thead th { position: sticky; top: 0; z-index: 1; }
+
+/* 기출 풀기: 회차별 · 시대별 · 랜덤 모의고사 */
+.q-tabs { display: flex; gap: 4px; margin: 0 0 14px; border-bottom: 1px solid var(--line); }
+.q-tabs button { font: inherit; font-size: 14.5px; font-weight: 700; padding: 8px 14px; border: 0; border-bottom: 3px solid transparent; background: none; color: var(--muted); cursor: pointer; }
+.q-tabs button[aria-selected="true"] { color: var(--text); border-bottom-color: var(--accent); }
+.q-builder { padding: 14px 16px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); display: grid; gap: 10px; }
+.q-row { display: grid; grid-template-columns: 64px minmax(0, 1fr); gap: 8px; align-items: start; }
+.q-row > .q-make { grid-column: 1 / -1; justify-self: start; }
+.q-lab { font-size: 12.5px; font-weight: 700; color: var(--muted); padding-top: 5px; }
+.q-desc { margin: 0; font-size: 13.5px; line-height: 1.7; color: var(--muted); }
+.q-desc b { color: var(--text); }
+.q-make { font: inherit; font-size: 15px; font-weight: 700; padding: 10px 20px; border-radius: 999px; border: 0; background: var(--accent); color: #fff; cursor: pointer; }
+.q-make:disabled { opacity: .45; cursor: default; }
+.q-make small { font-weight: 400; opacity: .85; }
+.q-rounds li { position: relative; }
+.q-setdel { position: absolute; top: 8px; right: 8px; width: 24px; height: 24px; border-radius: 50%; border: 1px solid var(--line); background: var(--surface); color: var(--muted); font-size: 11px; cursor: pointer; }
+.q-setdel:hover { color: #c62828; border-color: #c62828; }
+.q-src { padding: 0 7px; border-radius: 999px; background: #eee; color: #444; font-size: 11.5px; }

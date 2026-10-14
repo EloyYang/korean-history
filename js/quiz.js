@@ -5,10 +5,23 @@
   const S = window.UserStore;
   const N = (r) => (KEY[r] ? KEY[r].ans.length : 50);
   const TOTAL = (r) => (KEY[r] ? KEY[r].pt.reduce((a, b) => a + b, 0) : 100);
-  const rname = (r) => EX.round.replace('{r}', r);
-  const imgOf = (r, n) => EX.img.replace('{r}', r).replace('{n}', String(n).padStart(2, '0'));
+  // 시대별 풀기·랜덤 모의고사는 '세트'로 만든다: 세트 id(문자열) → 실제 [회차, 번호] 목록
+  const SETS_KEY = window.ATTEMPTS.key('quizSets');
+  const SETLOG_KEY = window.ATTEMPTS.key('setLog');
+  const SETS = {};
+  const isSet = (r) => typeof r === 'string' && !!SETS[r];
+  const real = (r, n) => (isSet(r) ? SETS[r].items[n - 1] : [r, n]);
+  function registerSet(id, set) {
+    SETS[id] = set;
+    const ans = [], pt = [], hot = [];
+    set.items.forEach(([r, n]) => { const k = KEY[r]; ans.push(k ? k.ans[n - 1] : 0); pt.push(k ? k.pt[n - 1] : 0); hot.push(k && k.hot ? k.hot[n - 1] : null); });
+    KEY[id] = { ans, pt, hot };
+  }
+  const rname = (r) => (isSet(r) ? SETS[r].title : EX.round.replace('{r}', r));
+  const imgOf = (r, n) => { const [rr, nn] = real(r, n); return EX.img.replace('{r}', rr).replace('{n}', String(nn).padStart(2, '0')); };
   const NUMS = '①②③④⑤';
   const rounds = Object.keys(KEY).map(Number).sort((a, b) => b - a);
+  Object.entries(S.get(SETS_KEY, {}) || {}).forEach(([id, st]) => { if (st && st.items) registerSet(id, st); });
   const box = document.getElementById('quiz');
   const bar = document.getElementById('quiz-bar');
   const draftKey = (r) => window.ATTEMPTS.key('quizDraft.' + r);
@@ -22,14 +35,15 @@
   const state = { round: null, answers: {}, times: {}, cur: 1, graded: false, view: 'list', onlyWrong: false, onlyFlag: false, showGrid: false, paused: false };
   // 헷갈리는 문제 표시: 회차별 번호 목록 — 채점과 상관없이 남고, 오답 노트에서 모아 본다
   const flagKey = (r) => window.ATTEMPTS.key('flag.' + r);
-  const flags = (r) => S.get(flagKey(r), []) || [];
-  const isFlag = (r, n) => flags(r).includes(n);
+  const rawFlags = (r) => S.get(flagKey(r), []) || [];
+  const isFlag = (r, n) => { const [rr, nn] = real(r, n); return rawFlags(rr).includes(nn); };
+  const flags = (r) => (isSet(r) ? SETS[r].items.map((_, i) => i + 1).filter((n) => isFlag(r, n)) : rawFlags(r));
   function toggleFlag() {
-    const r = state.round, n = state.cur; const f = flags(r);
+    const [r, n] = real(state.round, state.cur); const f = rawFlags(r);
     S.set(flagKey(r), f.includes(n) ? f.filter((x) => x !== n) : [...f, n].sort((a, b) => a - b));
-    const on = isFlag(r, n);
+    const on = isFlag(state.round, state.cur); const n2 = state.cur;
     document.querySelectorAll('.q-flag').forEach((b) => { b.setAttribute('aria-pressed', on); b.innerHTML = on ? '🚩 헷갈림 표시됨' : '🏳 헷갈림 표시'; });
-    const g = box.querySelector(`.q-grid [data-go="${n}"]`); if (g) g.classList.toggle('flag', on);
+    const g = box.querySelector(`.q-grid [data-go="${n2}"]`); if (g) g.classList.toggle('flag', on);
   }
   // 일시정지: 시간이 멈추고 문제가 가려진다
   function setPause(on) {
@@ -40,7 +54,8 @@
   }
   let timer = null;
 
-  const lastAttempt = (r) => window.ATTEMPTS.all().find((a) => a.round === r);
+  const setLog = () => S.get(SETLOG_KEY, []) || [];
+  const lastAttempt = (r) => (isSet(r) ? setLog().find((a) => a.id === r) : window.ATTEMPTS.all().find((a) => a.round === r));
   document.title = `기출 풀기 · ${EX.name}`;
   function score(r, answers) {
     const k = KEY[r]; let s = 0; const wrong = [];
@@ -62,19 +77,124 @@
   }
   function stopTimer() { if (timer) clearInterval(timer); timer = null; }
 
-  // ── 회차 목록
+  // ── 시대 구분 (오답 노트와 같은 묶음)
+  const PERIODS = [
+    ['선사 시대', ['prehistoric']], ['고조선', ['gojoseon']], ['여러 나라', ['states']],
+    ['삼국', ['c4', 'c5', 'c6', 'c7']], ['통일신라·발해', ['nambuk']], ['후삼국', ['husamguk']],
+    ['고려 전기', ['goryeo1']], ['고려 후기', ['goryeo2']], ['조선 전기', ['joseon1', 'imjin']],
+    ['조선 후기·개항기', ['horan', 'gaehang']], ['일제 강점기', ['colonial']], ['광복 이후', ['modern']],
+  ];
+  const EXAMQ = window.EXAM || {};
+  const periodOfQ = (r, n) => { const row = (EXAMQ[r] || []).find((x) => x[0] === n); if (!row) return -1; const e = row[7] >= 0 ? row[6] : row[1]; return PERIODS.findIndex((p) => p[1].includes(e)); };
+  const pname = (i) => (PERIODS[i] ? PERIODS[i][0] : '기타 (통합)');
+  const pref = { get: (k, d) => { try { const v = localStorage.getItem('khmap.quizUi.' + k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } }, set: (k, v) => { try { localStorage.setItem('khmap.quizUi.' + k, JSON.stringify(v)); } catch (e) { /* 무시 */ } } };
+  const ui = { tab: pref.get('tab', 'round'), periods: pref.get('periods', []), rounds: pref.get('rounds', []), order: pref.get('order', 'round'), count: pref.get('count', 0), mockRounds: pref.get('mockRounds', []) };
+  const pool = (sel) => (sel.length ? rounds.filter((r) => sel.includes(r)) : rounds);
+  const shuffle = (a) => { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+  const newId = (p) => p + Date.now().toString(36);
+  function saveSet(id, set) {
+    registerSet(id, set);
+    const all = S.get(SETS_KEY, {}) || {}; all[id] = set;
+    // 오래된 세트는 정리 (풀던 중인 것과 기록이 남은 것은 남긴다)
+    const ids = Object.keys(all).sort((a, b) => (all[b].t || 0) - (all[a].t || 0));
+    ids.slice(40).forEach((x) => { if (!load(draftKey(x), null)) delete all[x]; });
+    S.set(SETS_KEY, all);
+  }
+  function makePeriodSet() {
+    if (!ui.periods.length) { alert('시대를 하나 이상 골라 주세요.'); return; }
+    const ps = ui.periods.map(Number);
+    let items = [];
+    pool(ui.rounds).forEach((r) => { for (let n = 1; n <= N(r); n++) if (ps.includes(periodOfQ(r, n))) items.push([r, n]); });
+    if (!items.length) { alert('고른 시대·회차에 해당하는 문제가 없어요.'); return; }
+    items = ui.order === 'random' ? shuffle(items) : items.sort((a, b) => (ps.indexOf(periodOfQ(...a)) - ps.indexOf(periodOfQ(...b))) || b[0] - a[0] || a[1] - b[1]);
+    if (ui.count) items = items.slice(0, ui.count);
+    const title = `${ps.sort((a, b) => a - b).map(pname).join('·')} ${items.length}문항${ui.order === 'random' ? ' (랜덤)' : ''}`;
+    const id = newId('P'); saveSet(id, { title, kind: 'period', items, t: Date.now() }); location.hash = id;
+  }
+  // 랜덤 모의고사: 기준 회차 하나의 시대 배치·배점을 그대로 두고, 자리마다 같은 시대·같은 배점 문제를 다른 회차에서 무작위로
+  function makeMockSet() {
+    const P = pool(ui.mockRounds);
+    if (!P.length) return;
+    const base = P[Math.floor(Math.random() * P.length)];
+    const used = new Set(); const items = [];
+    const cand = {};
+    P.forEach((r) => { for (let n = 1; n <= N(r); n++) { const key = `${periodOfQ(r, n)}|${KEY[r].pt[n - 1]}`; (cand[key] = cand[key] || []).push([r, n]); } });
+    for (let n = 1; n <= N(base); n++) {
+      const key = `${periodOfQ(base, n)}|${KEY[base].pt[n - 1]}`;
+      const opts = shuffle(cand[key] || []).filter(([r, m]) => !used.has(`${r}-${m}`));
+      const pick = opts[0] || [base, n];
+      used.add(`${pick[0]}-${pick[1]}`); items.push(pick);
+    }
+    const no = setLog().filter((x) => x.kind === 'mock').length + Object.values(SETS).filter((x) => x.kind === 'mock').length + 1;
+    const id = newId('M'); saveSet(id, { title: `랜덤 모의고사 ${no}`, kind: 'mock', base, items, t: Date.now() }); location.hash = id;
+  }
+
+  // ── 회차 목록 · 시대별 · 랜덤 모의고사
+  function setsHtml(kind) {
+    const ids = Object.keys(SETS).filter((id) => SETS[id].kind === kind).sort((a, b) => (SETS[b].t || 0) - (SETS[a].t || 0));
+    if (!ids.length) return '';
+    return `<h3 class="r-h">내가 만든 ${kind === 'mock' ? '모의고사' : '시대별 문제'} <small>누르면 이어 풀거나 결과를 볼 수 있어요</small></h3>
+      <ul class="q-rounds">${ids.map((id) => {
+        const a = lastAttempt(id); const dr = load(draftKey(id), null); const dn = dr ? Object.keys(dr.answers || {}).length : 0;
+        return `<li><a href="#${id}"><b>${escH(SETS[id].title)}</b>
+          <span>${a ? `최근 <em>${a.score}점</em>/${a.max || TOTAL(id)} · 틀림 ${a.wrong.length}${a.date ? ` · ${a.date}` : ''}` : `${N(id)}문항 · 아직 안 풀었어요`}</span>
+          ${dn ? `<span class="q-draft">이어 풀기 ${dn}/${N(id)} · ${mmss(sum(dr.times))}</span>` : ''}</a><button type="button" class="q-setdel" data-setdel="${id}" title="이 세트 지우기">✕</button></li>`;
+      }).join('')}</ul>`;
+  }
+  const chip = (attr, v, on, label, extra) => `<button type="button" ${attr}="${v}" aria-pressed="${on}">${label}${extra != null ? ` <small>${extra}</small>` : ''}</button>`;
   function renderList() {
     stopTimer(); bar.hidden = true; state.view = 'list';
-    box.innerHTML = `
-      <h2 class="r-h">${EX.name}${EX.level ? ` (${EX.level})` : ''} · 회차 선택</h2>
-      <ul class="q-rounds">${rounds.map((r) => {
+    const tabs = [['round', '회차별'], ['period', '시대별'], ['mock', '랜덤 모의고사']];
+    const head = `<h2 class="r-h">${EX.name}${EX.level ? ` (${EX.level})` : ''} · 기출 풀기</h2>
+      <div class="q-tabs" role="tablist">${tabs.map(([k, l]) => `<button type="button" role="tab" data-qtab="${k}" aria-selected="${ui.tab === k}">${l}</button>`).join('')}</div>`;
+    let body = '';
+    if (ui.tab === 'period') {
+      const P = pool(ui.rounds); const cnt = {};
+      P.forEach((r) => { for (let n = 1; n <= N(r); n++) { const p = periodOfQ(r, n); cnt[p] = (cnt[p] || 0) + 1; } });
+      const ps = ui.periods.map(Number); const total = ps.reduce((a, p) => a + (cnt[p] || 0), 0);
+      body = `<div class="q-builder">
+        <div class="q-row"><span class="q-lab">시대</span><span class="r-chips">${[...PERIODS.keys(), -1].filter((i) => cnt[i]).map((i) => chip('data-qper', i, ps.includes(i), pname(i), cnt[i])).join('')}</span></div>
+        <div class="q-row"><span class="q-lab">회차</span><span class="r-chips">${chip('data-qround', 'all', !ui.rounds.length, '전체 회차')}${rounds.map((r) => chip('data-qround', r, ui.rounds.includes(r), r + '회')).join('')}</span></div>
+        <div class="q-row"><span class="q-lab">순서</span><span class="r-chips">${chip('data-qorder', 'round', ui.order === 'round', '시대·회차 순')}${chip('data-qorder', 'random', ui.order === 'random', '랜덤으로 섞기')}</span></div>
+        <div class="q-row"><span class="q-lab">문항 수</span><span class="r-chips">${[0, 10, 20, 30].map((c) => chip('data-qcount', c, ui.count === c, c ? `${c}문항` : '전부')).join('')}</span></div>
+        <div class="q-row"><button type="button" class="q-make" data-qmake="period" ${total ? '' : 'disabled'}>▶ ${total ? `${ui.count ? Math.min(ui.count, total) : total}문항 풀기` : '시대를 골라 주세요'}</button></div>
+      </div>${setsHtml('period')}`;
+    } else if (ui.tab === 'mock') {
+      const P = pool(ui.mockRounds);
+      body = `<div class="q-builder">
+        <p class="q-desc">고른 회차들의 문제를 섞어 <b>50문항 · 100점</b> 시험을 만들어요. 실제 시험 한 회차의 <b>시대 배치와 배점을 그대로</b> 두고, 자리마다 같은 시대·같은 배점의 문제를 다른 회차에서 무작위로 가져와요.</p>
+        <div class="q-row"><span class="q-lab">회차</span><span class="r-chips">${chip('data-qmround', 'all', !ui.mockRounds.length, '전체 회차')}${rounds.map((r) => chip('data-qmround', r, ui.mockRounds.includes(r), r + '회')).join('')}</span></div>
+        <div class="q-row"><button type="button" class="q-make" data-qmake="mock" ${P.length >= 2 ? '' : 'disabled'}>▶ 랜덤 모의고사 만들기 <small>(${P.length}개 회차에서)</small></button></div>
+      </div>${setsHtml('mock')}`;
+    } else {
+      body = `<ul class="q-rounds">${rounds.map((r) => {
         const a = lastAttempt(r); const dr = load(draftKey(r), null); const dn = dr ? Object.keys(dr.answers || {}).length : 0;
         return `<li><a href="#${r}"><b>${rname(r)}</b>
           <span>${a ? `최근 ${a.score != null ? `<em>${a.score}점</em> · ` : ''}틀림 ${a.wrong.length}${a.total ? ` · ${mmss(a.total)}` : ''}${a.date ? ` · ${a.date}` : ''}` : '아직 안 풀었어요'}</span>
           ${dn ? `<span class="q-draft">이어 풀기 ${dn}/${N(r)} · ${mmss(sum(dr.times))}</span>` : ''}</a></li>`;
-      }).join('')}</ul>
-      <p class="r-note">문제 이미지의 ①~⑤를 누르면 답이 선택되고 다음 문제로 넘어가요. 문제마다 머문 시간과 총 소요 시간이 기록돼요. 키보드 1~5 · ← → 도 쓸 수 있어요. 헷갈리는 문제는 🏳 헷갈림 표시(F), 잠깐 쉴 땐 ⏸ 일시정지(P).<br>채점 기록은 이 브라우저에 저장되고 오답 노트에 바로 반영돼요. 문항 사진 등의 저작권은 원저작자에게 있어요.</p>`;
+      }).join('')}</ul>`;
+    }
+    box.innerHTML = head + body + `
+      <p class="r-note">문제 이미지의 ①~⑤를 누르면 답이 선택되고 다음 문제로 넘어가요. 문제마다 머문 시간과 총 소요 시간이 기록돼요. 키보드 1~5 · ← → 도 쓸 수 있어요. 헷갈리는 문제는 🏳 헷갈림 표시(F), 잠깐 쉴 땐 ⏸ 일시정지(P).<br>회차별 채점 기록은 오답 노트에 바로 반영돼요. 시대별·랜덤 모의고사 기록은 이 화면의 각 탭에 남고, 메모·헷갈림 표시는 원래 회차 문제에 함께 저장돼요. 문항 사진 등의 저작권은 원저작자에게 있어요.</p>`;
   }
+  const toggleIn = (arr, v) => (arr.includes(v) ? arr.filter((x) => x !== v) : [...arr, v]);
+  document.addEventListener('click', (e) => {
+    if (state.view !== 'list') return;
+    const t = e.target.closest('[data-qtab]'); if (t) { ui.tab = t.dataset.qtab; pref.set('tab', ui.tab); renderList(); return; }
+    const pe = e.target.closest('[data-qper]'); if (pe) { ui.periods = toggleIn(ui.periods.map(Number), +pe.dataset.qper); pref.set('periods', ui.periods); renderList(); return; }
+    const ro = e.target.closest('[data-qround]'); if (ro) { ui.rounds = ro.dataset.qround === 'all' ? [] : toggleIn(ui.rounds, +ro.dataset.qround); pref.set('rounds', ui.rounds); renderList(); return; }
+    const mr = e.target.closest('[data-qmround]'); if (mr) { ui.mockRounds = mr.dataset.qmround === 'all' ? [] : toggleIn(ui.mockRounds, +mr.dataset.qmround); pref.set('mockRounds', ui.mockRounds); renderList(); return; }
+    const od = e.target.closest('[data-qorder]'); if (od) { ui.order = od.dataset.qorder; pref.set('order', ui.order); renderList(); return; }
+    const ct = e.target.closest('[data-qcount]'); if (ct) { ui.count = +ct.dataset.qcount; pref.set('count', ui.count); renderList(); return; }
+    const mk = e.target.closest('[data-qmake]'); if (mk) { if (mk.dataset.qmake === 'period') makePeriodSet(); else makeMockSet(); return; }
+    const del = e.target.closest('[data-setdel]');
+    if (del) {
+      const id = del.dataset.setdel; if (!confirm(`'${SETS[id].title}'을(를) 지울까요?\n(이 세트의 풀이 기록도 지워져요. 메모·헷갈림 표시는 원래 회차에 남아요)`)) return;
+      const all = S.get(SETS_KEY, {}) || {}; delete all[id]; S.set(SETS_KEY, all); delete SETS[id]; delete KEY[id];
+      S.set(SETLOG_KEY, setLog().filter((x) => x.id !== id)); try { localStorage.removeItem(draftKey(id)); } catch (err) { /* 무시 */ }
+      renderList();
+    }
+  });
 
   // ── 한 문제 화면
   function solveHtml() {
@@ -92,7 +212,7 @@
     return `
       <div class="q-one ${res}${state.paused && !state.graded ? ' paused' : ''}">
         <div class="q-head">
-          <b>${n}번</b><span>${k.pt[n - 1]}점</span>
+          <b>${n}번</b>${isSet(r) ? `<span class="q-src">${real(r, n)[0]}회 ${real(r, n)[1]}번</span>` : ''}<span>${k.pt[n - 1]}점</span>
           ${state.graded ? `<span class="q-res">${a === right ? '정답' : a ? `오답 (고른 답 ${NUMS[a - 1]})` : '안 품'} · 정답 ${NUMS[right - 1]}</span><span class="q-tm">머문 시간 ${mmss(state.times[n])}</span>`
             : `<span id="q-time" class="q-tm">이 문제 <b>${mmss(state.times[n])}</b> · 총 <b>${mmss(sum(state.times))}</b></span><button type="button" class="q-pause" aria-pressed="${state.paused}" title="일시정지 (P)">${state.paused ? '▶ 다시 시작' : '⏸ 일시정지'}</button>`}
           <button type="button" class="q-flag" aria-pressed="${isFlag(r, n)}" title="헷갈리는 문제로 표시 (F) — 오답 노트에 모여요">${isFlag(r, n) ? '🚩 헷갈림 표시됨' : '🏳 헷갈림 표시'}</button>
@@ -100,7 +220,7 @@
         ${state.graded ? '' : `<div class="q-pausecover"><p>일시정지 중 <small>시간이 멈췄어요</small></p><button type="button" class="q-resume">▶ 다시 시작</button></div>`}
         <div class="q-body">
           <div class="q-imgwrap">
-            <img src="${imgOf(r, n)}" alt="${rname(r)} ${n}번 문제">
+            <img src="${imgOf(r, n)}" alt="${real(r, n)[0]}회 ${real(r, n)[1]}번 문제">
             ${spots}
           </div>
           ${memoHtml(r, n)}
@@ -113,18 +233,20 @@
 
   // ── 메모: 문제(지문)와 선지 ①~⑤ 각각 — 회차별로 저장, 로그인하면 계정에 동기화
   const memoKey = (r) => window.ATTEMPTS.key('memo.' + r);
-  const memoOf = (r, n) => (S.get(memoKey(r), {}) || {})[n] || { q: '', o: ['', '', '', '', ''] };
+  const memoOf = (r0, n0) => { const [r, n] = real(r0, n0); return (S.get(memoKey(r), {}) || {})[n] || { q: '', o: ['', '', '', '', ''] }; };
   // 다시 풀면 지금까지의 메모는 '이전 풀이 메모'로 따로 보관하고, 새 풀이는 빈 메모로 시작한다
   const oldKey = (r) => window.ATTEMPTS.key('memoOld.' + r);
   const oldMemos = (r) => S.get(oldKey(r), []) || [];
   function archiveMemo(r) {
+    if (isSet(r)) return; // 세트는 여러 회차에서 모은 문제라 회차 메모를 따로 보관하지 않는다
     const cur = S.get(memoKey(r), {}) || {};
     if (!Object.keys(cur).length) return;
     const a = lastAttempt(r);
     S.set(oldKey(r), [...oldMemos(r), { t: Date.now(), date: (a && a.date) || today(), score: a && a.score != null ? a.score : null, memos: cur }]);
     S.set(memoKey(r), {});
   }
-  function oldMemoHtml(r, n) {
+  function oldMemoHtml(r0, n0) {
+    const [r, n] = real(r0, n0);
     const list = oldMemos(r).filter((x) => x.memos && x.memos[n]).reverse();
     if (!list.length) return '';
     return `<details class="q-oldmemo"><summary>이전 풀이 메모 ${list.length}개 보기</summary>${list.map((x) => { const m = x.memos[n]; return `<div class="q-oldmemo-item"><p class="d">${escH(x.date || '')}${x.score != null ? ` · ${x.score}점 때` : ''}</p>${m.q ? `<p class="m-q">${escH(m.q)}</p>` : ''}${(m.o || []).some(Boolean) ? `<ul>${m.o.map((t, i) => (t ? `<li><b>${NUMS[i]}</b> ${escH(t)}</li>` : '')).join('')}</ul>` : ''}</div>`; }).join('')}</details>`;
@@ -152,7 +274,7 @@
   let memoTimer = null;
   function saveMemo() {
     const box2 = document.querySelector('.q-memo'); if (!box2) return;
-    const r = state.round, n = state.cur;
+    const [r, n] = real(state.round, state.cur);
     const all = S.get(memoKey(r), {}) || {};
     const m = { q: box2.querySelector('[data-memo="q"]').value.trim(), o: [0, 1, 2, 3, 4].map((i) => box2.querySelector(`[data-memo="${i}"]`).value.trim()) };
     if (m.q || m.o.some(Boolean)) all[n] = m; else delete all[n];
@@ -182,14 +304,15 @@
   }
   // 시기·나라·왕(정부) 한 줄 요약
   const QMETA = window.QMETA || {};
-  function metaHtml(r, n) {
+  function metaHtml(r0, n0) {
+    const [r, n] = real(r0, n0);
     const m = (QMETA[r] || [])[n - 1]; if (!m) return '';
     const [when, state, king] = m.split('|');
     const cell = (k, v) => (v ? `<div><dt>${k}</dt><dd>${escH(v)}</dd></div>` : '');
     return `<dl class="sv-meta">${cell('시기', when)}${cell('나라', state)}${cell('왕·정부', king)}</dl>`;
   }
   function solvePanel(r, n) {
-    const sv = SOLVES[`${r}-${n}`];
+    const [rr, nn] = real(r, n); const sv = SOLVES[`${rr}-${nn}`];
     if (!sv) return `<div class="q-solve">${metaHtml(r, n)}<p class="sv-h">정답·도출 포인트</p><p class="sv-how">아직 정리 전이에요.</p></div>`;
     const right = KEY[r].ans[n - 1];
     return `
@@ -199,7 +322,7 @@
         <p class="sv-clue">${sv.clue.map((c) => `<mark class="clue">${escH(c)}</mark>`).join(' ')}</p>
         <p class="sv-h">정답까지 생각의 순서</p>
         <p class="sv-how">${sv.how}</p>
-        ${optList(`${r}-${n}`, sv, right, state.graded ? (state.answers[n] || 0) : null)}
+        ${optList(`${rr}-${nn}`, sv, right, state.graded ? (state.answers[n] || 0) : null)}
       </div>`;
   }
 
@@ -215,7 +338,7 @@
     const s = state.graded ? score(r, state.answers) : null;
     box.innerHTML = `
       <div class="q-top">
-        <a href="#" class="top-link">← 회차 목록</a>
+        <a href="#" class="top-link">← 목록</a>
         <h2>${rname(r)} <small>${state.cur} / ${N(r)}</small></h2>
         ${state.graded ? `<button type="button" class="top-link q-to-result">결과 보기</button>` : ''}
       </div>
@@ -249,13 +372,13 @@
         <b>${n}</b><span>${ok ? '○' : '✕'}</span>${isFlag(r, n) ? '<span class="fl" title="헷갈림">🚩</span>' : ''}<span class="t">${mmss(t)}</span><span class="bar" style="width:${Math.min(100, (t / Math.max(1, ...Object.values(state.times))) * 100)}%"></span></button>`;
     }).join('');
     box.innerHTML = `
-      <div class="q-top"><a href="#" class="top-link">← 회차 목록</a><h2>${rname(r)} 결과</h2></div>
+      <div class="q-top"><a href="#" class="top-link">← 목록</a><h2>${rname(r)} 결과</h2></div>
       <div class="q-result">
         <b>${s.score}점</b><small>/ ${TOTAL(r)}</small>
         <span>맞음 ${N(r) - s.wrong.length} · 틀림 ${s.wrong.length}</span>
         <span>총 소요 시간 <b class="tt">${mmss(total)}</b> · 문제당 평균 ${mmss(avg)}</span>
         ${flags(r).length ? `<span>헷갈림 표시 ${flags(r).length}문항 · 그중 맞힘 ${flags(r).filter((n) => state.answers[n] === k.ans[n - 1]).length}</span>` : ''}
-        <span class="q-saved">오답 노트에 저장했어요</span>
+        <span class="q-saved">${isSet(r) ? '풀이 기록에 저장했어요 (기출 풀기 › 시대별·랜덤 탭)' : '오답 노트에 저장했어요'}</span>
       </div>
       <div class="q-actions">
         <button type="button" class="q-review-wrong" ${s.wrong.length ? '' : 'disabled'}>틀린 문제 다시 보기</button>
@@ -299,7 +422,10 @@
     const left = N(state.round) - Object.keys(state.answers).length;
     if (left && !confirm(`아직 ${left}문항을 고르지 않았어요. 고르지 않은 문항은 틀린 것으로 채점할까요?`)) return;
     const s = score(state.round, state.answers);
-    window.ATTEMPTS.save({ round: state.round, date: today(), wrong: s.wrong, answers: state.answers, score: s.score, times: state.times, total: sum(state.times) });
+    if (isSet(state.round)) {
+      const st = SETS[state.round];
+      S.set(SETLOG_KEY, [{ id: state.round, title: st.title, kind: st.kind, items: st.items, date: today(), wrong: s.wrong, answers: state.answers, score: s.score, max: TOTAL(state.round), times: state.times, total: sum(state.times) }, ...setLog().filter((x) => x.id !== state.round)].slice(0, 30));
+    } else window.ATTEMPTS.save({ round: state.round, date: today(), wrong: s.wrong, answers: state.answers, score: s.score, times: state.times, total: sum(state.times) });
     try { localStorage.removeItem(draftKey(state.round)); } catch (e) { /* 무시 */ }
     state.graded = true; state.showGrid = false; state.paused = false; state.onlyFlag = false;
     renderResult();
@@ -321,8 +447,9 @@
   }
 
   function route() {
-    const r = Number(location.hash.slice(1));
-    if (KEY[r]) open(r); else { state.round = null; renderList(); }
+    const h = decodeURIComponent(location.hash.slice(1));
+    const r = isSet(h) ? h : Number(h);
+    if (KEY[r] && (isSet(r) || rounds.includes(r))) open(r); else { state.round = null; renderList(); }
   }
 
   document.addEventListener('click', (e) => {
