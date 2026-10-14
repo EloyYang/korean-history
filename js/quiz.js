@@ -88,7 +88,7 @@
   const periodOfQ = (r, n) => { const row = (EXAMQ[r] || []).find((x) => x[0] === n); if (!row) return -1; const e = row[7] >= 0 ? row[6] : row[1]; return PERIODS.findIndex((p) => p[1].includes(e)); };
   const pname = (i) => (PERIODS[i] ? PERIODS[i][0] : '기타 (통합)');
   const pref = { get: (k, d) => { try { const v = localStorage.getItem('khmap.quizUi.' + k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } }, set: (k, v) => { try { localStorage.setItem('khmap.quizUi.' + k, JSON.stringify(v)); } catch (e) { /* 무시 */ } } };
-  const ui = { tab: pref.get('tab', 'round'), periods: pref.get('periods', []), rounds: pref.get('rounds', []), order: pref.get('order', 'round'), count: pref.get('count', 0), mockRounds: pref.get('mockRounds', []) };
+  const ui = { tab: pref.get('tab', 'round'), periods: pref.get('periods', []), rounds: pref.get('rounds', []), order: pref.get('order', 'round'), count: pref.get('count', 0), mockRounds: pref.get('mockRounds', []), mockMode: pref.get('mockMode', 'even') };
   const pool = (sel) => (sel.length ? rounds.filter((r) => sel.includes(r)) : rounds);
   const shuffle = (a) => { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
   const newId = (p) => p + Date.now().toString(36);
@@ -112,21 +112,37 @@
     const id = newId('P'); saveSet(id, { title, kind: 'period', items, t: Date.now() }); location.hash = id;
   }
   // 랜덤 모의고사: 기준 회차 하나의 시대 배치·배점을 그대로 두고, 자리마다 같은 시대·같은 배점 문제를 다른 회차에서 무작위로
+  // 내가 틀렸던 문제·헷갈린 문제 (외웠어요 표시한 문제는 뺀다) → 우선순위 2·1
+  function weakMap() {
+    const w = new Map(); const add = (r, n, v) => { const k = `${r}-${n}`; w.set(k, Math.max(w.get(k) || 0, v)); };
+    window.ATTEMPTS.all().forEach((l) => l.wrong.forEach((n) => add(l.round, n, 2)));
+    setLog().forEach((l) => (l.wrong || []).forEach((p) => { const it = (l.items || [])[p - 1]; if (it) add(it[0], it[1], 2); }));
+    Object.entries(S.get(window.ATTEMPTS.key('retry'), {}) || {}).forEach(([k, x]) => { if (x && x.last === 'no') { const [r, n] = k.split('-').map(Number); add(r, n, 2); } });
+    if (ui.mockMode === 'weakflag') rounds.forEach((r) => rawFlags(r).forEach((n) => add(r, n, 1)));
+    (S.get(window.ATTEMPTS.key('mastered'), []) || []).forEach((k) => w.delete(k));
+    return w;
+  }
   function makeMockSet() {
     const P = pool(ui.mockRounds);
     if (!P.length) return;
+    const W = ui.mockMode === 'even' ? new Map() : weakMap();
+    const pri = ([r, n]) => W.get(`${r}-${n}`) || 0;
     const base = P[Math.floor(Math.random() * P.length)];
     const used = new Set(); const items = [];
     const cand = {};
     P.forEach((r) => { for (let n = 1; n <= N(r); n++) { const key = `${periodOfQ(r, n)}|${KEY[r].pt[n - 1]}`; (cand[key] = cand[key] || []).push([r, n]); } });
     for (let n = 1; n <= N(base); n++) {
       const key = `${periodOfQ(base, n)}|${KEY[base].pt[n - 1]}`;
-      const opts = shuffle(cand[key] || []).filter(([r, m]) => !used.has(`${r}-${m}`));
+      // 틀린 문제 위주: 같은 시대·배점 후보 중 틀렸던(헷갈린) 문제를 먼저, 없으면 나머지에서 무작위
+      const opts = shuffle(cand[key] || []).filter(([r, m]) => !used.has(`${r}-${m}`)).sort((a, b) => pri(b) - pri(a));
       const pick = opts[0] || [base, n];
       used.add(`${pick[0]}-${pick[1]}`); items.push(pick);
     }
     const no = setLog().filter((x) => x.kind === 'mock').length + Object.values(SETS).filter((x) => x.kind === 'mock').length + 1;
-    const id = newId('M'); saveSet(id, { title: `랜덤 모의고사 ${no}`, kind: 'mock', base, items, t: Date.now() }); location.hash = id;
+    const weakN = items.filter((x) => pri(x) > 0).length;
+    if (ui.mockMode !== 'even' && !weakN) { alert('아직 틀렸거나 헷갈린 문제 기록이 없어서 골고루 섞어 만들었어요.'); }
+    const title = `랜덤 모의고사 ${no}${ui.mockMode !== 'even' && weakN ? ` · ${ui.mockMode === 'weakflag' ? '틀림·헷갈림' : '틀린 문제'} ${weakN}문항 포함` : ''}`;
+    const id = newId('M'); saveSet(id, { title, kind: 'mock', base, items, weak: weakN, t: Date.now() }); location.hash = id;
   }
 
   // ── 회차 목록 · 시대별 · 랜덤 모의고사
@@ -141,6 +157,7 @@
           ${dn ? `<span class="q-draft">이어 풀기 ${dn}/${N(id)} · ${mmss(sum(dr.times))}</span>` : ''}</a><button type="button" class="q-setdel" data-setdel="${id}" title="이 세트 지우기">✕</button></li>`;
       }).join('')}</ul>`;
   }
+  function weakCount(mode, P) { const m0 = ui.mockMode; ui.mockMode = mode; const W = weakMap(); ui.mockMode = m0; return [...W.keys()].filter((k) => P.includes(+k.split('-')[0])).length; }
   const chip = (attr, v, on, label, extra) => `<button type="button" ${attr}="${v}" aria-pressed="${on}">${label}${extra != null ? ` <small>${extra}</small>` : ''}</button>`;
   function renderList() {
     stopTimer(); bar.hidden = true; state.view = 'list';
@@ -164,6 +181,8 @@
       body = `<div class="q-builder">
         <p class="q-desc">고른 회차들의 문제를 섞어 <b>50문항 · 100점</b> 시험을 만들어요. 실제 시험 한 회차의 <b>시대 배치와 배점을 그대로</b> 두고, 자리마다 같은 시대·같은 배점의 문제를 다른 회차에서 무작위로 가져와요.</p>
         <div class="q-row"><span class="q-lab">회차</span><span class="r-chips">${chip('data-qmround', 'all', !ui.mockRounds.length, '전체 회차')}${rounds.map((r) => chip('data-qmround', r, ui.mockRounds.includes(r), r + '회')).join('')}</span></div>
+        <div class="q-row"><span class="q-lab">문제 구성</span><span class="r-chips">${[['even', '골고루 랜덤'], ['weak', '틀린 문제 위주'], ['weakflag', '틀림 + 헷갈림 위주']].map(([k, l]) => chip('data-qmmode', k, ui.mockMode === k, l, k === 'even' ? null : weakCount(k, P))).join('')}</span></div>
+        ${ui.mockMode !== 'even' ? `<p class="q-desc">시대·배점 자리는 그대로 두고, 자리마다 <b>내가 틀렸던 문제${ui.mockMode === 'weakflag' ? '·헷갈림 표시한 문제' : ''}</b>를 먼저 넣어요. 그런 문제가 없는 자리는 다른 문제로 채워요. ‘외웠어요’ 표시한 문제는 빼요.</p>` : ''}
         <div class="q-row"><button type="button" class="q-make" data-qmake="mock" ${P.length >= 2 ? '' : 'disabled'}>▶ 랜덤 모의고사 만들기 <small>(${P.length}개 회차에서)</small></button></div>
       </div>${setsHtml('mock')}`;
     } else {
@@ -184,6 +203,7 @@
     const pe = e.target.closest('[data-qper]'); if (pe) { ui.periods = toggleIn(ui.periods.map(Number), +pe.dataset.qper); pref.set('periods', ui.periods); renderList(); return; }
     const ro = e.target.closest('[data-qround]'); if (ro) { ui.rounds = ro.dataset.qround === 'all' ? [] : toggleIn(ui.rounds, +ro.dataset.qround); pref.set('rounds', ui.rounds); renderList(); return; }
     const mr = e.target.closest('[data-qmround]'); if (mr) { ui.mockRounds = mr.dataset.qmround === 'all' ? [] : toggleIn(ui.mockRounds, +mr.dataset.qmround); pref.set('mockRounds', ui.mockRounds); renderList(); return; }
+    const mm = e.target.closest('[data-qmmode]'); if (mm) { ui.mockMode = mm.dataset.qmmode; pref.set('mockMode', ui.mockMode); renderList(); return; }
     const od = e.target.closest('[data-qorder]'); if (od) { ui.order = od.dataset.qorder; pref.set('order', ui.order); renderList(); return; }
     const ct = e.target.closest('[data-qcount]'); if (ct) { ui.count = +ct.dataset.qcount; pref.set('count', ui.count); renderList(); return; }
     const mk = e.target.closest('[data-qmake]'); if (mk) { if (mk.dataset.qmake === 'period') makePeriodSet(); else makeMockSet(); return; }
