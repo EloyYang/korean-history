@@ -1244,12 +1244,18 @@ body.pw-on { overflow: hidden; }
 .fv-box .rq-toggle { margin-top: 8px; }
 .q-grid[hidden] { display: none; }
 
-/* 선지별 포인트: 정답 선지는 초록 글씨 */
-.sv-opts li.ans, .sv-opts.ox li.ans b, .sv-opts.ox li.ans .n, .sv-opts.ox li.ans small { color: #2e7d32; }
+/* 선지별 포인트: 정답 선지는 제목만 초록, 내가 골라서 틀린 선지는 제목만 빨강 — 설명·번호는 본문 색 */
+.sv-opts li.ans, .sv-opts li.mine, .sv-opts.ox li.ans .n, .sv-opts.ox li.mine .n, .sv-opts.ox li.ans small, .sv-opts.ox li.mine small { color: inherit; }
+.sv-opts.ox li.ans > span > b { color: #2e7d32; }
+.sv-opts.ox li.mine > span > b { color: #c62828; }
 .sv-opts li.ans em:not(.mine), .sv-opts.ox li.ans em:not(.mine) { background: #2e7d32; }
 @media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) .sv-opts li.ans, :root:not([data-theme="light"]) .sv-opts.ox li.ans b, :root:not([data-theme="light"]) .sv-opts.ox li.ans .n, :root:not([data-theme="light"]) .sv-opts.ox li.ans small { color: #81c784; }
+  :root:not([data-theme="light"]) .sv-opts.ox li.ans > span > b { color: #81c784; }
+  :root:not([data-theme="light"]) .sv-opts.ox li.mine > span > b { color: #ff8a80; }
 }
-:root[data-theme="dark"] .sv-opts li.ans, :root[data-theme="dark"] .sv-opts.ox li.ans b, :root[data-theme="dark"] .sv-opts.ox li.ans .n, :root[data-theme="dark"] .sv-opts.ox li.ans small { color: #81c784; }
+:root[data-theme="dark"] .sv-opts.ox li.ans > span > b { color: #81c784; }
+:root[data-theme="dark"] .sv-opts.ox li.mine > span > b { color: #ff8a80; }
 /* 기출 풀기 풀이 칸은 늘 밝은 바탕 */
-.q-solve .sv-opts li.ans, .q-solve .sv-opts.ox li.ans b, .q-solve .sv-opts.ox li.ans .n, .q-solve .sv-opts.ox li.ans small { color: #2e7d32 !important; }
+.q-solve .sv-opts li.ans, .q-solve .sv-opts li.mine, .q-solve .sv-opts.ox li.ans .n, .q-solve .sv-opts.ox li.mine .n, .q-solve .sv-opts.ox li.ans small, .q-solve .sv-opts.ox li.mine small { color: #2a2620 !important; }
+.q-solve .sv-opts.ox li.ans > span > b { color: #2e7d32 !important; }
+.q-solve .sv-opts.ox li.mine > span > b { color: #c62828 !important; }
