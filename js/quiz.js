@@ -191,14 +191,47 @@
     TREND = { R, next, latest, rows };
     return TREND;
   }
+  // 예상 주제를 실제로 물었던 문제 (같은 번호 근처 → 최근 회차 순으로)
+  function qsOfPoint(k, n) {
+    const out = [];
+    rounds.forEach((r) => { for (let m = 1; m <= N(r); m++) if (ptKey(r, m) === k) out.push([r, m]); });
+    return out.sort((a, b) => Math.abs(a[1] - n) - Math.abs(b[1] - n) || b[0] - a[0]);
+  }
+  // 80회 예상 모의고사: 자리마다 예상 주제를 물었던 문제를 넣고, 배점 합이 100점이 되게 맞춘다
+  function makePredictSet() {
+    const T = buildTrend(); const used = new Set(); const slots = [];
+    T.rows.forEach((x) => {
+      const ptc = {}; T.R.forEach((r) => { const p = KEY[r].pt[x.n - 1]; ptc[p] = (ptc[p] || 0) + 1; });
+      const modal = +Object.entries(ptc).sort((a, b) => b[1] - a[1])[0][0];
+      let cands = x.picks.flatMap((k) => qsOfPoint(k, x.n));
+      if (!cands.length) T.R.forEach((r) => { if (periodOfQ(r, x.n) === x.period) cands.push([r, x.n]); });
+      cands = cands.filter((c) => !used.has(c.join('-')));
+      const pick = cands.find((c) => KEY[c[0]].pt[c[1] - 1] === modal) || cands[0] || [T.R[0], x.n];
+      used.add(pick.join('-')); slots.push({ n: x.n, pick, cands });
+    });
+    // 총점 100점 맞추기: 다른 후보로 바꿔 합을 조정
+    const pt = ([r, n]) => KEY[r].pt[n - 1];
+    let total = slots.reduce((a, s0) => a + pt(s0.pick), 0);
+    for (let guard = 0; guard < 200 && total !== 100; guard++) {
+      const need = 100 - total; let done = false;
+      for (const s0 of shuffle(slots)) {
+        const alt = s0.cands.find((c) => !used.has(c.join('-')) && pt(c) - pt(s0.pick) !== 0 && Math.abs(need - (pt(c) - pt(s0.pick))) < Math.abs(need));
+        if (alt) { used.delete(s0.pick.join('-')); used.add(alt.join('-')); total += pt(alt) - pt(s0.pick); s0.pick = alt; done = true; break; }
+      }
+      if (!done) break;
+    }
+    const items = slots.map((s0) => s0.pick);
+    const id = newId('X'); saveSet(id, { title: `${T.next}회 예상 모의고사`, kind: 'predict', items, t: Date.now() }); location.hash = id;
+  }
   function trendHtml() {
     const T = buildTrend();
     const pcell = (p) => `<span class="tr-per" style="--c:${PCOL[p] || '#777'}">${escH(pname(p))}</span>`;
     return `<p class="q-desc">번호(자리)마다 ${T.R[T.R.length - 1]}~${T.R[0]}회에 어떤 시기·주제가 나왔는지 모았어요. <b>${T.next}회 예상</b>은 그 자리에 가장 자주 나온 시대와, 그 근처 자리에서 자주 나왔지만 최근 회차(${T.latest}·${T.latest - 1}회)에는 덜 나온 기출 포인트를 골라 계산한 참고용 예측이에요. 칸을 누르면 그 문제가 열려요.</p>
+      <div class="q-row tr-go"><button type="button" class="q-make" data-qmake="predict">▶ ${T.next}회 예상 문제로 모의고사 풀기</button><small>번호마다 예상 1순위 주제를 실제로 물었던 기출 문제를 넣어 50문항·100점으로 만들어요 · 예상 칸의 주제를 누르면 그 주제 문제만 바로 볼 수 있어요</small></div>
       <div class="tr-wrap"><table class="tr-table">
         <thead><tr><th class="tr-n">번호</th><th class="tr-pred">${T.next}회 예상</th>${T.R.map((r) => `<th>${r}회</th>`).join('')}</tr></thead>
         <tbody>${T.rows.map((x) => `<tr><th class="tr-n">${x.n}</th>
-          <td class="tr-pred">${pcell(x.period)} <small>${x.pct}%</small>${x.picks.length ? `<ol>${x.picks.map((k) => `<li>${escH(ptLabel(k))}${x.recent[k] ? ` <small>최근 ${x.recent[k]}회</small>` : ''}</li>`).join('')}</ol>` : ''}</td>
+          <td class="tr-pred">${pcell(x.period)} <small>${x.pct}%</small>${x.picks.length ? `<ol>${x.picks.map((k) => `<li><button type="button" class="tr-topic" data-trpt="${k}" data-trn="${x.n}" title="이 주제를 물었던 문제 보기">${escH(ptLabel(k))}</button>${x.recent[k] ? ` <small>최근 ${x.recent[k]}회</small>` : ''}</li>`).join('')}</ol>` : ''}</td>
           ${T.R.map((r) => { const p = periodOfQ(r, x.n); return `<td class="tr-c" style="--c:${PCOL[p] || '#777'}" data-trq="${r}-${x.n}" title="${escH(pname(p))} · ${r}회 ${x.n}번">${escH(cellLabel(r, x.n))}</td>`; }).join('')}</tr>`).join('')}</tbody>
       </table></div>
       <p class="r-note">예측은 지난 ${T.R.length}개 회차의 출제 위치와 빈도만으로 계산한 참고 자료예요. 실제 출제와 다를 수 있어요.</p>`;
@@ -226,7 +259,7 @@
       <div class="q-tabs" role="tablist">${tabs.map(([k, l]) => `<button type="button" role="tab" data-qtab="${k}" aria-selected="${ui.tab === k}">${l}</button>`).join('')}</div>`;
     let body = '';
     if (ui.tab === 'trend') {
-      body = trendHtml();
+      body = trendHtml() + setsHtml();
     } else if (ui.tab === 'mock') {
       const scoped = ui.scope === 'scope';
       const P = scoped ? pool(ui.rounds) : rounds; const cnt = {};
@@ -269,7 +302,8 @@
     const ro = e.target.closest('[data-qround]'); if (ro) { ui.rounds = ro.dataset.qround === 'all' ? [] : toggleIn(ui.rounds, +ro.dataset.qround); pref.set('rounds', ui.rounds); renderList(); return; }
     const mm = e.target.closest('[data-qmmode]'); if (mm) { ui.mockMode = mm.dataset.qmmode; pref.set('mockMode', ui.mockMode); renderList(); return; }
     const ct = e.target.closest('[data-qcount]'); if (ct) { ui.count = +ct.dataset.qcount; pref.set('count', ui.count); renderList(); return; }
-    const mk = e.target.closest('[data-qmake]'); if (mk) { if (mk.dataset.qmake === 'period') makePeriodSet(); else makeMockSet(); return; }
+    const mk = e.target.closest('[data-qmake]'); if (mk) { const k = mk.dataset.qmake; if (k === 'period') makePeriodSet(); else if (k === 'predict') makePredictSet(); else makeMockSet(); return; }
+    const tp = e.target.closest('[data-trpt]'); if (tp && window.QView) { const qs = qsOfPoint(tp.dataset.trpt, +tp.dataset.trn); window.QView.open(qs.map((x) => x.join('-')), { title: `예상 주제: ${ptLabel(tp.dataset.trpt)}`, note: `이 주제를 물었던 기출 ${qs.length}문항`, showAnswer: false }); return; }
     const del = e.target.closest('[data-setdel]');
     if (del) {
       const id = del.dataset.setdel; if (!confirm(`'${SETS[id].title}'을(를) 지울까요?\n(이 세트의 풀이 기록도 지워져요. 메모·헷갈림 표시는 원래 회차에 남아요)`)) return;

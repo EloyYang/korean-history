@@ -463,7 +463,7 @@
         <td><button type="button" class="r-del" data-del="${l.round}" title="${l.round}회 기록 삭제">삭제</button></td>
       </tr>`;
     }).join('') + SETLOG.map((l) => `<tr class="r-set${state.views.has('s:' + l.id) ? ' in-view' : ''}">
-        <th><button type="button" class="r-link" data-era-round="s:${esc(l.id)}" title="이 모의고사 선택/해제">${esc(l.title.replace(/ · .*$/, ''))}</button><small class="src">${l.kind === 'mock' ? '랜덤 모의고사' : '범위 랜덤'} · ${l.items.length}문항</small></th>
+        <th><button type="button" class="r-link" data-era-round="s:${esc(l.id)}" title="이 모의고사 선택/해제">${esc(l.title.replace(/ · .*$/, ''))}</button><small class="src">${l.kind === 'mock' ? '랜덤 모의고사' : l.kind === 'predict' ? '예상 모의고사' : '범위 랜덤'} · ${l.items.length}문항</small></th>
         <td><button type="button" class="r-full" data-fv-open="${esc(l.id)}" data-fv-f="all" title="한 문제씩 넘겨 보며 내 답·정답·메모 확인">전체 문제 보기</button></td>
         <td>${l.date ? `<button type="button" class="r-link" data-era-round="d:${esc(l.date)}">${esc(l.date)}</button>` : ''}</td>
         <td><b>${(l.wrong || []).length}</b> / ${l.items.length}</td>
