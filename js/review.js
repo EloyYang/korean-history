@@ -99,7 +99,13 @@
     return { round, num, era, theme, stars, diff, ans, pEra, pIdx, ex, pt, id: `${round}-${num}`,
       target: stars >= MIN_STARS && EASY.includes(diff) };
   };
-  const wrongs = LOG.flatMap((l) => l.wrong.map((n) => ({ ...Q(l.round, n), time: (l.times || {})[n] }))).filter((q) => !q.missing);
+  // 랜덤 모의고사(여러 회차에서 모은 문제) 기록: 위치 → 실제 [회차, 번호]
+  const SETLOG_KEY = window.ATTEMPTS.key('setLog');
+  const SETLOG = (window.UserStore.get(SETLOG_KEY, []) || []).filter((l) => l && l.items && l.items.length);
+  const roundWrongs = LOG.flatMap((l) => l.wrong.map((n) => ({ ...Q(l.round, n), time: (l.times || {})[n] }))).filter((q) => !q.missing);
+  const setWrongs = SETLOG.flatMap((l) => (l.wrong || []).map((p) => { const [r, n] = l.items[p - 1] || []; return r ? { ...Q(r, n), time: (l.times || {})[p], fromSet: l.id, setTitle: l.title } : null; }).filter(Boolean));
+  const dedupe = (arr) => { const seen = new Set(); return arr.filter((q) => (seen.has(q.id) ? false : seen.add(q.id))); };
+  const wrongs = dedupe([...roundWrongs, ...setWrongs]);
   const mmss = (s) => { s = Math.round(s || 0); const h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), x = s % 60; return (h ? `${h}:${String(m).padStart(2, '0')}` : `${m}`) + ':' + String(x).padStart(2, '0'); };
   const targets = wrongs.filter((q) => q.target);
   // 기출 풀기에서 '헷갈림' 표시한 문제
@@ -132,7 +138,15 @@
   }
 
   // 내가 고른 번호: 기출 풀기로 채점한 기록에만 있다 (null = 기록 없음, 0 = 고르지 않음)
-  const pickedOf = (r, n) => { const l = LOG.find((x) => x.round === r); return l && l.answers ? (l.answers[n] || 0) : null; };
+  const pickedOf = (r, n) => {
+    // 회차로 풀어 틀린 문제면 그때 고른 답, 모의고사에서만 틀렸다면 모의고사에서 고른 답
+    const l = LOG.find((x) => x.round === r);
+    if (l && l.answers && (l.wrong.includes(n) || !setPickWrong(r, n))) return l.answers[n] || 0;
+    const sp = setPick(r, n); return sp != null ? sp : l && l.answers ? (l.answers[n] || 0) : null;
+  };
+  // 모의고사에서 고른 답 (가장 최근 기록)
+  function setPick(r, n) { for (const l of SETLOG) { const i = l.items.findIndex(([a, b]) => a === r && b === n); if (i >= 0 && l.answers) return l.answers[i + 1] || 0; } return null; }
+  const setPickWrong = (r, n) => setWrongs.some((q) => q.round === r && q.num === n);
   // 선지별 포인트: 자세한 설명(OPTX) 우선, 없으면 예전 짧은 정리
   const OPTX = window.OPTX || {};
   function optList(q, sv, f, img, now) {
@@ -260,7 +274,7 @@
     return `
       <li class="rq${done ? ' done' : ''}${q.target ? '' : ' off'}${open ? ' open' : ''}" data-id="${q.id}">
         <div class="rq-head">
-          <span class="rq-no">${q.round}회 ${q.num}번</span>
+          <span class="rq-no">${q.round}회 ${q.num}번</span>${q.setTitle ? `<span class="rq-src" title="이 모의고사에서 틀린 문제">${esc(q.setTitle.replace(/ · .*$/, ''))}</span>` : ''}
           <span class="rq-tag">${esc(q.theme)}</span>
           <span class="rq-star" title="출제빈도">${starTxt(q.stars)}</span>
           <span class="rq-diff d-${esc(q.diff)}">난이도 ${esc(q.diff)}</span>
@@ -291,11 +305,22 @@
 
   // ── 풀었던 시험 한 문제씩 넘겨 보기 (기출 풀기의 '전체 문제 보기'와 같은 화면)
   const fv = { round: null, n: 1, filter: 'all', grid: false, shown: false };
+  // 회차 기록이든 모의고사 기록이든 { title, items:[[회차,번호]…], answers·times·wrong(위치 기준) } 로 맞춘다
+  function exOf(id) {
+    if (typeof id === 'string') {
+      const l = SETLOG.find((x) => x.id === id); if (!l) return null;
+      return { id, title: l.title, date: l.date, score: l.score, max: l.max, items: l.items, answers: l.answers || {}, times: l.times || {}, wrong: l.wrong || [], isSet: true };
+    }
+    const l = LOG.find((x) => x.round === id); if (!l) return null;
+    const total = QKEY[l.round] ? QKEY[l.round].ans.length : 50;
+    return { id, title: `${l.round}회`, date: l.date, score: l.score, max: 100, items: Array.from({ length: total }, (_, i) => [l.round, i + 1]), answers: l.answers || null, times: l.times || {}, wrong: l.wrong };
+  }
+  const memoAt = (r, n) => memoText((memoOf(r) || {})[n]);
   function fvList() {
-    const l = LOG.find((x) => x.round === fv.round); if (!l) return [];
-    const total = QKEY[l.round] ? QKEY[l.round].ans.length : 50; const memos = memoOf(l.round); const FL = flagSet();
+    const l = exOf(fv.round); if (!l) return [];
+    const total = l.items.length; const FL = flagSet();
     const all = Array.from({ length: total }, (_, i) => i + 1);
-    const f = { wrong: (n) => l.wrong.includes(n), flag: (n) => FL.has(`${l.round}-${n}`), memo: (n) => memoText(memos[n]) }[fv.filter];
+    const f = { wrong: (p) => l.wrong.includes(p), flag: (p) => FL.has(l.items[p - 1].join('-')), memo: (p) => memoAt(...l.items[p - 1]) }[fv.filter];
     const list = f ? all.filter(f) : all;
     return list.length ? list : all;
   }
@@ -312,20 +337,20 @@
   function fvStep(d) { const list = fvList(); const i = list.indexOf(fv.n); const nx = list[i + d]; if (nx != null) fvGo(nx); }
   function renderFv() {
     const box = document.getElementById('fv'); if (!box || fv.round == null) return;
-    const l = LOG.find((x) => x.round === fv.round); const r = l.round, n = fv.n; const k = QKEY[r];
-    const q = Q(r, n); const right = k ? k.ans[n - 1] : 0; const pick = l.answers ? (l.answers[n] || 0) : null;
-    const wrong = l.wrong.includes(n); const t = (l.times || {})[n]; const FL = flagSet(); const memos = memoOf(r);
-    const list = fvList(); const pos = list.indexOf(n); const total = k ? k.ans.length : 50;
+    const l = exOf(fv.round); const p = fv.n; const [r, n] = l.items[p - 1]; const k = QKEY[r];
+    const q = Q(r, n); const right = k ? k.ans[n - 1] : 0; const pick = l.answers ? (l.answers[p] || 0) : null;
+    const wrong = l.wrong.includes(p); const t = l.times[p]; const FL = flagSet();
+    const list = fvList(); const pos = list.indexOf(p); const total = l.items.length;
     const hot = (k && k.hot && k.hot[n - 1]) || []; const full = hot.filter(Boolean).length === 5;
     const sh = fv.shown;
     const spots = hot.map((h, i) => (h ? `<span class="q-spot${sh ? (i + 1 === right ? ' ans' : pick === i + 1 && pick !== right ? ' miss' : '') : pick === i + 1 ? ' pick' : ''}" style="left:${h[0] * 100}%;top:${h[1] * 100}%;width:${h[2] * 100}%;height:${h[3] * 100}%"></span>` : '')).join('');
     const sv = SOLVE[q.id];
     const FILTERS = [['all', '전체'], ['wrong', '틀린 문제'], ['flag', '🚩 헷갈림'], ['memo', '메모']];
     box.innerHTML = `<div class="qv-box fv-box" role="dialog" aria-modal="true" aria-label="풀었던 문제 보기">
-      <div class="qv-top"><div class="qv-ttl"><b>${r}회 · ${n} / ${total}</b><span>${l.date ? esc(l.date) + ' 풀이 · ' : ''}${l.score != null ? l.score + '점 · ' : ''}맞힘 ${total - l.wrong.length} · 틀림 ${l.wrong.length}</span></div>
+      <div class="qv-top"><div class="qv-ttl"><b>${esc(l.title)} · ${p} / ${total}</b><span>${l.date ? esc(l.date) + ' 풀이 · ' : ''}${l.score != null ? `${l.score}점${l.isSet && l.max ? `/${l.max}` : ''} · ` : ''}맞힘 ${total - l.wrong.length} · 틀림 ${l.wrong.length}</span></div>
         <button type="button" class="qv-x" data-fv-close aria-label="닫기">✕</button></div>
       <div class="fv-filter r-chips">${FILTERS.map(([key, label]) => `<button type="button" data-fv-filter="${key}" aria-pressed="${fv.filter === key}">${label}</button>`).join('')}</div>
-      <div class="fv-head"><b>${n}번</b>${q.pt ? `<span>${q.pt}점</span>` : ''}
+      <div class="fv-head"><b>${p}번</b>${l.isSet ? `<span class="q-src">${r}회 ${n}번</span>` : ''}${q.pt ? `<span>${q.pt}점</span>` : ''}
         ${sh ? `<span class="fv-res ${wrong ? 'ng' : 'ok'}">${wrong ? (pick ? `오답 (고른 답 ${NUMS[pick - 1]})` : pick === 0 ? '안 품' : '오답') : '정답'} · 정답 ${right ? NUMS[right - 1] : '-'}</span>` : `<span class="fv-res mine">내가 고른 답 ${pick ? NUMS[pick - 1] : pick === 0 ? '없음' : '-'}</span>`}
         ${t ? `<span>머문 시간 ${mmss(t)}</span>` : ''}${FL.has(q.id) ? '<span>🚩 헷갈림</span>' : ''}<span class="rq-tag">${esc(q.theme)}</span></div>
       <div class="q-imgwrap"><img src="${imgOf(r, n)}" alt="${r}회 ${n}번 문제">${full ? spots : ''}</div>
@@ -336,7 +361,7 @@
       <div class="q-nav"><button type="button" data-fv-step="-1" ${pos <= 0 ? 'disabled' : ''}>◀ 이전</button>
         <button type="button" class="q-gridbtn" data-fv-grid>${fv.filter === 'all' ? '문항 목록' : `${FILTERS.find((x) => x[0] === fv.filter)[1]}만 보는 중 (${list.length})`}</button>
         <button type="button" class="q-next" data-fv-step="1" ${pos >= list.length - 1 ? 'disabled' : ''}>다음 ▶</button></div>
-      <div class="q-grid"${fv.grid ? '' : ' hidden'}>${Array.from({ length: total }, (_, i) => { const m = i + 1; return `<button type="button" data-fv-go="${m}" class="${l.wrong.includes(m) ? 'ng' : 'ok'}${m === n ? ' cur' : ''}${FL.has(`${r}-${m}`) ? ' flag' : ''}${memoText(memos[m]) ? ' memo' : ''}">${m}</button>`; }).join('')}</div>
+      <div class="q-grid"${fv.grid ? '' : ' hidden'}>${Array.from({ length: total }, (_, i) => { const m = i + 1; const it = l.items[i]; return `<button type="button" data-fv-go="${m}" class="${l.wrong.includes(m) ? 'ng' : 'ok'}${m === p ? ' cur' : ''}${FL.has(it.join('-')) ? ' flag' : ''}${memoAt(...it) ? ' memo' : ''}">${m}</button>`; }).join('')}</div>
     </div>`;
   }
 
@@ -381,13 +406,16 @@
     // 보기 범위: 전체 / 날짜별(d:YYYY-MM-DD) / 회차별(79)
     const dates = [...new Set(LOG.map((l) => l.date).filter(Boolean))].sort().reverse();
     const eraRounds = LOG.map((l) => l.round).sort((a, b) => b - a);
-    [...state.views].forEach((v) => { if (!(v.startsWith('d:') ? dates.includes(v.slice(2)) : eraRounds.includes(+v))) state.views.delete(v); });
+    SETLOG.forEach((l) => { if (l.date && !dates.includes(l.date)) dates.push(l.date); }); dates.sort().reverse();
+    [...state.views].forEach((v) => { if (!(v.startsWith('d:') ? dates.includes(v.slice(2)) : v.startsWith('s:') ? SETLOG.some((l) => l.id === v.slice(2)) : eraRounds.includes(+v))) state.views.delete(v); });
     const anyView = state.views.size > 0;
     const inView = (l) => !anyView || state.views.has('d:' + l.date) || state.views.has(String(l.round));
     const FLOG = LOG.filter(inView);
+    const setInView = (l) => !anyView || state.views.has('d:' + l.date) || state.views.has('s:' + l.id);
+    const FSETS = SETLOG.filter(setInView);
     const shortDate = (d) => d.replace(/^\d{4}-/, '').replace('-', '/');
-    const viewName = !anyView ? '전체 기록' : [...dates.filter((d) => state.views.has('d:' + d)).map(shortDate), ...eraRounds.filter((r) => state.views.has(String(r))).map((r) => r + '회')].join(' + ');
-    const vWrongs = wrongs.filter((q) => FLOG.some((l) => l.round === q.round));
+    const viewName = !anyView ? '전체 기록' : [...dates.filter((d) => state.views.has('d:' + d)).map(shortDate), ...eraRounds.filter((r) => state.views.has(String(r))).map((r) => r + '회'), ...SETLOG.filter((l) => state.views.has('s:' + l.id)).map((l) => l.title)].join(' + ');
+    const vWrongs = dedupe([...roundWrongs.filter((q) => FLOG.some((l) => l.round === q.round)), ...setWrongs.filter((q) => FSETS.some((l) => l.id === q.fromSet))]);
     const vTargets = vWrongs.filter((q) => q.target);
     const others = vWrongs.filter((q) => !q.target);
     const allFlags = flagged();
@@ -434,7 +462,16 @@
         <td class="nums">${l.wrong.map((n) => `<span class="${tg.includes(n) ? 'on' : ''}">${n}</span>`).join('')}</td>
         <td><button type="button" class="r-del" data-del="${l.round}" title="${l.round}회 기록 삭제">삭제</button></td>
       </tr>`;
-    }).join('');
+    }).join('') + SETLOG.map((l) => `<tr class="r-set${state.views.has('s:' + l.id) ? ' in-view' : ''}">
+        <th><button type="button" class="r-link" data-era-round="s:${esc(l.id)}" title="이 모의고사 선택/해제">${esc(l.title.replace(/ · .*$/, ''))}</button><small class="src">${l.kind === 'mock' ? '랜덤 모의고사' : '범위 랜덤'} · ${l.items.length}문항</small></th>
+        <td><button type="button" class="r-full" data-fv-open="${esc(l.id)}" data-fv-f="all" title="한 문제씩 넘겨 보며 내 답·정답·메모 확인">전체 문제 보기</button></td>
+        <td>${l.date ? `<button type="button" class="r-link" data-era-round="d:${esc(l.date)}">${esc(l.date)}</button>` : ''}</td>
+        <td><b>${(l.wrong || []).length}</b> / ${l.items.length}</td>
+        <td><b>${l.score}</b>점${l.max && l.max !== 100 ? ` <small class="src">/ ${l.max}</small>` : ''}</td>
+        <td>${l.total ? mmss(l.total) : '-'}</td>
+        <td class="nums">${(l.wrong || []).map((p) => { const it = l.items[p - 1]; return `<span title="${it[0]}회 ${it[1]}번">${it[0]}-${it[1]}</span>`; }).join('')}</td>
+        <td><button type="button" class="r-del" data-setdel="${esc(l.id)}" title="이 모의고사 기록 삭제">삭제</button></td>
+      </tr>`).join('');
 
     // 시대별 약점: 푼 회차의 전체 문항을 시대별로 → 출제 수 · 틀린 수
     const byEra = new Map();
@@ -448,6 +485,13 @@
         if (wr.has(row[0])) { v.wr++; if (Q(l.round, row[0]).target) v.tg++; }
       });
     });
+    FSETS.forEach((l) => l.items.forEach(([r, n], i) => {
+      const row = (EXAM[r] || []).find((x) => x[0] === n); if (!row) return;
+      const e = periodOf(row[7] >= 0 ? row[6] : row[1]);
+      if (!byEra.has(e)) byEra.set(e, { all: 0, wr: 0, tg: 0 });
+      const v = byEra.get(e); v.all++;
+      if ((l.wrong || []).includes(i + 1)) { v.wr++; if (Q(r, n).target) v.tg++; }
+    }));
     const maxAll = Math.max(1, ...[...byEra.values()].map((v) => v.all));
     const sumAll = [...byEra.values()].reduce((a, v) => a + v.all, 0);
     const sumWr = [...byEra.values()].reduce((a, v) => a + v.wr, 0);
@@ -472,12 +516,13 @@
         ${ptLogs.length > 1 ? ptLogs.map(({ l, c }) => `<tr><th>${l.round}회</th>${PTS.map((p, i) => ptCell(c[i].all, c[i].wr.length, p, c[i].wr)).join('')}<td><b>−${PTS.reduce((a, p, i) => a + c[i].wr.length * p, 0)}</b>점</td></tr>`).join('') : `<tr><th>틀린 번호</th>${PTS.map((p, i) => `<td><span class="pt-nums">${ptLogs[0].c[i].wr.map((n) => `<span>${n}</span>`).join('') || '-'}</span></td>`).join('')}<td></td></tr>`}</tbody>
       </table></div>` : '<p class="r-empty">아직 푼 회차가 없어요</p>';
     const btn = (v, label, n) => `<button data-era-round="${esc(v)}" aria-pressed="${v === 'all' ? !anyView : state.views.has(v)}">${label}${n ? ` <small>${n}</small>` : ''}</button>`;
-    const eraSeg = eraRounds.length ? `<section class="r-view">
+    const eraSeg = eraRounds.length || SETLOG.length ? `<section class="r-view">
       <div class="r-view-row"><span class="r-view-lab">전체</span><span class="r-chips">${btn('all', `전체 기록`, `${eraRounds.length}회차`)}</span></div>
       ${dates.length ? `<div class="r-view-row"><span class="r-view-lab">날짜별</span><span class="r-chips">${dates.map((d) => { const ls = LOG.filter((l) => l.date === d); return btn('d:' + d, d.replace(/^\d{4}-/, '').replace('-', '/'), `${ls.map((l) => l.round + '회').join('·')} · 틀림 ${ls.reduce((a, l) => a + l.wrong.length, 0)}`); }).join('')}</span></div>` : ''}
       <div class="r-view-row"><span class="r-view-lab">회차별</span><span class="r-chips">${eraRounds.map((r) => btn(String(r), `${r}회`)).join('')}</span></div>
+      ${SETLOG.length ? `<div class="r-view-row"><span class="r-view-lab">모의고사</span><span class="r-chips">${SETLOG.map((l) => btn('s:' + l.id, esc(l.title.replace(/ · .*$/, '')), `틀림 ${(l.wrong || []).length}`)).join('')}</span></div>` : ''}
       ${perRow}
-      <p class="r-view-sum"><b>${esc(viewName)}</b> — ${FLOG.length}개 회차 ${sumAll}문항 중 <b>${sumWr}</b>문항 틀림 (오답률 ${pct(sumWr, sumAll)}%) · 복습 대상 ${vTargets.length} · 어렵거나 빈도 낮음 ${others.length} · 헷갈림 ${vFlags.length} · 오래 고민 ${vSlow.length}</p>
+      <p class="r-view-sum"><b>${esc(viewName)}</b> — ${FLOG.length}개 회차${FSETS.length ? ` + 모의고사 ${FSETS.length}개` : ''} ${sumAll}문항 중 <b>${sumWr}</b>문항 틀림 (오답률 ${pct(sumWr, sumAll)}%) · 복습 대상 ${vTargets.length} · 어렵거나 빈도 낮음 ${others.length} · 헷갈림 ${vFlags.length} · 오래 고민 ${vSlow.length}</p>
     </section>` : '';
 
     // 내가 약한 개념: 같은 기출 포인트(없으면 주제)끼리 묶어 출제 수 대비 틀린 수
@@ -492,6 +537,13 @@
         if (wr.has(q.num)) v.wrongs.push(q);
       });
     });
+    FSETS.forEach((l) => l.items.forEach(([r, n], i) => {
+      const q = Q(r, n); if (q.unknown) return;
+      const k = q.pIdx >= 0 ? `${q.pEra}#${q.pIdx}` : `t#${q.theme}`;
+      if (!byPt.has(k)) byPt.set(k, { q, all: 0, wrongs: [] });
+      const v = byPt.get(k); v.all++;
+      if ((l.wrong || []).includes(i + 1) && !v.wrongs.some((w) => w.id === q.id)) v.wrongs.push(q);
+    }));
     const weak = [...byPt.values()].filter((v) => v.wrongs.length)
       .map((v) => ({ ...v, done: v.wrongs.every((q) => mastered.has(q.id)) }))
       .filter((v) => !(state.hideDone && v.done))
@@ -669,6 +721,11 @@
     }
     const ry = e.target.closest('[data-retry]');
     if (ry) { const ids = ry.dataset.retry.split(','); startRetry(ids, ids.length > 1 ? '이 개념에서 틀린 문제' : '', false); return; }
+    const sdel = e.target.closest('[data-setdel]');
+    if (sdel) {
+      const l = SETLOG.find((x) => x.id === sdel.dataset.setdel); if (!l || !confirm(`'${l.title}' 풀이 기록을 오답 노트에서 지울까요?\n(메모·헷갈림 표시는 원래 회차 문제에 남아요)`)) return;
+      window.UserStore.set(SETLOG_KEY, (window.UserStore.get(SETLOG_KEY, []) || []).filter((x) => x.id !== l.id)); location.reload(); return;
+    }
     const del = e.target.closest('[data-del]');
     if (del) {
       const r = +del.dataset.del;
@@ -727,7 +784,7 @@
     const fn = e.target.closest('tr[data-full-n]');
     if (fn) { openFv(full.round, +fn.dataset.fullN, full.filter === 'right' ? 'all' : full.filter); return; }
     const fo = e.target.closest('[data-fv-open]');
-    if (fo) { openFv(+fo.dataset.fvOpen, null, fo.dataset.fvF); return; }
+    if (fo) { const v = fo.dataset.fvOpen; openFv(/^\d+$/.test(v) ? +v : v, null, fo.dataset.fvF); return; }
     const qv = e.target.closest('[data-qview]');
     if (qv) { openQView(qv.dataset.qview); return; }
     if (e.target.closest('.qv-x') || e.target.classList.contains('qv')) { closeQView(); return; }
