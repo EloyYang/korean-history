@@ -1264,3 +1264,18 @@ body.pw-on { overflow: hidden; }
 .q-solve-toggle { display: block; margin: 12px auto 0; font: inherit; font-size: 13.5px; font-weight: 700; padding: 7px 18px; border-radius: 999px; border: 1px solid var(--accent); background: none; color: var(--accent); cursor: pointer; }
 .q-solve-toggle[aria-expanded="true"] { background: var(--accent); color: #fff; }
 .q-res.mine { background: #eee; color: #333; }
+
+/* 기출 풀기: 출제 경향·예측표 */
+.tr-wrap { overflow: auto; max-height: 75vh; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); }
+.tr-table { border-collapse: separate; border-spacing: 0; font-size: 12.5px; min-width: 100%; }
+.tr-table th, .tr-table td { padding: 6px 8px; border-bottom: 1px solid var(--line); border-right: 1px solid var(--line); white-space: nowrap; text-align: center; }
+.tr-table thead th { position: sticky; top: 0; z-index: 3; background: var(--surface-2); font-size: 12px; }
+.tr-table .tr-n { position: sticky; left: 0; z-index: 2; background: var(--surface-2); width: 40px; }
+.tr-table thead .tr-n { z-index: 4; }
+.tr-table td.tr-pred { position: sticky; left: 40px; z-index: 1; background: var(--surface); text-align: left; white-space: normal; min-width: 190px; max-width: 220px; border-right: 2px solid var(--accent); }
+.tr-table thead th.tr-pred { left: 40px; z-index: 4; border-right: 2px solid var(--accent); color: var(--accent); }
+.tr-pred ol { margin: 3px 0 0; padding-left: 16px; font-size: 12px; line-height: 1.5; }
+.tr-pred small { color: var(--muted); font-size: 10.5px; }
+.tr-per { display: inline-block; padding: 0 7px; border-radius: 999px; font-size: 11.5px; font-weight: 700; color: #fff; background: var(--c); }
+.tr-c { cursor: pointer; background: color-mix(in srgb, var(--c) 16%, var(--surface)); box-shadow: inset 3px 0 0 var(--c); }
+.tr-c:hover { background: color-mix(in srgb, var(--c) 32%, var(--surface)); }

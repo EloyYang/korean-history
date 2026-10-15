@@ -153,6 +153,57 @@
     const id = newId('M'); saveSet(id, { title, kind: 'mock', base, items, weak: weakN, t: Date.now() }); location.hash = id;
   }
 
+  // ── 출제 경향표: 번호(자리)마다 회차별로 어떤 시기·주제가 나왔는지 + 다음 회차 예측
+  const GICHUL_ = window.GICHUL || {};
+  const stripH = (h) => String(h || '').replace(/<[^>]+>/g, '').replace(/&amp;/g, '&');
+  const rowOf = (r, n) => (EXAMQ[r] || []).find((x) => x[0] === n);
+  const ptKey = (r, n) => { const row = rowOf(r, n); return row && row[7] >= 0 ? `${row[6]}#${row[7]}` : null; };
+  const ptLabel = (key) => { if (!key) return ''; const [e, i] = key.split('#'); const p = (GICHUL_[e] || {}).pts; const t = p && p[+i] ? stripH(p[+i][1]) : ''; const h = t.split(/[:：]/)[0].trim(); return (t.includes(':') || t.includes('：')) && !/헷갈|주의|비교|구분|정리|참고/.test(h) ? h : ''; };
+  const short = (t) => String(t || '').replace(/\([^)]*\)/g, '').replace(/\s+/g, ' ').trim();
+  function cellLabel(r, n) {
+    const fromPt = ptLabel(ptKey(r, n)); if (fromPt) return fromPt.length > 16 ? fromPt.slice(0, 15) + '…' : fromPt;
+    const m = ((window.QMETA || {})[r] || [])[n - 1] || ''; const [when, st, king] = m.split('|').map(short);
+    const row = rowOf(r, n); const theme = row ? row[2] : '';
+    if (king && st) return `${st.split(/[ /·]/)[0]} ${king}`.slice(0, 16);
+    if (!st && when) return when.split(/[ ,]/)[0];
+    return theme || st || when || '';
+  }
+  const PCOL = ['#8d6e63', '#a1887f', '#9575cd', '#5c6bc0', '#26a69a', '#66bb6a', '#d4a017', '#f39c12', '#e57373', '#ec407a', '#8e44ad', '#546e7a'];
+  let TREND = null;
+  function buildTrend() {
+    if (TREND) return TREND;
+    const R = rounds.slice(); const next = Math.max(...R) + 1; const latest = R[0];
+    const freq = {}; const lastSeen = {};
+    R.forEach((r) => { for (let n = 1; n <= N(r); n++) { const k = ptKey(r, n); if (!k) continue; freq[k] = (freq[k] || 0) + 1; lastSeen[k] = Math.max(lastSeen[k] || 0, r); } });
+    const used = new Set(); const rows = [];
+    for (let n = 1; n <= 50; n++) {
+      const pc = {}; R.forEach((r) => { const p = periodOfQ(r, n); pc[p] = (pc[p] || 0) + 1; });
+      const [topP, topC] = Object.entries(pc).sort((a, b) => b[1] - a[1])[0];
+      // 이 자리 근처(±1)에 나왔던 같은 시대 포인트 중, 자주 나오고 최근에 안 나온 것
+      const cand = {};
+      R.forEach((r) => [n - 1, n, n + 1].forEach((m) => { if (m < 1 || m > N(r)) return; const k = ptKey(r, m); if (!k || String(periodOfQ(r, m)) !== topP) return; cand[k] = (cand[k] || 0) + (m === n ? 3 : 1); }));
+      const stars = (k) => { const [e, i] = k.split('#'); const p = (GICHUL_[e] || {}).pts; return p && p[+i] ? Math.min(p[+i][0], 3) : 0; };
+      const score = (k) => cand[k] + (freq[k] || 0) + stars(k) - (lastSeen[k] === latest ? 5 : lastSeen[k] === latest - 1 ? 2 : 0);
+      const picks = Object.keys(cand).filter((k) => ptLabel(k)).sort((a, b) => score(b) - score(a)).filter((k) => !used.has(k)).slice(0, 3);
+      if (picks[0]) used.add(picks[0]);
+      rows.push({ n, period: +topP, pct: Math.round((topC / R.length) * 100), picks, recent: lastSeen });
+    }
+    TREND = { R, next, latest, rows };
+    return TREND;
+  }
+  function trendHtml() {
+    const T = buildTrend();
+    const pcell = (p) => `<span class="tr-per" style="--c:${PCOL[p] || '#777'}">${escH(pname(p))}</span>`;
+    return `<p class="q-desc">번호(자리)마다 ${T.R[T.R.length - 1]}~${T.R[0]}회에 어떤 시기·주제가 나왔는지 모았어요. <b>${T.next}회 예상</b>은 그 자리에 가장 자주 나온 시대와, 그 근처 자리에서 자주 나왔지만 최근 회차(${T.latest}·${T.latest - 1}회)에는 덜 나온 기출 포인트를 골라 계산한 참고용 예측이에요. 칸을 누르면 그 문제가 열려요.</p>
+      <div class="tr-wrap"><table class="tr-table">
+        <thead><tr><th class="tr-n">번호</th><th class="tr-pred">${T.next}회 예상</th>${T.R.map((r) => `<th>${r}회</th>`).join('')}</tr></thead>
+        <tbody>${T.rows.map((x) => `<tr><th class="tr-n">${x.n}</th>
+          <td class="tr-pred">${pcell(x.period)} <small>${x.pct}%</small>${x.picks.length ? `<ol>${x.picks.map((k) => `<li>${escH(ptLabel(k))}${x.recent[k] ? ` <small>최근 ${x.recent[k]}회</small>` : ''}</li>`).join('')}</ol>` : ''}</td>
+          ${T.R.map((r) => { const p = periodOfQ(r, x.n); return `<td class="tr-c" style="--c:${PCOL[p] || '#777'}" data-trq="${r}-${x.n}" title="${escH(pname(p))} · ${r}회 ${x.n}번">${escH(cellLabel(r, x.n))}</td>`; }).join('')}</tr>`).join('')}</tbody>
+      </table></div>
+      <p class="r-note">예측은 지난 ${T.R.length}개 회차의 출제 위치와 빈도만으로 계산한 참고 자료예요. 실제 출제와 다를 수 있어요.</p>`;
+  }
+
   // ── 회차 목록 · 시대별 · 랜덤 모의고사
   function setsHtml() {
     const ids = Object.keys(SETS).sort((a, b) => (SETS[b].t || 0) - (SETS[a].t || 0));
@@ -169,12 +220,14 @@
   const chip = (attr, v, on, label, extra) => `<button type="button" ${attr}="${v}" aria-pressed="${on}">${label}${extra != null ? ` <small>${extra}</small>` : ''}</button>`;
   function renderList() {
     stopTimer(); bar.hidden = true; state.view = 'list';
-    const tabs = [['round', '회차별'], ['mock', '랜덤 모의고사']];
+    const tabs = [['round', '회차별'], ['mock', '랜덤 모의고사'], ['trend', '출제 경향·예측']];
     if (ui.tab === 'period') ui.tab = 'mock';
     const head = `<h2 class="r-h">${EX.name}${EX.level ? ` (${EX.level})` : ''} · 기출 풀기</h2>
       <div class="q-tabs" role="tablist">${tabs.map(([k, l]) => `<button type="button" role="tab" data-qtab="${k}" aria-selected="${ui.tab === k}">${l}</button>`).join('')}</div>`;
     let body = '';
-    if (ui.tab === 'mock') {
+    if (ui.tab === 'trend') {
+      body = trendHtml();
+    } else if (ui.tab === 'mock') {
       const scoped = ui.scope === 'scope';
       const P = scoped ? pool(ui.rounds) : rounds; const cnt = {};
       P.forEach((r) => { for (let n = 1; n <= N(r); n++) { const p = periodOfQ(r, n); cnt[p] = (cnt[p] || 0) + 1; } });
@@ -209,6 +262,7 @@
   const toggleIn = (arr, v) => (arr.includes(v) ? arr.filter((x) => x !== v) : [...arr, v]);
   document.addEventListener('click', (e) => {
     if (state.view !== 'list') return;
+    const tq = e.target.closest('[data-trq]'); if (tq && window.QView) { const [r, n] = tq.dataset.trq.split('-').map(Number); const T = buildTrend(); window.QView.open(T.R.map((x) => `${x}-${n}`), { start: T.R.indexOf(r), title: `${n}번 자리 문제 (회차별)`, showAnswer: false }); return; }
     const t = e.target.closest('[data-qtab]'); if (t) { ui.tab = t.dataset.qtab; pref.set('tab', ui.tab); renderList(); return; }
     const sc = e.target.closest('[data-qscope]'); if (sc) { ui.scope = sc.dataset.qscope; pref.set('scope', ui.scope); renderList(); return; }
     const pe = e.target.closest('[data-qper]'); if (pe) { ui.periods = pe.dataset.qper === 'all' ? [] : toggleIn(ui.periods.map(Number), +pe.dataset.qper); pref.set('periods', ui.periods); renderList(); return; }
