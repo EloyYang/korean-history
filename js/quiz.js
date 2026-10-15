@@ -230,11 +230,12 @@
     const r = state.round, n = state.cur, k = KEY[r];
     const a = state.answers[n], right = k.ans[n - 1];
     const hot = (k.hot && k.hot[n - 1]) || [];
-    const res = state.graded ? (a === right ? 'right' : 'wrong') : '';
+    const sh = state.graded && state.shownSolve;
+    const res = sh ? (a === right ? 'right' : 'wrong') : '';
     const spots = [0, 1, 2, 3, 4].map((i) => {
       const h = hot[i]; if (!h) return '';
       let c = a === i + 1 ? ' pick' : '';
-      if (state.graded) c += i + 1 === right ? ' ans' : a === i + 1 ? ' miss' : '';
+      if (sh) c += i + 1 === right ? ' ans' : a === i + 1 ? ' miss' : '';
       return `<button type="button" class="q-spot${c}" data-i="${i + 1}" style="left:${h[0] * 100}%;top:${h[1] * 100}%;width:${h[2] * 100}%;height:${h[3] * 100}%" aria-label="${NUMS[i]} 선택" ${state.graded ? 'disabled' : ''}></button>`;
     }).join('');
     const missing = hot.filter(Boolean).length < 5;
@@ -242,7 +243,7 @@
       <div class="q-one ${res}${state.paused && !state.graded ? ' paused' : ''}">
         <div class="q-head">
           <b>${n}번</b>${isSet(r) ? `<span class="q-src">${real(r, n)[0]}회 ${real(r, n)[1]}번</span>` : ''}<span>${k.pt[n - 1]}점</span>
-          ${state.graded ? `<span class="q-res">${a === right ? '정답' : a ? `오답 (고른 답 ${NUMS[a - 1]})` : '안 품'} · 정답 ${NUMS[right - 1]}</span><span class="q-tm">머문 시간 ${mmss(state.times[n])}</span>`
+          ${state.graded ? `${sh ? `<span class="q-res">${a === right ? '정답' : a ? `오답 (고른 답 ${NUMS[a - 1]})` : '안 품'} · 정답 ${NUMS[right - 1]}</span>` : `<span class="q-res mine">내가 고른 답 ${a ? NUMS[a - 1] : '없음'}</span>`}<span class="q-tm">머문 시간 ${mmss(state.times[n])}</span>`
             : `<span id="q-time" class="q-tm">이 문제 <b>${mmss(state.times[n])}</b> · 총 <b>${mmss(sum(state.times))}</b></span><button type="button" class="q-pause" aria-pressed="${state.paused}" title="일시정지 (P)">${state.paused ? '▶ 다시 시작' : '⏸ 일시정지'}</button>`}
           <button type="button" class="q-flag" aria-pressed="${isFlag(r, n)}" title="헷갈리는 문제로 표시 (F) — 오답 노트에 모여요">${isFlag(r, n) ? '🚩 헷갈림 표시됨' : '🏳 헷갈림 표시'}</button>
         </div>
@@ -256,7 +257,7 @@
         </div>
         ${oldMemoHtml(r, n)}
         ${missing ? `<div class="q-opts">${[1, 2, 3, 4, 5].map((i) => `<button type="button" class="q-spot-btn${a === i ? ' pick' : ''}" data-i="${i}" ${state.graded ? 'disabled' : ''}>${NUMS[i - 1]}</button>`).join('')}</div>` : ''}
-        ${state.graded ? solvePanel(r, n) : ''}
+        ${state.graded ? `<button type="button" class="q-solve-toggle" aria-expanded="${sh}">${sh ? '정답·도출 포인트 접기 ▴' : '정답·도출 포인트 보기 ▾'}</button>${sh ? solvePanel(r, n) : ''}` : ''}
       </div>`;
   }
 
@@ -424,7 +425,7 @@
 
   function go(n) {
     if (document.querySelector('.q-memo')) { clearTimeout(memoTimer); saveMemo(); }
-    state.cur = Math.max(1, Math.min(N(state.round), n));
+    state.cur = Math.max(1, Math.min(N(state.round), n)); state.shownSolve = false;
     saveDraft(); renderSolve(); window.scrollTo(0, 0);
   }
   function step(d) {
@@ -491,6 +492,7 @@
     if (e.target.closest('.q-gridbtn')) { state.showGrid = !state.showGrid; box.querySelector('.q-grid').hidden = !state.showGrid; return; }
     if (e.target.closest('.q-grade')) { grade(); return; }
     if (e.target.closest('.q-to-result')) { renderResult(); return; }
+    if (e.target.closest('.q-solve-toggle')) { state.shownSolve = !state.shownSolve; const y = window.scrollY; renderSolve(); window.scrollTo(0, y); return; }
     if (e.target.closest('.q-flag')) { toggleFlag(); return; }
     if (e.target.closest('.q-pause')) { setPause(!state.paused); return; }
     if (e.target.closest('.q-resume')) { setPause(false); return; }

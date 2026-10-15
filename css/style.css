@@ -1261,3 +1261,6 @@ body.pw-on { overflow: hidden; }
 .q-solve .sv-opts.ox li.mine > span > b { color: #c62828 !important; }
 .rq-src { font-size: 11px; font-weight: 700; padding: 0 7px; border-radius: 999px; border: 1px solid var(--accent); color: var(--accent); }
 .r-set th small.src { display: block; margin-top: 2px; }
+.q-solve-toggle { display: block; margin: 12px auto 0; font: inherit; font-size: 13.5px; font-weight: 700; padding: 7px 18px; border-radius: 999px; border: 1px solid var(--accent); background: none; color: var(--accent); cursor: pointer; }
+.q-solve-toggle[aria-expanded="true"] { background: var(--accent); color: #fff; }
+.q-res.mine { background: #eee; color: #333; }
