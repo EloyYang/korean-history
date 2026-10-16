@@ -158,7 +158,10 @@
   const stripH = (h) => String(h || '').replace(/<[^>]+>/g, '').replace(/&amp;/g, '&');
   const rowOf = (r, n) => (EXAMQ[r] || []).find((x) => x[0] === n);
   const ptKey = (r, n) => { const row = rowOf(r, n); return row && row[7] >= 0 ? `${row[6]}#${row[7]}` : null; };
-  const ptLabel = (key) => { if (!key) return ''; const [e, i] = key.split('#'); const p = (GICHUL_[e] || {}).pts; const t = p && p[+i] ? stripH(p[+i][1]) : ''; const h = t.split(/[:：]/)[0].trim(); return (t.includes(':') || t.includes('：')) && !/헷갈|주의|비교|구분|정리|참고/.test(h) ? h : ''; };
+  const ptLabel = (key) => { if (!key) return ''; const [e, i] = key.split('#'); const p = (GICHUL_[e] || {}).pts; const t = p && p[+i] ? stripH(p[+i][1]) : ''; // '부여: …' 처럼 제목이 있으면 제목, 없으면(고조선 '범금 8조로 …' 등) 첫 구절을 쓴다
+    const h = (/[:：]/.test(t) ? t.split(/[:：]/)[0] : t.split(/\s*(?:←|→|\/|,|·\s)\s*/)[0]).trim();
+    if (!h || /헷갈|주의|비교|구분|정리|참고/.test(h)) return '';
+    return h.length > 16 ? h.slice(0, 15) + '…' : h; };
   const short = (t) => String(t || '').replace(/\([^)]*\)/g, '').replace(/\s+/g, ' ').trim();
   function cellLabel(r, n) {
     const fromPt = ptLabel(ptKey(r, n)); if (fromPt) return fromPt.length > 16 ? fromPt.slice(0, 15) + '…' : fromPt;
