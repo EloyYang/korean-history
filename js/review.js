@@ -96,7 +96,8 @@
     const row = (EXAM[round] || []).find((x) => x[0] === num);
     if (!row) return { round, num, id: `${round}-${num}`, era: '', theme: '분류 정보 없음', stars: 0, diff: '-', ans: '', pEra: '', pIdx: -1, ex: '', pt: QKEY[round] ? QKEY[round].pt[num - 1] : 0, target: true, unknown: true };
     const [, era, theme, stars, diff, ans, pEra, pIdx, ex, pt] = row;
-    return { round, num, era, theme, stars, diff, ans, pEra, pIdx, ex, pt, id: `${round}-${num}`,
+    const qera = (window.QERA || {})[`${round}-${num}`] || (pIdx >= 0 ? pEra : era);
+    return { round, num, era, theme, stars, diff, ans, pEra, pIdx, ex, pt, qera, id: `${round}-${num}`,
       target: stars >= MIN_STARS && EASY.includes(diff) };
   };
   // 랜덤 모의고사(여러 회차에서 모은 문제) 기록: 위치 → 실제 [회차, 번호]
@@ -425,7 +426,7 @@
     const timedN = FLOG.filter((l) => l.times && Object.keys(l.times).length).length;
     const vFlags = !anyView ? allFlags : allFlags.filter((q) => FLOG.some((l) => l.round === q.round));
     // 시기 필터 (약한 개념·문제 목록에 적용)
-    const perOfQ = (q) => periodOf(q.pIdx >= 0 ? q.pEra : q.era);
+    const perOfQ = (q) => periodOf(q.qera || (q.pIdx >= 0 ? q.pEra : q.era));
     const perOfW = (w) => (w.pt && ptOf(w.pt) ? periodOf(ptOf(w.pt).e) : PERIODS.findIndex((p) => p[0] === w.era));
     const inP = (i) => !state.periods.size || state.periods.has(String(i));
     const pq = (arr) => arr.filter((q) => inP(perOfQ(q)));
@@ -481,7 +482,7 @@
       const wr = new Set(l.wrong);
       const rows = EXAM[l.round] || (QKEY[l.round] ? QKEY[l.round].ans.map((_, i) => [i + 1, '']) : []);
       rows.forEach((row) => {
-        const e = periodOf(row[7] >= 0 ? row[6] : row[1]);
+        const e = periodOf(Q(l.round, row[0]).qera);
         if (!byEra.has(e)) byEra.set(e, { all: 0, wr: 0, tg: 0 });
         const v = byEra.get(e); v.all++;
         if (wr.has(row[0])) { v.wr++; if (Q(l.round, row[0]).target) v.tg++; }
@@ -489,7 +490,7 @@
     });
     FSETS.forEach((l) => l.items.forEach(([r, n], i) => {
       const row = (EXAM[r] || []).find((x) => x[0] === n); if (!row) return;
-      const e = periodOf(row[7] >= 0 ? row[6] : row[1]);
+      const e = periodOf(Q(r, n).qera);
       if (!byEra.has(e)) byEra.set(e, { all: 0, wr: 0, tg: 0 });
       const v = byEra.get(e); v.all++;
       if ((l.wrong || []).includes(i + 1)) { v.wr++; if (Q(r, n).target) v.tg++; }
@@ -571,7 +572,7 @@
         <span class="wk-qs wk-act"><label class="chip-check"><input type="checkbox" data-wk-done="${w.id}" ${w.done ? 'checked' : ''}> 외웠어요</label><button type="button" data-wk-edit="${w.id}">수정</button><button type="button" data-wk-del="${w.id}">삭제</button></span></li>`);
     const weakItems = weak.filter((v) => inP(perOfQ(v.q))).map((v) => {
       const { q } = v; const p = q.pIdx >= 0 && GICHUL[q.pEra] ? GICHUL[q.pEra].pts[q.pIdx] : null;
-      const per = periodName(periodOf(q.pIdx >= 0 ? q.pEra : q.era));
+      const per = periodName(periodOf(q.qera || (q.pIdx >= 0 ? q.pEra : q.era)));
       const ck = q.pIdx >= 0 ? `${q.pEra}#${q.pIdx}` : `t#${q.theme}`;
       const memo = weakMemo()[ck] || '';
       const memoUi = memoOpen === ck
@@ -592,7 +593,7 @@
     // 암기 부족 포인트: 시대 → 기출 포인트 → 틀린 문항
     const groups = new Map();
     shown.forEach((q) => {
-      const e = q.pIdx >= 0 ? q.pEra : q.era;
+      const e = q.qera || (q.pIdx >= 0 ? q.pEra : q.era);
       if (!groups.has(e)) groups.set(e, new Map());
       const g = groups.get(e); const k = q.pIdx >= 0 ? q.pIdx : -1;
       if (!g.has(k)) g.set(k, []);

@@ -85,7 +85,9 @@
     ['조선 후기·개항기', ['horan', 'gaehang']], ['일제 강점기', ['colonial']], ['광복 이후', ['modern']],
   ];
   const EXAMQ = window.EXAM || {};
-  const periodOfQ = (r, n) => { const row = (EXAMQ[r] || []).find((x) => x[0] === n); if (!row) return -1; const e = row[7] >= 0 ? row[6] : row[1]; return PERIODS.findIndex((p) => p[1].includes(e)); };
+  // 문항 시대는 QERA(문제가 묻는 시대 — 문항 내용으로 확인한 표)를 쓴다
+  const qEra = (r, n) => { const e = (window.QERA || {})[`${r}-${n}`]; if (e != null) return e; const row = (EXAMQ[r] || []).find((x) => x[0] === n); return row ? (row[7] >= 0 ? row[6] : row[1]) : ''; };
+  const periodOfQ = (r, n) => { const e = qEra(r, n); if (!e) return -1; return PERIODS.findIndex((p) => p[1].includes(e)); };
   const pname = (i) => (PERIODS[i] ? PERIODS[i][0] : '기타 (통합)');
   const pref = { get: (k, d) => { try { const v = localStorage.getItem('khmap.quizUi.' + k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } }, set: (k, v) => { try { localStorage.setItem('khmap.quizUi.' + k, JSON.stringify(v)); } catch (e) { /* 무시 */ } } };
   const ui = { tab: pref.get('tab', 'round'), periods: pref.get('periods', []), rounds: pref.get('rounds', []), order: pref.get('order', 'round'), count: pref.get('count', 20), mockRounds: pref.get('mockRounds', []), mockMode: pref.get('mockMode', 'even'), scope: pref.get('scope', 'all') };
@@ -101,7 +103,7 @@
     S.set(SETS_KEY, all);
   }
   // 시대 순서: 시대 묶음 → 그 안의 세부 시대(4세기→5세기…) 순
-  const eraIdx = (r, n) => { const row = (EXAMQ[r] || []).find((x) => x[0] === n); if (!row) return 999; const e = row[7] >= 0 ? row[6] : row[1]; const i = (window.ERAS || []).findIndex((x) => x.id === e); return i < 0 ? 999 : i; };
+  const eraIdx = (r, n) => { const e = qEra(r, n); if (!e) return 999; const i = (window.ERAS || []).findIndex((x) => x.id === e); return i < 0 ? 999 : i; };
   const chrono = (a, b) => ((periodOfQ(...a) + 100) % 100) - ((periodOfQ(...b) + 100) % 100) || eraIdx(...a) - eraIdx(...b);
   // 범위를 정한 랜덤: 고른 시대·회차 안에서 무작위로 뽑되, 문제는 시대 순서대로 놓는다
   function makePeriodSet() {
@@ -157,8 +159,10 @@
   const GICHUL_ = window.GICHUL || {};
   const stripH = (h) => String(h || '').replace(/<[^>]+>/g, '').replace(/&amp;/g, '&');
   const rowOf = (r, n) => (EXAMQ[r] || []).find((x) => x[0] === n);
-  const ptKey = (r, n) => { const row = rowOf(r, n); return row && row[7] >= 0 ? `${row[6]}#${row[7]}` : null; };
-  const ptLabel = (key) => { if (!key) return ''; const [e, i] = key.split('#'); const p = (GICHUL_[e] || {}).pts; const t = p && p[+i] ? stripH(p[+i][1]) : ''; // '부여: …' 처럼 제목이 있으면 제목, 없으면(고조선 '범금 8조로 …' 등) 첫 구절을 쓴다
+  const grpOfEra = (e) => PERIODS.findIndex((p) => p[1].includes(e));
+  // 문항에 연결된 기출 포인트 — 문항이 묻는 시대와 같은 시대의 포인트만 (답 선지 쪽 시대 포인트는 표·예측에 쓰지 않는다)
+  const ptKey = (r, n) => { const row = rowOf(r, n); if (!row || row[7] < 0) return null; return grpOfEra(row[6]) === periodOfQ(r, n) ? `${row[6]}#${row[7]}` : null; };
+  const ptLabel = (key) => { if (!key) return ''; if (key.startsWith('Q:')) { const [r, n] = key.slice(2).split('-').map(Number); return `${cellLabel(r, n)} (${r}회)`; } const [e, i] = key.split('#'); const p = (GICHUL_[e] || {}).pts; const t = p && p[+i] ? stripH(p[+i][1]) : ''; // '부여: …' 처럼 제목이 있으면 제목, 없으면(고조선 '범금 8조로 …' 등) 첫 구절을 쓴다
     const h = (/[:：]/.test(t) ? t.split(/[:：]/)[0] : t.split(/\s*(?:←|→|\/|,|·\s)\s*/)[0]).trim();
     if (!h || /헷갈|주의|비교|구분|정리|참고/.test(h)) return '';
     return h.length > 16 ? h.slice(0, 15) + '…' : h; };
@@ -187,7 +191,9 @@
       R.forEach((r) => [n - 1, n, n + 1].forEach((m) => { if (m < 1 || m > N(r)) return; const k = ptKey(r, m); if (!k || String(periodOfQ(r, m)) !== topP) return; cand[k] = (cand[k] || 0) + (m === n ? 3 : 1); }));
       const stars = (k) => { const [e, i] = k.split('#'); const p = (GICHUL_[e] || {}).pts; return p && p[+i] ? Math.min(p[+i][0], 3) : 0; };
       const score = (k) => cand[k] + (freq[k] || 0) + stars(k) - (lastSeen[k] === latest ? 5 : lastSeen[k] === latest - 1 ? 2 : 0);
-      const picks = Object.keys(cand).filter((k) => ptLabel(k)).sort((a, b) => score(b) - score(a)).filter((k) => !used.has(k)).slice(0, 3);
+      let picks = Object.keys(cand).filter((k) => ptLabel(k)).sort((a, b) => score(b) - score(a)).filter((k) => !used.has(k)).slice(0, 3);
+      // 같은 시대 기출 포인트가 없는 자리는 그 자리에 나왔던 같은 시대 문제를 대신 보여 준다 (Q:회차-번호)
+      if (!picks.length) picks = R.filter((r) => String(periodOfQ(r, n)) === topP).slice(0, 3).map((r) => `Q:${r}-${n}`);
       if (picks[0]) used.add(picks[0]);
       rows.push({ n, period: +topP, pct: Math.round((topC / R.length) * 100), picks, recent: lastSeen });
     }
@@ -196,6 +202,7 @@
   }
   // 예상 주제를 실제로 물었던 문제 (같은 번호 근처 → 최근 회차 순으로)
   function qsOfPoint(k, n) {
+    if (k.startsWith('Q:')) return [k.slice(2).split('-').map(Number)];
     const out = [];
     rounds.forEach((r) => { for (let m = 1; m <= N(r); m++) if (ptKey(r, m) === k) out.push([r, m]); });
     return out.sort((a, b) => Math.abs(a[1] - n) - Math.abs(b[1] - n) || b[0] - a[0]);
