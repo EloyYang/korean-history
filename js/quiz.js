@@ -290,7 +290,7 @@
       }).join('')}</ul>`;
     }
     box.innerHTML = head + body + `
-      <p class="r-note">문제 이미지의 ①~⑤를 누르면 답이 선택되고 다음 문제로 넘어가요. 문제마다 머문 시간과 총 소요 시간이 기록돼요. 키보드 1~5 · ← → 도 쓸 수 있어요. 헷갈리는 문제는 🏳 헷갈림 표시(F), 잠깐 쉴 땐 ⏸ 일시정지(P).<br>회차별 채점 기록은 오답 노트에 바로 반영돼요. 랜덤 모의고사 기록은 그 탭의 ‘내가 만든 모의고사’에 남고, 메모·헷갈림 표시는 원래 회차 문제에 함께 저장돼요. 문항 사진 등의 저작권은 원저작자에게 있어요.</p>`;
+      <p class="r-note">문제 이미지의 ①~⑤를 누르면 답이 선택되고 다음 문제로 넘어가요. 문제마다 머문 시간과 총 소요 시간이 기록돼요. 키보드 1~5 · ← → 도 쓸 수 있어요. 헷갈리는 문제는 🏳 헷갈림 표시(F), 잠깐 쉴 땐 ⏸ 일시정지(P).<br>회차별 채점 기록은 오답 노트에 바로 반영돼요. 랜덤 모의고사 기록은 그 탭의 ‘내가 만든 모의고사’에 남고, 메모는 모의고사마다 따로, 헷갈림 표시는 원래 회차 문제에 저장돼요. 문항 사진 등의 저작권은 원저작자에게 있어요.</p>`;
   }
   const toggleIn = (arr, v) => (arr.includes(v) ? arr.filter((x) => x !== v) : [...arr, v]);
   document.addEventListener('click', (e) => {
@@ -306,9 +306,9 @@
     const tp = e.target.closest('[data-trpt]'); if (tp && window.QView) { const qs = qsOfPoint(tp.dataset.trpt, +tp.dataset.trn); window.QView.open(qs.map((x) => x.join('-')), { title: `예상 주제: ${ptLabel(tp.dataset.trpt)}`, note: `이 주제를 물었던 기출 ${qs.length}문항`, showAnswer: false }); return; }
     const del = e.target.closest('[data-setdel]');
     if (del) {
-      const id = del.dataset.setdel; if (!confirm(`'${SETS[id].title}'을(를) 지울까요?\n(이 세트의 풀이 기록도 지워져요. 메모·헷갈림 표시는 원래 회차에 남아요)`)) return;
+      const id = del.dataset.setdel; if (!confirm(`'${SETS[id].title}'을(를) 지울까요?\n(이 세트의 풀이 기록과 메모도 지워져요. 헷갈림 표시는 원래 회차에 남아요)`)) return;
       const all = S.get(SETS_KEY, {}) || {}; delete all[id]; S.set(SETS_KEY, all); delete SETS[id]; delete KEY[id];
-      S.set(SETLOG_KEY, setLog().filter((x) => x.id !== id)); try { localStorage.removeItem(draftKey(id)); } catch (err) { /* 무시 */ }
+      S.set(SETLOG_KEY, setLog().filter((x) => x.id !== id)); S.set(memoKey(id), {}); S.set(oldKey(id), []); try { localStorage.removeItem(draftKey(id)); } catch (err) { /* 무시 */ }
       renderList();
     }
   });
@@ -351,20 +351,19 @@
 
   // ── 메모: 문제(지문)와 선지 ①~⑤ 각각 — 회차별로 저장, 로그인하면 계정에 동기화
   const memoKey = (r) => window.ATTEMPTS.key('memo.' + r);
-  const memoOf = (r0, n0) => { const [r, n] = real(r0, n0); return (S.get(memoKey(r), {}) || {})[n] || { q: '', o: ['', '', '', '', ''] }; };
+  // 모의고사(세트)는 세트마다 메모를 따로 둔다 — 원래 회차의 메모와 섞이지 않게
+  const memoOf = (r, n) => (S.get(memoKey(r), {}) || {})[n] || { q: '', o: ['', '', '', '', ''] };
   // 다시 풀면 지금까지의 메모는 '이전 풀이 메모'로 따로 보관하고, 새 풀이는 빈 메모로 시작한다
   const oldKey = (r) => window.ATTEMPTS.key('memoOld.' + r);
   const oldMemos = (r) => S.get(oldKey(r), []) || [];
   function archiveMemo(r) {
-    if (isSet(r)) return; // 세트는 여러 회차에서 모은 문제라 회차 메모를 따로 보관하지 않는다
     const cur = S.get(memoKey(r), {}) || {};
     if (!Object.keys(cur).length) return;
     const a = lastAttempt(r);
     S.set(oldKey(r), [...oldMemos(r), { t: Date.now(), date: (a && a.date) || today(), score: a && a.score != null ? a.score : null, memos: cur }]);
     S.set(memoKey(r), {});
   }
-  function oldMemoHtml(r0, n0) {
-    const [r, n] = real(r0, n0);
+  function oldMemoHtml(r, n) {
     const list = oldMemos(r).filter((x) => x.memos && x.memos[n]).reverse();
     if (!list.length) return '';
     return `<details class="q-oldmemo"><summary>이전 풀이 메모 ${list.length}개 보기</summary>${list.map((x) => { const m = x.memos[n]; return `<div class="q-oldmemo-item"><p class="d">${escH(x.date || '')}${x.score != null ? ` · ${x.score}점 때` : ''}</p>${m.q ? `<p class="m-q">${escH(m.q)}</p>` : ''}${(m.o || []).some(Boolean) ? `<ul>${m.o.map((t, i) => (t ? `<li><b>${NUMS[i]}</b> ${escH(t)}</li>` : '')).join('')}</ul>` : ''}</div>`; }).join('')}</details>`;
@@ -392,7 +391,7 @@
   let memoTimer = null;
   function saveMemo() {
     const box2 = document.querySelector('.q-memo'); if (!box2) return;
-    const [r, n] = real(state.round, state.cur);
+    const r = state.round, n = state.cur;
     const all = S.get(memoKey(r), {}) || {};
     const m = { q: box2.querySelector('[data-memo="q"]').value.trim(), o: [0, 1, 2, 3, 4].map((i) => box2.querySelector(`[data-memo="${i}"]`).value.trim()) };
     if (m.q || m.o.some(Boolean)) all[n] = m; else delete all[n];

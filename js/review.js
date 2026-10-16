@@ -316,11 +316,13 @@
     return { id, title: `${l.round}회`, date: l.date, score: l.score, max: 100, items: Array.from({ length: total }, (_, i) => [l.round, i + 1]), answers: l.answers || null, times: l.times || {}, wrong: l.wrong };
   }
   const memoAt = (r, n) => memoText((memoOf(r) || {})[n]);
+  // 넘겨 보기의 p번 메모: 회차 기록은 회차 메모, 모의고사는 그 모의고사 메모
+  const exMemo = (l, p) => (l.isSet ? memoText((memoOf(l.id) || {})[p]) : memoAt(...l.items[p - 1]));
   function fvList() {
     const l = exOf(fv.round); if (!l) return [];
     const total = l.items.length; const FL = flagSet();
     const all = Array.from({ length: total }, (_, i) => i + 1);
-    const f = { wrong: (p) => l.wrong.includes(p), flag: (p) => FL.has(l.items[p - 1].join('-')), memo: (p) => memoAt(...l.items[p - 1]) }[fv.filter];
+    const f = { wrong: (p) => l.wrong.includes(p), flag: (p) => FL.has(l.items[p - 1].join('-')), memo: (p) => exMemo(l, p) }[fv.filter];
     const list = f ? all.filter(f) : all;
     return list.length ? list : all;
   }
@@ -357,11 +359,11 @@
       ${full || !sh ? '' : `<p class="fv-note">내가 고른 답 ${pick ? NUMS[pick - 1] : pick === 0 ? '없음' : '-'} · 정답 ${right ? NUMS[right - 1] : '-'}</p>`}
       <div class="rq${sh ? ' open' : ''}"><div class="rq-solve"><button type="button" class="rq-toggle" data-fv-show>${sh ? '정답·도출 포인트 접기 ▴' : '정답·도출 포인트 보기 ▾'}</button><div class="rq-solve-body">${metaHtml(r, n)}
         ${sv ? `<p class="sv-h">지문에서 잡을 단서</p><p class="sv-clue">${sv.clue.map((c) => `<mark class="clue">${esc(c)}</mark>`).join(' ')}</p><p class="sv-h">정답까지 생각의 순서</p><p class="sv-how">${sv.how}</p>${optList(q, sv, FULL[q.id], true)}` : ''}</div></div>
-        ${memoView(q) || '<p class="fv-note">이 문제에 남긴 메모가 없어요 <small>(메모는 기출 풀기에서 쓸 수 있어요)</small></p>'}</div>
+        ${(l.isSet ? memoView({ round: l.id, num: p }) : memoView(q)) || '<p class="fv-note">이 문제에 남긴 메모가 없어요 <small>(메모는 기출 풀기에서 쓸 수 있어요)</small></p>'}</div>
       <div class="q-nav"><button type="button" data-fv-step="-1" ${pos <= 0 ? 'disabled' : ''}>◀ 이전</button>
         <button type="button" class="q-gridbtn" data-fv-grid>${fv.filter === 'all' ? '문항 목록' : `${FILTERS.find((x) => x[0] === fv.filter)[1]}만 보는 중 (${list.length})`}</button>
         <button type="button" class="q-next" data-fv-step="1" ${pos >= list.length - 1 ? 'disabled' : ''}>다음 ▶</button></div>
-      <div class="q-grid"${fv.grid ? '' : ' hidden'}>${Array.from({ length: total }, (_, i) => { const m = i + 1; const it = l.items[i]; return `<button type="button" data-fv-go="${m}" class="${l.wrong.includes(m) ? 'ng' : 'ok'}${m === p ? ' cur' : ''}${FL.has(it.join('-')) ? ' flag' : ''}${memoAt(...it) ? ' memo' : ''}">${m}</button>`; }).join('')}</div>
+      <div class="q-grid"${fv.grid ? '' : ' hidden'}>${Array.from({ length: total }, (_, i) => { const m = i + 1; const it = l.items[i]; return `<button type="button" data-fv-go="${m}" class="${l.wrong.includes(m) ? 'ng' : 'ok'}${m === p ? ' cur' : ''}${FL.has(it.join('-')) ? ' flag' : ''}${exMemo(l, m) ? ' memo' : ''}">${m}</button>`; }).join('')}</div>
     </div>`;
   }
 
