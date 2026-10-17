@@ -7,7 +7,7 @@
   const esc = (s) => String(s == null ? '' : s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
   const EX = window.examById ? window.examById('history') : { img: 'quiz/{r}/{n}.webp' };
   const imgOf = (r, n) => EX.img.replace('{r}', r).replace('{n}', String(n).padStart(2, '0'));
-  const ROUNDS = [79, 78, 77, 76, 75, 74, 73, 72, 71, 70];
+  const ROUNDS = [80, 79, 78, 77, 76, 75, 74, 73, 72, 71, 70];
   const NEED = ['js/quiz-key.js', 'js/qmeta.js', 'js/solve.js'].concat(ROUNDS.map((r) => `js/solve/${r}.js`), ROUNDS.map((r) => `js/optx/${r}.js`), ROUNDS.map((r) => `js/optm/${r}.js`), ['js/exam.js', 'js/opt-same.js', 'js/optview.js']);
 
   let loading = null;
