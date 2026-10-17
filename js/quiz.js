@@ -300,6 +300,7 @@
       }).join('')}</ul>`;
     }
     box.innerHTML = head + body + `
+      <div class="ad-slot" data-ad="list"></div>
       <p class="r-note">문제 이미지의 ①~⑤를 누르면 답이 선택되고 다음 문제로 넘어가요. 문제마다 머문 시간과 총 소요 시간이 기록돼요. 키보드 1~5 · ← → 도 쓸 수 있어요. 헷갈리는 문제는 🏳 헷갈림 표시(F), 잠깐 쉴 땐 ⏸ 일시정지(P).<br>회차별 채점 기록은 오답 노트에 바로 반영돼요. 랜덤 모의고사 기록은 그 탭의 ‘내가 만든 모의고사’에 남고, 메모는 모의고사마다 따로, 헷갈림 표시는 원래 회차 문제에 저장돼요. 문항 사진 등의 저작권은 원저작자에게 있어요.</p>`;
   }
   const toggleIn = (arr, v) => (arr.includes(v) ? arr.filter((x) => x !== v) : [...arr, v]);
@@ -514,6 +515,7 @@
         <a class="q-btn" href="review.html?exam=${EX.id}">오답 노트</a>
         <button type="button" class="q-retry">다시 풀기</button>
       </div>
+      <div class="ad-slot" data-ad="result"></div>
       <h3 class="r-h">문제별 머문 시간 <small>○ 정답 · ✕ 오답 · 🚩 헷갈림 · 주황 = 평균보다 오래 걸린 문제</small></h3>
       <div class="q-times">${rows}</div>`;
     bar.hidden = true;

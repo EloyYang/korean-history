@@ -686,6 +686,7 @@
       <details class="old-points"${G ? '' : ' open'}><summary class="section-title">기본 시험 포인트</summary>
       <ul class="points">${era.points.map((p) => `<li>${esc(p)}</li>`).join('')}</ul></details>
       ${evs ? `<div class="section-title">지도 위 사건·장소 <small>(누르면 지도 이동)</small></div><ul class="event-list">${evs}</ul>` : ''}
+      <div class="ad-slot" data-ad="map"></div>
     `;
 
     renderRulers();

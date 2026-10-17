@@ -1283,3 +1283,10 @@ body.pw-on { overflow: hidden; }
 .tr-go small { color: var(--muted); font-size: 12px; }
 .tr-topic { font: inherit; font-size: 12px; padding: 0; border: 0; background: none; color: var(--text); text-decoration: underline dotted; text-underline-offset: 3px; cursor: pointer; text-align: left; }
 .tr-topic:hover { color: var(--accent); }
+
+/* 광고 자리: 광고가 켜지기 전에는 보이지 않는다 */
+.ad-slot { display: none; }
+.ad-slot.on { display: block; margin: 18px 0; padding: 6px 0 10px; border-top: 1px dashed var(--line); border-bottom: 1px dashed var(--line); min-height: 90px; text-align: center; }
+.ad-label { display: block; margin-bottom: 4px; font-size: 10.5px; color: var(--muted); letter-spacing: .05em; }
+.ad-wrap { padding-top: 0; }
+.site-foot { padding-top: 0; font-size: 12.5px; color: var(--muted); text-align: center; } .site-foot a { color: var(--muted); }

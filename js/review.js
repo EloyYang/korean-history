@@ -641,6 +641,7 @@
       </table></div>
 
 
+      <div class="ad-slot" data-ad="review"></div>
       <h2 class="r-h">보기 범위 <small>여러 개를 함께 고를 수 있어요 (누르면 선택, 다시 누르면 해제) · 날짜·회차는 아래 전체에, 시기는 약한 개념·문제 목록에 적용돼요</small></h2>
       ${eraSeg}
 
@@ -656,6 +657,7 @@
       <ol class="r-weak">${weakShown.join('') || '<li class="r-empty">틀린 개념이 없어요 🎉</li>'}</ol>
       ${weakMore}
 
+      <div class="ad-slot" data-ad="review"></div>
       <h2 class="r-h">암기가 부족한 기출 포인트 <small>${esc(viewName + perName)}</small></h2>
       <div class="r-tools">
         <span class="seg">${[['target', '복습 대상', pTargets.length, '★★ 이상 · 난이도 하·중인 틀린 문제'], ['other', '어렵거나 빈도 낮은 문제', pOthers.length, '출제빈도 ★ 또는 난이도 중상·상·특인 틀린 문제'], ['flag', '🚩 헷갈린 문제', pFlags.length, '기출 풀기에서 헷갈림 표시한 문제 (맞힌 문제 포함)'], ['slow', '⏱ 오래 고민한 문제', pSlow.length, `회차 평균의 ${SLOW_X}배 이상(1분 초과) 또는 3분 이상 걸린 문제`]].map(([k, label, n, tip]) => `<button data-scope="${k}" aria-pressed="${SC.has(k)}" title="${tip}">${label} (${n})</button>`).join('')}</span>
