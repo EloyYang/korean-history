@@ -1290,3 +1290,120 @@ body.pw-on { overflow: hidden; }
 .ad-label { display: block; margin-bottom: 4px; font-size: 10.5px; color: var(--muted); letter-spacing: .05em; }
 .ad-wrap { padding-top: 0; }
 .site-foot { padding-top: 0; font-size: 12.5px; color: var(--muted); text-align: center; } .site-foot a { color: var(--muted); }
+
+/* ───── 지텔프 ───── */
+.gt-page { --accent: #1f5f8b; --accent-soft: #dcebf5; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .gt-page { --accent: #7fb3d9; --accent-soft: #1e3140; } }
+:root[data-theme="dark"] .gt-page { --accent: #7fb3d9; --accent-soft: #1e3140; }
+.gt-tabs { display: flex; gap: 4px; overflow-x: auto; padding-top: 10px; padding-bottom: 0; border-bottom: 1px solid var(--line); scrollbar-width: none; }
+.gt-tabs a { flex: none; padding: 9px 14px; font-weight: 700; font-size: 14.5px; color: var(--muted); text-decoration: none; border-bottom: 3px solid transparent; }
+.gt-tabs a.on { color: var(--text); border-bottom-color: var(--accent); }
+.gt-muted { color: var(--muted); font-size: 13.5px; }
+.gt-page .g { color: #2e7d32; } .gt-page .r { color: #c62828; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .gt-page .g { color: #81c784; } :root:not([data-theme="light"]) .gt-page .r { color: #ff8a80; } }
+:root[data-theme="dark"] .gt-page .g { color: #81c784; } :root[data-theme="dark"] .gt-page .r { color: #ff8a80; }
+.gt-hero { margin-top: 18px; padding: 16px 18px; border: 1px solid var(--line); border-top: 4px solid var(--accent); border-radius: var(--radius); background: var(--surface); }
+.gt-hero h2 { margin: 0 0 6px; font-size: 20px; }
+.gt-hero p { margin: 0 0 12px; }
+.gt-tbl { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+.gt-tbl th, .gt-tbl td { padding: 7px 8px; border-bottom: 1px solid var(--line); text-align: left; vertical-align: top; }
+.gt-tbl th { background: var(--surface-2); font-size: 12.5px; color: var(--muted); }
+.gt-tbl td:first-child { white-space: nowrap; font-weight: 700; }
+.gt-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(165px, 1fr)); gap: 10px; margin: 16px 0; }
+.gt-card { display: flex; flex-direction: column; gap: 2px; padding: 14px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); color: var(--text); text-decoration: none; }
+.gt-card:hover { border-color: var(--accent); }
+.gt-card h3 { margin: 0 0 4px; font-size: 15px; color: var(--accent); }
+.gt-card b { font-size: 22px; }
+.gt-card span { font-size: 12.5px; color: var(--muted); }
+.gt-card small { margin-top: 6px; font-size: 12.5px; color: var(--muted); }
+.gt-card em { font-style: normal; color: var(--accent); font-weight: 700; }
+.gt-chips { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0; align-items: center; }
+.gt-chips .chip { cursor: pointer; color: var(--text); font-weight: 600; }
+.gt-chips .chip small { color: var(--muted); font-weight: 500; font-size: 11.5px; }
+.gt-chips .chip.on { background: var(--accent); border-color: var(--accent); color: #fff; }
+.gt-chips .chip.on small { color: rgba(255,255,255,.85); }
+.gt-chips.small .chip { padding: 4px 10px; font-size: 12.5px; box-shadow: none; }
+.gt-tip { margin: 12px 0; padding: 12px 16px; border-left: 4px solid var(--accent); background: var(--accent-soft); border-radius: 0 var(--radius) var(--radius) 0; font-size: 14px; line-height: 1.65; }
+.gt-tip h3 { margin: 0 0 6px; font-size: 15px; } .gt-tip h3 small { font-weight: 500; color: var(--muted); font-size: 12px; margin-left: 4px; }
+.gt-tip ul { margin: 6px 0; padding-left: 20px; }
+.gt-tip i { font-style: normal; color: var(--accent); font-weight: 600; }
+.gt-bar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 12px 0; }
+.gt-bar.center { justify-content: center; }
+.gt-btn { padding: 8px 15px; border-radius: 999px; border: 1px solid var(--line); background: var(--surface-2); color: var(--text); font-size: 14px; font-weight: 700; cursor: pointer; text-decoration: none; font-family: inherit; }
+.gt-btn.main { background: var(--accent); border-color: var(--accent); color: #fff; }
+.gt-link { border: 0; background: none; color: var(--accent); font-weight: 700; cursor: pointer; padding: 6px 0; font-size: 13.5px; font-family: inherit; }
+.gt-qs { display: flex; flex-direction: column; gap: 10px; }
+.gt-q { padding: 12px 14px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); }
+.gt-q.ok { border-left: 4px solid #2e7d32; } .gt-q.no { border-left: 4px solid #c62828; }
+.gt-qt { font-size: 15px; line-height: 1.6; margin-bottom: 8px; }
+.gt-qt u { text-decoration-thickness: 2px; text-underline-offset: 3px; font-weight: 700; }
+.gt-blank { display: inline-block; min-width: 70px; border-bottom: 2px solid var(--accent); color: transparent; line-height: 1.1; }
+.gt-tag { display: inline-block; padding: 1px 7px; margin-right: 4px; border-radius: 6px; background: var(--surface-2); color: var(--muted); font-size: 11.5px; font-weight: 700; vertical-align: 2px; }
+.gt-src { font-size: 12px; font-weight: 700; color: var(--accent); margin-right: 4px; }
+.gt-opts { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; }
+.gt-opts button { width: 100%; text-align: left; padding: 8px 11px; border: 1.5px solid var(--line); border-radius: 8px; background: var(--surface-2); color: var(--text); font-size: 14px; line-height: 1.45; cursor: pointer; font-family: inherit; }
+.gt-opts button i { font-style: normal; color: var(--muted); font-weight: 700; margin-right: 2px; }
+.gt-opts button:hover:not(:disabled) { border-color: var(--accent); }
+.gt-opts button.pick { border-color: var(--accent); background: var(--accent-soft); font-weight: 700; }
+.gt-opts button.ans { border-color: #2e7d32; background: #e6f4e7; color: #1b5e20; font-weight: 700; }
+.gt-opts button.miss { border-color: #c62828; background: #fdeaea; color: #b71c1c; text-decoration: line-through; }
+.gt-opts button:disabled { cursor: default; }
+.gt-ex { margin-top: 8px; font-size: 13.5px; line-height: 1.6; color: var(--text); }
+.gt-sets { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 8px; margin: 8px 0 14px; }
+.gt-set { display: flex; flex-direction: column; padding: 10px 12px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); color: var(--text); text-decoration: none; }
+.gt-set.on { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-soft); }
+.gt-set small { color: var(--muted); font-size: 12px; } .gt-set b { font-size: 14px; } .gt-set em { font-style: normal; color: var(--accent); font-weight: 700; font-size: 13px; }
+.gt-work { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 14px; align-items: start; margin-bottom: 18px; }
+.gt-work.listening { grid-template-columns: minmax(0, 2fr) minmax(0, 3fr); }
+.gt-passage { padding: 14px 16px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); font-size: 15px; line-height: 1.75; position: sticky; top: 8px; max-height: calc(100vh - 16px); overflow-y: auto; }
+.gt-passage h3 { margin: 0 0 8px; font-size: 16px; } .gt-passage h3 small { color: var(--muted); font-weight: 500; font-size: 12.5px; }
+.gt-passage p { margin: 0 0 10px; }
+.gt-player { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 6px; }
+.gt-rate { font-size: 13px; color: var(--muted); } .gt-rate select { font-family: inherit; }
+.gt-script { margin-top: 8px; font-size: 14px; line-height: 1.65; }
+.gt-script.hide { display: none; }
+.gt-script p { margin: 0 0 6px; padding: 2px 6px; border-radius: 6px; }
+.gt-script p.cur { background: var(--accent-soft); }
+.gt-script b { display: inline-block; min-width: 22px; padding: 0 4px; border-radius: 5px; font-size: 12px; text-align: center; color: #fff; }
+.gt-script .sp-M { background: #1f5f8b; } .gt-script .sp-F { background: #b0476b; }
+.gt-score { font-size: 20px; color: var(--accent); }
+.gt-flash { max-width: 520px; margin: 16px auto 0; padding: 26px 20px; border: 1px solid var(--line); border-radius: 14px; background: var(--surface); text-align: center; cursor: pointer; box-shadow: var(--shadow); }
+.gt-word { font-size: 30px; font-weight: 900; margin: 6px 0 10px; } .gt-word small { font-size: 13px; }
+.gt-mean { font-size: 20px; font-weight: 700; margin-bottom: 8px; }
+.gt-syn { font-size: 14.5px; color: var(--muted); margin-bottom: 6px; } .gt-syn b { color: var(--accent); }
+.gt-exs { font-size: 14.5px; font-style: italic; }
+.gt-opts.vq { grid-template-columns: 1fr; margin: 6px 0 10px; }
+.gt-vres { padding: 4px 0; border-bottom: 1px dashed var(--line); font-size: 14px; } .gt-vres small { color: var(--muted); }
+.gt-search { width: 100%; padding: 9px 12px; margin: 6px 0 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); color: var(--text); font-size: 14px; font-family: inherit; box-sizing: border-box; }
+.gt-vtbl td:first-child { width: 1%; }
+.gt-mocks { display: flex; flex-direction: column; gap: 10px; }
+.gt-mock { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; justify-content: space-between; padding: 14px 16px; border: 1px solid var(--line); border-left: 4px solid var(--accent); border-radius: var(--radius); background: var(--surface); }
+.gt-mock > div:first-child b { display: block; font-size: 16px; } .gt-mock small { color: var(--muted); font-size: 12.5px; }
+.gt-mock .gt-bar { margin: 0; }
+.gt-sc { display: flex; flex-direction: column; } .gt-sc b { font-size: 20px; color: var(--accent); } .gt-sc span { font-size: 13px; }
+.gt-mbar { position: sticky; top: 0; z-index: 50; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 10px -4px 14px; padding: 10px 12px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); box-shadow: var(--shadow); }
+.gt-mbar .gt-chips { margin: 0; }
+.gt-time { font-variant-numeric: tabular-nums; font-size: 18px; font-weight: 900; padding: 2px 10px; border-radius: 8px; background: var(--surface-2); }
+.gt-time.warn { color: #e65100; } .gt-time.over { color: #fff; background: #c62828; }
+.gt-sh { margin: 24px 0 10px; font-size: 16px; } .gt-sh small { font-weight: 500; color: var(--muted); font-size: 12.5px; margin-left: 4px; }
+.gt-result { display: grid; grid-template-columns: 1.2fr repeat(3, 1fr); gap: 10px; margin: 10px 0; }
+.gt-total, .gt-secsc { position: relative; overflow: hidden; display: flex; flex-direction: column; justify-content: center; padding: 14px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); text-align: center; }
+.gt-total b { font-size: 38px; color: var(--accent); } .gt-secsc b { font-size: 26px; }
+.gt-total span, .gt-secsc span { font-size: 13px; color: var(--muted); }
+.gt-secsc i { position: absolute; left: 0; bottom: 0; height: 4px; width: var(--w); background: var(--accent); }
+.gt-types { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 14px; }
+@media (max-width: 760px) {
+  .gt-work, .gt-work.listening { grid-template-columns: 1fr; }
+  .gt-passage { position: static; max-height: none; }
+  .gt-opts { grid-template-columns: 1fr; }
+  .gt-result { grid-template-columns: repeat(3, 1fr); } .gt-total { grid-column: 1 / -1; }
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .gt-opts button.ans { background: #1d3a20; color: #a5d6a7; }
+  :root:not([data-theme="light"]) .gt-opts button.miss { background: #3d1f1f; color: #ff8a80; }
+}
+:root[data-theme="dark"] .gt-opts button.ans { background: #1d3a20; color: #a5d6a7; }
+:root[data-theme="dark"] .gt-opts button.miss { background: #3d1f1f; color: #ff8a80; }
+.gt-page main a:not(.gt-btn):not(.gt-card):not(.gt-set) { color: var(--accent); font-weight: 700; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .gt-page :is(.gt-chips .chip.on, .gt-btn.main) { color: #0f1d27; } :root:not([data-theme="light"]) .gt-page .gt-chips .chip.on small { color: #0f1d27; } }
+:root[data-theme="dark"] .gt-page :is(.gt-chips .chip.on, .gt-btn.main) { color: #0f1d27; } :root[data-theme="dark"] .gt-page .gt-chips .chip.on small { color: #0f1d27; }

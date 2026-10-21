@@ -5,6 +5,8 @@
  *   round  : 회차 이름 형식
  *   pages  : 시험별 전용 페이지 (지도 노트처럼 따로 만든 것)
  *   ready  : false 면 '준비 중' 카드로만 보인다
+ *   links  : 기출 풀기·오답 노트 대신 쓰는 바로가기 (전용 화면만 있는 시험)
+ *   stats  : 처음 화면 카드에 보일 숫자 [[값, 이름], …] (UserStore 를 받아 계산)
  */
 window.EXAMS = [
   {
@@ -17,6 +19,30 @@ window.EXAMS = [
     img: 'quiz/{r}/{n}.webp',
     round: '제{r}회',
     pages: [{ href: 'history.html', label: '지도 노트', note: '시대별 영토·왕·기출 포인트' }],
+    ready: true,
+  },
+  {
+    id: 'gtelp',
+    name: '지텔프',
+    level: 'Level 2',
+    mark: 'G',
+    color: '#1f5f8b',
+    desc: '문법 유형 공식과 연습, 독해·청취(원어민 음성), 필수 단어, 90분 실전 모의고사',
+    links: [
+      { href: 'gtelp.html#mock', label: '모의고사', main: true },
+      { href: 'gtelp.html#grammar', label: '문법' },
+      { href: 'gtelp.html#reading', label: '독해' },
+      { href: 'gtelp.html#listening', label: '청취' },
+      { href: 'gtelp.html#vocab', label: '필수 단어' },
+      { href: 'gtelp.html#wrong', label: '오답' },
+    ],
+    stats(S) {
+      const k = (n) => 'study.gtelp.' + n;
+      const log = (S.get(k('quizLog'), []) || []).slice().sort((a, b) => String(b.date || '').localeCompare(String(a.date || '')));
+      const g = S.get(k('grammar'), {}) || {};
+      const v = S.get(k('vocab'), {}) || {};
+      return [[log.length, '본 모의고사'], [log[0] ? log[0].score + '점' : '-', '최근 점수'], [Object.keys(g).length, '푼 문법'], [(v.known || []).length, '외운 단어']];
+    },
     ready: true,
   },
 ];

@@ -16,20 +16,15 @@
   function render() {
     const u = S.user;
     const cards = window.EXAMS.map((ex) => {
-      const s = stats(ex);
+      const s = ex.stats ? null : stats(ex);
+      const st = ex.stats ? ex.stats(S) : [[`${s.solved}</b> / ${s.rounds}<b>`, '푼 회차'], [s.last && s.last.score != null ? s.last.score + '점' : '-', s.last ? `최근 ${esc(s.last.round)}회` : '최근 점수'], [s.wrong, '틀린 문항'], [s.done, '외운 문항']];
+      const links = ex.links || [{ href: `quiz.html?exam=${ex.id}`, label: '기출 풀기', main: true }, { href: `review.html?exam=${ex.id}`, label: '오답 노트' }].concat(ex.pages || []);
       return `
         <article class="h-card" style="--c:${ex.color}">
           <div class="h-head"><span class="h-mark">${esc(ex.mark)}</span><div><h2>${esc(ex.name)}${ex.level ? ` <small>${esc(ex.level)}</small>` : ''}</h2><p>${esc(ex.desc)}</p></div></div>
-          <ul class="h-stats">
-            <li><b>${s.solved}</b> / ${s.rounds}<span>푼 회차</span></li>
-            <li><b>${s.last && s.last.score != null ? s.last.score + '점' : '-'}</b><span>${s.last ? `최근 ${esc(s.last.round)}회` : '최근 점수'}</span></li>
-            <li><b>${s.wrong}</b><span>틀린 문항</span></li>
-            <li><b>${s.done}</b><span>외운 문항</span></li>
-          </ul>
+          <ul class="h-stats">${st.map(([v, l]) => `<li><b>${v}</b><span>${l}</span></li>`).join('')}</ul>
           <div class="h-links">
-            <a class="h-btn main" href="quiz.html?exam=${ex.id}">기출 풀기</a>
-            <a class="h-btn" href="review.html?exam=${ex.id}">오답 노트</a>
-            ${(ex.pages || []).map((p) => `<a class="h-btn" href="${p.href}" title="${esc(p.note || '')}">${esc(p.label)}</a>`).join('')}
+            ${links.map((p) => `<a class="h-btn${p.main ? ' main' : ''}" href="${p.href}" title="${esc(p.note || '')}">${esc(p.label)}</a>`).join('')}
           </div>
         </article>`;
     }).join('');

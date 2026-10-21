@@ -1,0 +1,82 @@
+/* 지텔프 Level 2 독해·어휘 연습 지문 (직접 작성) — Part 1 인물 · 2 기사 · 3 백과사전 · 4 비즈니스 편지, 지문마다 7문항(이해 5 + 어휘 2) */
+window.GT_READING = [
+  {
+    id: 'r1', part: 1, kind: '인물 전기', title: 'GRACE HOPPER',
+    paras: [
+      'Grace Hopper was an American computer scientist and a rear admiral in the United States Navy. She is best known for developing one of the first programs that translated English-like instructions into machine code, an idea that led to modern programming languages.',
+      'Hopper was born in New York City in 1906. As a child, she was extremely curious about how things worked. At the age of seven, she took apart several alarm clocks in her house to see how they functioned. Her parents encouraged this curiosity and supported her decision to study mathematics and physics at Vassar College. She later earned a doctorate in mathematics from Yale University in 1934, which was rare for a woman at that time.',
+      'When the United States entered World War II, Hopper wanted to serve her country. Although she was initially rejected by the Navy for being too old and too light, she persisted and joined the Navy Reserve in 1943. She was assigned to Harvard University, where she worked on the Mark I, one of the earliest electromechanical computers. There, she and her colleagues famously found a moth stuck inside the machine, and the incident helped make the word "debugging" popular.',
+      'After the war, Hopper joined a private company that was building commercial computers. At that time, programmers had to write instructions using numbers and symbols, which was slow and caused many errors. Hopper believed that computers could understand words if they were given the right translator. In 1952, she completed the first compiler, a program that converts human-readable code into machine language. Her work later contributed to the creation of COBOL, a programming language that is still used by banks and governments today.',
+      'Hopper retired from the Navy in 1986 at the age of 79, making her one of the oldest active-duty officers in the country. She spent her final years giving lectures and encouraging young people to take risks. She died in 1992, and in 2016 she was posthumously awarded the Presidential Medal of Freedom, the highest civilian honor in the United States.',
+    ],
+    qs: [
+      ['What is Grace Hopper most famous for?', ['inventing the first electronic computer', 'creating a way to write instructions in English-like words', 'commanding the largest ship in the Navy', 'teaching mathematics at Yale University'], 1, '1문단: English-like instructions를 기계어로 바꾸는 프로그램을 개발한 것으로 가장 유명'],
+      ['Why did Hopper take apart alarm clocks as a child?', ['She wanted to repair them for her parents.', 'She was interested in how machines worked.', 'She needed parts for a science project.', 'She was punished for breaking them.'], 1, '2문단: curious about how things worked'],
+      ['Why was Hopper first turned down by the Navy?', ['She did not have a college degree.', 'She was considered too old and too light.', 'She was working for a private company.', 'She refused to move to Harvard.'], 1, '3문단: rejected for being too old and too light'],
+      ['According to the article, what problem did programmers face before the compiler?', ['Computers were too large to move.', 'Writing code with numbers and symbols was slow and error-prone.', 'There were no computers outside the military.', 'Banks refused to use computers.'], 1, '4문단: numbers and symbols → slow and caused many errors'],
+      ['What can most likely be said about COBOL?', ['It was only used during World War II.', 'It has remained useful for a long time.', 'It replaced the compiler completely.', 'It was developed before Hopper was born.'], 1, '4문단: still used by banks and governments today → 오랫동안 쓰임'],
+      ['In the context of the passage, <u>persisted</u> means ____.', ['continued trying', 'complained', 'gave up', 'forgot'], 0, 'rejected 됐지만 계속 시도해 입대 → persisted = continued trying'],
+      ['In the context of the passage, <u>converts</u> means ____.', ['changes', 'protects', 'deletes', 'measures'], 0, '사람이 읽는 코드를 기계어로 바꾼다 → converts = changes'],
+    ],
+  },
+  {
+    id: 'r2', part: 2, kind: '잡지·신문 기사', title: 'CITY ROOFTOPS TURN GREEN TO FIGHT SUMMER HEAT',
+    paras: [
+      'As summers grow hotter, cities around the world are looking up for solutions. A new study published by the Urban Climate Institute shows that "green roofs," or rooftops covered with plants, can lower the temperature of buildings and the surrounding streets by several degrees.',
+      'Researchers measured the temperatures of 120 buildings in three large cities over two summers. Buildings with green roofs were, on average, 4°C cooler on the top floor than buildings with traditional black roofs. The plants absorb sunlight and release water vapor, which cools the air in a process similar to sweating. Residents living directly under green roofs also reported using their air conditioners 30 percent less often.',
+      'The benefits go beyond temperature. Green roofs absorb rainwater, which reduces the amount of water that flows into city drains during heavy storms. They also provide homes for bees and birds that have lost their natural habitats due to urban development. "A rooftop garden is like a small island of nature in a sea of concrete," said Dr. Mira Han, the lead author of the study.',
+      'However, green roofs are not suitable for every building. Soil and plants are heavy, especially when wet, so older buildings may need to be strengthened before a garden can be installed. The initial cost is also high, typically two to three times that of a regular roof. Some cities are addressing this issue by offering tax reductions to building owners who install green roofs.',
+      'Despite these challenges, interest is growing. Several cities now require all new public buildings to include some form of green roof. Dr. Han believes that this trend will continue. "In the future, flying over a city may look more like flying over a forest," she said.',
+    ],
+    qs: [
+      ['What is the article mainly about?', ['a new type of air conditioner', 'the advantages and challenges of planting gardens on roofs', 'a city that banned black roofs', 'how to grow vegetables at home'], 1, '전체: 녹색 지붕의 장점(온도·빗물·생태)과 한계(무게·비용)'],
+      ['How do plants on roofs cool the air?', ['by blocking the wind', 'by reflecting all sunlight into space', 'by absorbing sunlight and releasing water vapor', 'by producing cold air at night'], 2, '2문단: absorb sunlight and release water vapor'],
+      ['Which is NOT mentioned as a benefit of green roofs?', ['lower building temperatures', 'reduced flooding in drains', 'homes for bees and birds', 'cheaper construction costs'], 3, '4문단: 설치 비용이 2~3배 더 비쌈 → 비용 절감은 장점이 아님'],
+      ['Why might older buildings need extra work before installing a green roof?', ['They are usually too tall.', 'The weight of wet soil and plants could be too much.', 'They do not receive enough sunlight.', 'Their owners cannot get tax reductions.'], 1, '4문단: heavy, especially when wet → 보강 필요'],
+      ['What does Dr. Han most likely mean by her comment in the last paragraph?', ['Forests will be cut down for new buildings.', 'Many more roofs will be covered with plants.', 'Airplanes will fly lower over cities.', 'Cities will stop building new structures.'], 1, '5문단: 도시가 숲처럼 보일 것 → 녹색 지붕이 크게 늘어날 것'],
+      ['In the context of the passage, <u>suitable</u> means ____.', ['appropriate', 'expensive', 'visible', 'necessary'], 0, '모든 건물에 알맞지 않다 → suitable = appropriate'],
+      ['In the context of the passage, <u>addressing</u> means ____.', ['ignoring', 'dealing with', 'writing to', 'increasing'], 1, '비용 문제를 세금 감면으로 다룬다 → addressing = dealing with'],
+    ],
+  },
+  {
+    id: 'r3', part: 3, kind: '백과사전', title: 'MONARCH BUTTERFLY',
+    paras: [
+      'The monarch butterfly is a large orange-and-black butterfly found mainly in North America. It is one of the most recognizable insects in the world and is famous for its long-distance migration, which is unlike that of any other butterfly.',
+      'Every autumn, millions of monarchs in eastern North America fly up to 4,800 kilometers south to the mountain forests of central Mexico. There, they gather in huge groups on fir trees, sometimes covering branches so densely that the trees appear orange. The cool but not freezing climate allows the butterflies to survive the winter while using very little energy.',
+      'Remarkably, no single butterfly completes the entire round trip. The monarchs that fly south in autumn are a special "super generation" that lives up to eight months, while summer monarchs live only two to six weeks. In spring, the super generation begins the journey north, lays eggs, and dies. It takes three to four generations to return to Canada, yet the new butterflies somehow know the route. Scientists believe that monarchs use the position of the sun and Earth\'s magnetic field to navigate.',
+      'Monarch caterpillars feed only on milkweed plants. Milkweed contains chemicals that are poisonous to many animals, and the caterpillars store these chemicals in their bodies. As a result, adult monarchs taste bitter to birds, and their bright colors serve as a warning to predators.',
+      'The number of monarchs has dropped sharply in recent decades. The main causes include the loss of milkweed due to farming and the use of herbicides, as well as the destruction of their winter forests. Conservation groups now encourage people to plant milkweed in their gardens to provide food for the next generation.',
+    ],
+    qs: [
+      ['What makes the monarch butterfly unique among butterflies?', ['its bright blue color', 'its very long migration', 'its ability to live in cold water', 'its large wingspan of four meters'], 1, '1문단: long-distance migration, unlike any other butterfly'],
+      ['Why do monarchs spend the winter in the forests of central Mexico?', ['The forests have the most flowers in winter.', 'The climate there lets them survive while saving energy.', 'There are no birds in those forests.', 'They lay all of their eggs there.'], 1, '2문단: cool but not freezing → 적은 에너지로 겨울을 남'],
+      ['What is true about the "super generation"?', ['It lives much longer than summer monarchs.', 'It completes the whole round trip twice.', 'It never leaves Canada.', 'It feeds only on fir trees.'], 0, '3문단: up to eight months vs summer two to six weeks'],
+      ['How do monarchs protect themselves from birds?', ['by hiding under leaves', 'by flying faster than birds', 'by tasting bitter because of chemicals from milkweed', 'by changing their colors'], 2, '4문단: milkweed 독성 물질 → 쓴맛, 밝은 색은 경고'],
+      ['What can people do to help monarchs, according to the article?', ['grow milkweed in their gardens', 'catch monarchs and keep them indoors', 'cut down fir trees', 'use more herbicides'], 0, '5문단: plant milkweed in their gardens'],
+      ['In the context of the passage, <u>densely</u> means ____.', ['thickly', 'quietly', 'rarely', 'loosely'], 0, '가지를 빽빽하게 덮어 나무가 주황색으로 보임 → densely = thickly'],
+      ['In the context of the passage, <u>navigate</u> means ____.', ['find their way', 'rest', 'reproduce', 'communicate'], 0, '태양 위치와 자기장으로 길을 찾음 → navigate = find their way'],
+    ],
+  },
+  {
+    id: 'r4', part: 4, kind: '비즈니스 편지', title: 'Letter to a customer',
+    paras: [
+      'Ms. Rachel Moore<br>412 Pine Avenue<br>Portland, OR 97205',
+      'Dear Ms. Moore,',
+      'Thank you for your letter dated March 3 regarding the delayed delivery of your dining table. On behalf of Oakwood Furniture, I sincerely apologize for the inconvenience this has caused you and your family.',
+      'After reviewing your order, we found that the delay was caused by a shortage of the walnut wood used for your table. Our supplier experienced unexpected problems at its factory, and as a result, we were unable to begin production on schedule. We should have informed you of this situation immediately, and we regret that we failed to do so.',
+      'I am pleased to tell you that the wood has now arrived and your table is being built. It will be ready for delivery on March 24. To make up for the delay, we would like to offer you free delivery and installation, as well as a 15 percent discount on your next purchase. In addition, we will include a set of matching chair cushions at no extra cost.',
+      'If March 24 is not convenient for you, please contact our customer service team at 555-0198 to arrange another date. If you would prefer to cancel your order, we will provide a full refund within five business days.',
+      'We value your trust in Oakwood Furniture and hope to continue serving you for many years.',
+      'Sincerely,<br>Daniel Kim<br>Customer Relations Manager<br>Oakwood Furniture',
+    ],
+    qs: [
+      ['Why did Daniel Kim write to Ms. Moore?', ['to advertise a new furniture line', 'to respond to her complaint about a late delivery', 'to ask her to pay an overdue bill', 'to offer her a job'], 1, '첫 문단: 배송 지연에 대한 그녀의 편지에 답장하고 사과'],
+      ['What caused the delay?', ['Ms. Moore changed her order.', 'The delivery truck broke down.', 'There was not enough of a certain wood.', 'The factory workers went on strike.'], 2, '둘째 문단: shortage of the walnut wood'],
+      ['What did the company admit it should have done?', ['use a different kind of wood', 'tell Ms. Moore about the problem right away', 'build the table in another country', 'charge less for the table'], 1, 'should have informed you immediately'],
+      ['Which is NOT offered to Ms. Moore?', ['free delivery and installation', 'a discount on a future purchase', 'free chair cushions', 'a free dining table'], 3, '배송·설치 무료, 다음 구매 15% 할인, 쿠션 무료는 제공 / 식탁 무료는 아님'],
+      ['What should Ms. Moore do if she cannot receive the table on March 24?', ['visit the factory', 'call customer service to choose another date', 'write a letter to the supplier', 'cancel her order online'], 1, 'contact our customer service team to arrange another date'],
+      ['In the context of the passage, <u>shortage</u> means ____.', ['lack', 'surplus', 'quality', 'price'], 0, '나무가 모자람 → shortage = lack'],
+      ['In the context of the passage, <u>convenient</u> means ____.', ['suitable', 'expensive', 'difficult', 'early'], 0, '그날이 맞지 않으면 → convenient = suitable'],
+    ],
+  },
+];
