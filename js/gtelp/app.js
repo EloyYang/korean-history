@@ -23,7 +23,7 @@
   const TYPE = Object.fromEntries(G.types.map((t) => [t.id, t]));
   const MOCK_MIN = 90;
   const pct = (a, b) => (b ? Math.round((a / b) * 100) : 0);
-  const today = () => new Date().toISOString().slice(0, 10);
+  const today = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; }; // 이 기기 날짜
 
   // 문항 키마다 고정된 보기 순서
   function perm(key) {
@@ -140,14 +140,20 @@
   }
 
   // ───────── 라우팅 ─────────
-  const TABS = [['home', '홈'], ['grammar', '문법'], ['reading', '독해'], ['listening', '청취'], ['vocab', '필수 단어'], ['mock', '모의고사'], ['wrong', '오답']];
+  const TABS = [['home', '홈'], ['plan', '10일 플랜'], ['grammar', '문법'], ['reading', '독해'], ['listening', '청취'], ['vocab', '필수 단어'], ['mock', '모의고사'], ['wrong', '오답']];
   const route = () => { const [t, a] = location.hash.replace(/^#/, '').split('/'); return { tab: TABS.some((x) => x[0] === t) ? t : 'home', arg: a ? decodeURIComponent(a) : '' }; };
   let timer = null;
   function render() {
     TTS.stop(); clearInterval(timer);
     const { tab, arg } = route();
+    // 10일 플랜에서 온 링크(#grammar/day3, #vocab/day3)는 그날 범위로 열고 주소는 탭 이름만 남긴다
+    const day = /^day(\d+)$/.exec(arg);
+    if (day && (tab === 'grammar' || tab === 'vocab')) {
+      if (tab === 'grammar') { gDay = +day[1]; gOnlyWrong = false; } else { vDay = +day[1]; vMode = 'card'; vUnknown = false; vIdx = 0; vFlip = false; vq = null; }
+      history.replaceState(null, '', '#' + tab);
+    }
     document.querySelectorAll('.gt-tabs a').forEach((a) => a.classList.toggle('on', a.dataset.t === tab));
-    const f = { home, grammar, reading: () => setPage('reading', arg), listening: () => setPage('listening', arg), vocab, mock: () => mock(arg), wrong }[tab];
+    const f = { home, plan, grammar, reading: () => setPage('reading', arg), listening: () => setPage('listening', arg), vocab, mock: () => mock(arg), wrong }[tab];
     f();
   }
   function nav() {
@@ -179,6 +185,7 @@
           <tr><td>독해</td><td>53–80</td><td>Part 1 인물 · 2 기사 · 3 백과사전 · 4 비즈니스 편지, 지문마다 7문항 (어휘 2)</td></tr>
         </tbody></table>
       </section>
+      ${planCard()}
       <div class="gt-cards">
         ${card('#grammar', '문법', `${gDone} / ${G.items.length}`, '풀어 본 문항', gDone ? `정답률 ${pct(gOk, gDone)}%` : '유형별 공식부터')}
         ${card('#reading', '독해', `${Object.keys(rl).length} / ${R.length}`, '푼 지문', Object.keys(rl).length ? `평균 ${Math.round(Object.values(rl).reduce((a, x) => a + x.score, 0) / Object.keys(rl).length)}점` : 'Part 1~4')}
@@ -189,25 +196,111 @@
       <div class="ad-slot" data-ad="list"></div>`;
   }
 
+  // ───────── 10일 플랜 ─────────
+  // 하루: 문법 8문항(유형 섞음) + 단어 Day n, 독해·청취 한 세트씩, 4·8·10일째는 실전 모의고사
+  // 문법은 유형마다 10일에 고르게 나눈다 (그 유형이 가장 적은 날 → 하루 문항 수가 적은 날 순서)
+  const G_DAY = (() => {
+    const day = [], total = Array(10).fill(0);
+    G.types.forEach((t) => {
+      const per = Array(10).fill(0);
+      G.items.forEach((x, i) => {
+        if (x[0] !== t.id) return;
+        let best = 0;
+        for (let d = 1; d < 10; d++) if (per[d] < per[best] || (per[d] === per[best] && total[d] < total[best])) best = d;
+        day[i] = best; per[best]++; total[best]++;
+      });
+    });
+    return day;
+  })();
+  const gDayItems = (d) => G.items.map((x, i) => i).filter((i) => G_DAY[i] === d - 1);
+  const vDayWords = (d) => V.slice((d - 1) * DAY, d * DAY).map((w) => w[0]);
+  const PLAN = (() => {
+    const setDays = [1, 2, 3, 5, 6, 7, 9, 9]; // 독해·청취 세트 i 를 푸는 날
+    const mockDays = [4, 8, 10];
+    return Array.from({ length: 10 }, (_, k) => {
+      const d = k + 1; const t = [{ k: 'g' }, { k: 'v' }];
+      setDays.forEach((sd, i) => { if (sd === d) { if (R[i]) t.push({ k: 'r', id: R[i].id }); if (L[i]) t.push({ k: 'l', id: L[i].id }); } });
+      mockDays.forEach((md, i) => { if (md === d && M[i]) t.push({ k: 'm', id: M[i].id }); });
+      if (d === 10) t.push({ k: 'w' });
+      return t;
+    });
+  })();
+  const MIN = { g: 15, v: 20, r: 15, l: 15, m: 90, w: 30 };
+  function taskInfo(t, d) {
+    if (t.k === 'g') { const ids = gDayItems(d); const gl = gLog(); const n = ids.filter((i) => gl[gKey(i)] != null).length; const ok = ids.filter((i) => gl[gKey(i)] === G.items[i][3]).length; return { label: `문법 ${ids.length}문항`, sub: '여러 유형 섞어서', href: `#grammar/day${d}`, done: n === ids.length, prog: `${n}/${ids.length}${n ? ` · ${ok}개 정답` : ''}` }; }
+    if (t.k === 'v') { const ws = vDayWords(d); const kn = vLog().known; const n = ws.filter((w) => kn.includes(w)).length; return { label: `단어 Day ${d}`, sub: `${ws.length}개 · 카드로 외우고 '알아요' 표시`, href: `#vocab/day${d}`, done: n === ws.length, prog: `${n}/${ws.length} 외움` }; }
+    if (t.k === 'r' || t.k === 'l') { const kind = t.k === 'r' ? 'reading' : 'listening'; const s = (t.k === 'r' ? R : L).find((x) => x.id === t.id); const lg = sLog(kind)[t.id]; return { label: `${t.k === 'r' ? '독해' : '청취'} Part ${s.part}`, sub: s.title, href: `#${kind}/${t.id}`, done: !!lg, prog: lg ? `${lg.score}점` : '' }; }
+    if (t.k === 'm') { const m = M.find((x) => x.id === t.id); const r = mocks().find((x) => x.mock === t.id); return { label: m.title, sub: '90분 실전 · 문법→청취→독해', href: r ? `#mock/res-${t.id}` : '#mock', done: !!r, prog: r ? `${r.score}점` : '', main: true }; }
+    return { label: '오답 총정리', sub: '연습·모의고사에서 틀린 문제와 헷갈린 단어 다시 보기', href: '#wrong', done: null, prog: '' };
+  }
+  const planState = () => S.get(K('plan'), null);
+  // 시작한 날부터 오늘이 며칠째인지 (10일이 넘으면 10)
+  function todayDay() {
+    const p = planState(); if (!p || !p.start) return 0;
+    const diff = Math.floor((new Date(today()) - new Date(p.start)) / 86400000);
+    return Math.max(1, Math.min(10, diff + 1));
+  }
+  function dayStat(d) {
+    const ts = PLAN[d - 1].map((t) => taskInfo(t, d)).filter((x) => x.done !== null);
+    return { done: ts.filter((x) => x.done).length, n: ts.length };
+  }
+  function planCard() {
+    const td = todayDay();
+    if (!td) return `<a class="gt-plancard" href="#plan"><b>10일 완성 플랜</b><span>하루 분량으로 나눈 문법·단어·독해·청취·모의고사를 10일 동안 차례로 풀어요</span><em>시작하기 →</em></a>`;
+    const st = dayStat(td);
+    return `<a class="gt-plancard" href="#plan"><b>오늘은 Day ${td}</b><span>${PLAN[td - 1].map((t) => taskInfo(t, td).label).join(' · ')}</span><em>${st.done}/${st.n} 완료 →</em></a>`;
+  }
+  let planOpen = 0;
+  function plan() {
+    const td = todayDay();
+    const open = planOpen || td || 1;
+    const days = PLAN.map((ts, k) => {
+      const d = k + 1; const st = dayStat(d); const info = ts.map((t) => taskInfo(t, d));
+      const min = ts.reduce((a, t) => a + MIN[t.k], 0);
+      const cls = [st.done === st.n ? 'done' : '', d === td ? 'today' : '', d === open ? 'open' : ''].filter(Boolean).join(' ');
+      return `<section class="gt-day ${cls}" data-day="${d}">
+        <button type="button" class="gt-dayhead" data-open="${d}"><b>Day ${d}</b>${d === td ? '<em>오늘</em>' : ''}<span>${info.map((x) => x.label).join(' · ')}</span><i>${st.done === st.n ? '✓ 완료' : `${st.done}/${st.n}`} · 약 ${Math.round(min / 10) * 10}분</i></button>
+        <ul class="gt-tasks">${info.map((x) => `<li class="${x.done ? 'ok' : ''}${x.main ? ' main' : ''}"><a href="${x.href}"><span class="gt-chk">${x.done ? '✓' : x.done === null ? '•' : ''}</span><b>${esc(x.label)}</b><small>${esc(x.sub)}</small>${x.prog ? `<em>${x.prog}</em>` : ''}</a></li>`).join('')}</ul>
+      </section>`;
+    }).join('');
+    const all = PLAN.reduce((a, _, k) => { const s = dayStat(k + 1); return [a[0] + s.done, a[1] + s.n]; }, [0, 0]);
+    root.innerHTML = `
+      <h2 class="r-h">10일 완성 플랜 <small>하루 분량만 따라가면 연습 문제·단어·모의고사 3회를 모두 끝내요</small></h2>
+      <div class="gt-tip">
+        ${td ? `<b>${esc(planState().start)}</b>에 시작했어요. 오늘은 <b>Day ${td}</b>예요. 전체 ${all[1]}개 할 일 중 <b>${all[0]}개</b> 완료.` : '시작하기를 누르면 오늘이 Day 1이 되고, 날짜에 맞춰 그날 할 일을 보여 줘요. 밀리면 지난 Day를 펼쳐서 이어서 하면 돼요.'}
+        <ul><li>매일: 문법 8문항(여러 유형 섞음) + 필수 단어 하루치(${DAY}개)</li><li>독해·청취: Part 1~4 연습 세트를 하루 한 세트씩 (Day 9는 두 세트)</li><li>Day 4·8·10: 90분 실전 모의고사 1·2·3회, Day 10은 오답 총정리까지</li></ul>
+        <div class="gt-bar">${td ? '<button type="button" class="gt-btn" id="pl-reset">시작일 다시 정하기</button>' : '<button type="button" class="gt-btn main" id="pl-start">오늘부터 시작하기</button>'}</div>
+      </div>
+      <div class="gt-days">${days}</div>`;
+    root.querySelectorAll('[data-open]').forEach((b) => b.addEventListener('click', () => { const d = +b.dataset.open; planOpen = open === d ? -1 : d; plan(); }));
+    const st = $('#pl-start'); if (st) st.addEventListener('click', () => { S.set(K('plan'), { start: today() }); planOpen = 0; plan(); });
+    const rs = $('#pl-reset'); if (rs) rs.addEventListener('click', () => {
+      if (!confirm('오늘을 Day 1로 다시 정할까요? (푼 기록은 그대로 남아요)')) return;
+      S.set(K('plan'), { start: today() }); planOpen = 0; plan();
+    });
+  }
+
   // ───────── 문법 ─────────
-  let gType = 'all', gOnlyWrong = false;
+  let gType = 'all', gOnlyWrong = false, gDay = 0;
   function grammar() {
     const gl = gLog();
     const stat = (t) => { const ids = G.items.map((x, i) => [x, i]).filter(([x]) => t === 'all' || x[0] === t); const d = ids.filter(([, i]) => gl[gKey(i)] != null); return { n: ids.length, d: d.length, ok: d.filter(([x, i]) => gl[gKey(i)] === x[3]).length }; };
-    const list = G.items.map((x, i) => [x, i]).filter(([x, i]) => (gType === 'all' || x[0] === gType) && (!gOnlyWrong || (gl[gKey(i)] != null && gl[gKey(i)] !== x[3])));
-    const t = TYPE[gType];
+    const inScope = (x, i) => (gDay ? gDayItems(gDay).includes(i) : gType === 'all' || x[0] === gType);
+    const list = G.items.map((x, i) => [x, i]).filter(([x, i]) => inScope(x, i) && (!gOnlyWrong || (gl[gKey(i)] != null && gl[gKey(i)] !== x[3])));
+    const t = gDay ? null : TYPE[gType];
     root.innerHTML = `
       <h2 class="r-h">문법 <small>보기를 고르면 바로 채점하고 해설이 보여요</small></h2>
-      <div class="gt-chips">${['all'].concat(G.types.map((x) => x.id)).map((id) => { const s = stat(id); return `<button type="button" class="chip${gType === id ? ' on' : ''}" data-ty="${id}">${id === 'all' ? '전체' : TYPE[id].name}<small>${s.d}/${s.n}${s.d ? ` · ${pct(s.ok, s.d)}%` : ''}</small></button>`; }).join('')}</div>
-      ${t ? `<div class="gt-tip"><h3>${t.name} <small>실제 시험 ${t.n}문항</small></h3>${t.tip}</div>` : '<div class="gt-tip"><h3>문법 26문항 공략</h3>지텔프 문법은 <b>유형이 정해져 있어요</b>. 위에서 유형을 고르면 정답 찾는 공식이 보여요. 시제·가정법·준동사 18문항만 확실히 잡아도 문법 점수가 크게 올라요.</div>'}
+      ${gDay ? `<div class="gt-dayban"><b>Day ${gDay} 문법</b> ${gDayItems(gDay).length}문항 · 여러 유형이 섞여 있어요 <a href="#plan">← 10일 플랜</a></div>` : ''}
+      <div class="gt-chips">${['all'].concat(G.types.map((x) => x.id)).map((id) => { const s = stat(id); return `<button type="button" class="chip${!gDay && gType === id ? ' on' : ''}" data-ty="${id}">${id === 'all' ? '전체' : TYPE[id].name}<small>${s.d}/${s.n}${s.d ? ` · ${pct(s.ok, s.d)}%` : ''}</small></button>`; }).join('')}</div>
+      ${gDay ? '' : t ? `<div class="gt-tip"><h3>${t.name} <small>실제 시험 ${t.n}문항</small></h3>${t.tip}</div>` : '<div class="gt-tip"><h3>문법 26문항 공략</h3>지텔프 문법은 <b>유형이 정해져 있어요</b>. 위에서 유형을 고르면 정답 찾는 공식이 보여요. 시제·가정법·준동사 18문항만 확실히 잡아도 문법 점수가 크게 올라요.</div>'}
       <div class="gt-bar"><label class="chip-check"><input type="checkbox" id="g-wrong"${gOnlyWrong ? ' checked' : ''}> 틀린 문제만</label>
-        <button type="button" class="gt-btn" id="g-reset">${gType === 'all' ? '전체' : TYPE[gType].name} 기록 지우고 다시 풀기</button></div>
+        <button type="button" class="gt-btn" id="g-reset">${gDay ? `Day ${gDay}` : gType === 'all' ? '전체' : TYPE[gType].name} 기록 지우고 다시 풀기</button></div>
       <div class="gt-qs">${list.length ? list.map(([x, i], k) => qHtml(gKey(i), k + 1, `<span class="gt-tag">${TYPE[x[0]].name.split(' ')[0]}</span> ${blank(x[1])}`, x[2].map(esc), x[3], x[4], gl[gKey(i)], gl[gKey(i)] != null, gKo(x, gKey(i)))).join('') : '<p class="gt-muted">해당하는 문제가 없어요.</p>'}</div>`;
-    root.querySelectorAll('[data-ty]').forEach((b) => b.addEventListener('click', () => { gType = b.dataset.ty; grammar(); }));
+    root.querySelectorAll('[data-ty]').forEach((b) => b.addEventListener('click', () => { gType = b.dataset.ty; gDay = 0; grammar(); }));
     $('#g-wrong').addEventListener('change', (e) => { gOnlyWrong = e.target.checked; grammar(); });
     $('#g-reset').addEventListener('click', () => {
       if (!confirm('이 유형의 풀이 기록을 지우고 처음부터 다시 풀까요?')) return;
-      const l = gLog(); G.items.forEach((x, i) => { if (gType === 'all' || x[0] === gType) delete l[gKey(i)]; }); S.set(K('grammar'), l); grammar();
+      const l = gLog(); G.items.forEach((x, i) => { if (inScope(x, i)) delete l[gKey(i)]; }); S.set(K('grammar'), l); grammar();
     });
     root.querySelector('.gt-qs').addEventListener('click', (e) => {
       const b = e.target.closest('button[data-o]'); if (!b || b.disabled) return;
@@ -268,7 +361,7 @@
   }
 
   // ───────── 필수 단어 ─────────
-  const DAY = 30;
+  const DAY = Math.ceil(V.length / 10); // 필수 단어를 10일로 나눈 하루 분량
   let vMode = 'card', vDay = 0, vUnknown = false, vIdx = 0, vFlip = false, vq = null, vSearch = '';
   function vPool() {
     const vl = vLog();
