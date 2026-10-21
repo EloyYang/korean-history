@@ -1407,3 +1407,20 @@ body.pw-on { overflow: hidden; }
 .gt-page main a:not(.gt-btn):not(.gt-card):not(.gt-set) { color: var(--accent); font-weight: 700; }
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .gt-page :is(.gt-chips .chip.on, .gt-btn.main) { color: #0f1d27; } :root:not([data-theme="light"]) .gt-page .gt-chips .chip.on small { color: #0f1d27; } }
 :root[data-theme="dark"] .gt-page :is(.gt-chips .chip.on, .gt-btn.main) { color: #0f1d27; } :root[data-theme="dark"] .gt-page .gt-chips .chip.on small { color: #0f1d27; }
+.gt-chips[hidden] { display: none; }
+.gt-ko { margin-top: -6px !important; padding: 4px 10px; border-left: 3px solid var(--accent); background: var(--accent-soft); border-radius: 0 6px 6px 0; font-size: 13.5px; line-height: 1.6; color: var(--text); }
+.gt-script .gt-ko { margin: -2px 0 8px 28px !important; }
+.gt-qko { margin-top: 4px; font-size: 13px; color: var(--muted); }
+.gt-qs.no-ex .gt-qko { display: none; }
+.gt-kobar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 10px 0 14px; }
+.gt-note { margin-top: 10px; padding: 8px 10px; border-radius: 8px; background: #fff4e0; color: #5d4300; font-size: 13.5px; line-height: 1.55; text-align: left; }
+.gt-note.sm { margin-top: 4px; padding: 4px 8px; font-size: 12.5px; }
+.gt-note b { color: inherit; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .gt-note { background: #3a2f1a; color: #f3dca8; } }
+:root[data-theme="dark"] .gt-note { background: #3a2f1a; color: #f3dca8; }
+.gt-confs { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 10px; }
+.gt-conf { padding: 12px 14px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); font-size: 14px; line-height: 1.6; }
+.gt-conf h3 { margin: 0 0 6px; font-size: 16px; color: var(--accent); } .gt-conf h3 small { color: var(--muted); font-weight: 500; font-size: 12px; }
+.gt-conf p { margin: 0 0 6px; }
+.gt-conf ul { margin: 0; padding-left: 18px; }
+.gt-conf li span { display: block; color: var(--muted); font-size: 12.5px; }
