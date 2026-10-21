@@ -50,7 +50,12 @@
   }
   const blank = (s) => esc(s).replace(/_{3,}/, '<span class="gt-blank">______</span>');
 
-  // ───────── 음성 (브라우저 TTS) ─────────
+  // ───────── 음성 ─────────
+  // 청취 대본은 미리 녹음한 파일(gtelp/audio/<id>.m4a, AI 원어민 음성)을 틀고, 대사별 시작 시각은 GT_AUDIO[id].
+  // 녹음이 없는 문장(단어 발음 등)만 브라우저 TTS 로 읽는다.
+  const AUDIO = window.GT_AUDIO || {};
+  const AUD = new Audio();
+  AUD.preload = 'none';
   const TTS = {
     ok: 'speechSynthesis' in window, voices: [], tok: 0,
     init() {
@@ -86,8 +91,6 @@
         const u = new SpeechSynthesisUtterance(text);
         const v = this.voice(sp); if (v) u.voice = v;
         u.lang = (v && v.lang) || 'en-US'; u.rate = rate;
-        // 같은 목소리밖에 없을 때 남녀를 높낮이로 구분
-        u.pitch = sp === 'F' ? 1.15 : sp === 'M' ? 0.8 : 1;
         u.onend = () => { i++; setTimeout(next, 380); };
         u.onerror = (e) => { if (e.error !== 'interrupted' && e.error !== 'canceled') u.onend(); };
         onLine && onLine(i);
@@ -95,7 +98,7 @@
       };
       next();
     },
-    stop() { this.tok++; if (this.ok) speechSynthesis.cancel(); },
+    stop() { this.tok++; if (this.ok) speechSynthesis.cancel(); AUD.pause(); AUD.ontimeupdate = AUD.onended = null; },
     playing() { return this.ok && (speechSynthesis.speaking || speechSynthesis.pending); },
   };
   TTS.init();
@@ -104,7 +107,7 @@
   function playerHtml(id, lines, opt) {
     opt = opt || {};
     return `<div class="gt-player" data-pl="${id}">
-      ${TTS.ok ? `<button type="button" class="gt-btn main" data-act="play">▶ 듣기</button><button type="button" class="gt-btn" data-act="stop">■ 멈춤</button>
+      ${TTS.ok || AUDIO[id] ? `<button type="button" class="gt-btn main" data-act="play">▶ 듣기</button><button type="button" class="gt-btn" data-act="stop">■ 멈춤</button>
       <label class="gt-rate">속도 <select data-act="rate">${[0.8, 0.9, 0.95, 1, 1.1].map((r) => `<option value="${r}"${r === rate() ? ' selected' : ''}>${r}×</option>`).join('')}</select></label>
       ${opt.count != null ? `<span class="gt-muted">들은 횟수 ${opt.count}${opt.limit ? ` / 실제 시험은 ${opt.limit}번` : ''}</span>` : ''}`
         : '<span class="gt-muted">이 브라우저는 음성 읽기를 지원하지 않아요. 스크립트를 펼쳐 읽어 보세요.</span>'}
@@ -125,17 +128,28 @@
       const now = pl.querySelector('.gt-now');
       pl.addEventListener('click', (e) => {
         const b = e.target.closest('[data-act]'); if (!b) return;
+        const cur = (i) => {
+          now.textContent = `재생 중 ${i + 1} / ${lines.length}`;
+          box.querySelectorAll('.gt-script p[data-li]').forEach((p) => p.classList.toggle('cur', +p.dataset.li === i));
+        };
+        const end = () => { now.textContent = '끝'; box.querySelectorAll('.gt-script p.cur').forEach((p) => p.classList.remove('cur')); };
         if (b.dataset.act === 'play') {
           onPlay && onPlay();
-          TTS.play(lines, rate(), (i) => {
-            now.textContent = `재생 중 ${i + 1} / ${lines.length}`;
-            box.querySelectorAll('.gt-script p').forEach((p) => p.classList.toggle('cur', +p.dataset.li === i));
-          }, () => { now.textContent = '끝'; box.querySelectorAll('.gt-script p.cur').forEach((p) => p.classList.remove('cur')); });
+          const t = AUDIO[pl.dataset.pl];
+          if (t) {
+            TTS.stop();
+            AUD.src = `gtelp/audio/${pl.dataset.pl}.m4a`; AUD.playbackRate = rate();
+            let last = -1;
+            AUD.ontimeupdate = () => { let i = 0; while (i + 1 < t.length && t[i + 1] <= AUD.currentTime) i++; if (i !== last) { last = i; cur(i); } };
+            AUD.onended = end;
+            now.textContent = '불러오는 중…';
+            AUD.play().catch(() => { now.textContent = '재생할 수 없어요. 다시 눌러 주세요.'; });
+          } else TTS.play(lines, rate(), cur, end);
         }
         if (b.dataset.act === 'stop') { TTS.stop(); now.textContent = '멈춤'; }
       });
       const sel = pl.querySelector('select[data-act="rate"]');
-      if (sel) sel.addEventListener('change', () => S.set(K('rate'), +sel.value));
+      if (sel) sel.addEventListener('change', () => { S.set(K('rate'), +sel.value); AUD.playbackRate = +sel.value; });
     });
   }
 
@@ -319,7 +333,7 @@
     const list = `<div class="gt-sets">${sets.map((s) => `<a class="gt-set${cur && cur.id === s.id ? ' on' : ''}" href="#${kind}/${s.id}"><small>Part ${s.part} · ${s.kind}</small><b>${esc(s.title)}</b>${log[s.id] ? `<em>${log[s.id].score}점</em>` : ''}</a>`).join('')}</div>`;
     const head = kind === 'reading'
       ? '<h2 class="r-h">독해 <small>지문마다 7문항 · 마지막 두 문항은 문맥상 같은 뜻 고르기</small></h2>'
-      : '<h2 class="r-h">청취 <small>▶ 듣기로 대화·발표를 듣고 문제를 풀어요 · 채점 뒤 스크립트 확인</small></h2>';
+      : '<h2 class="r-h">청취 <small>▶ 듣기로 미국 원어민 억양(AI 음성) 대화·발표를 듣고 풀어요 · 채점 뒤 스크립트 확인</small></h2>';
     if (!cur) { root.innerHTML = head + list + '<p class="gt-muted">위에서 지문을 고르세요.</p><div class="ad-slot" data-ad="list"></div>'; return; }
     const done = log[cur.id]; const picks = done ? done.picks : (draftOf[cur.id] = draftOf[cur.id] || []);
     const showScript = !!done || !!draftOf['s-' + cur.id];
