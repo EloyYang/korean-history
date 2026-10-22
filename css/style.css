@@ -1474,3 +1474,9 @@ body.pw-on { overflow: hidden; }
 .gt-vsent { margin-top: 4px; font-size: 13.5px; font-style: italic; } .gt-vsent span { display: block; font-style: normal; color: var(--muted); font-size: 12.5px; }
 .gt-qcard { cursor: default; }
 .gt-vans { position: sticky; bottom: 8px; z-index: 5; padding: 6px; border-radius: 14px; background: color-mix(in srgb, var(--bg) 88%, transparent); backdrop-filter: blur(4px); }
+.gt-others { margin-top: 10px; } .gt-others h4 { margin: 0 0 6px; }
+.gt-oth { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 8px; padding: 6px 10px; margin-bottom: 4px; border: 1px solid var(--line); border-radius: 8px; font-size: 14px; }
+.gt-oth i { font-style: normal; color: var(--muted); } .gt-oth small { color: var(--muted); font-size: 12.5px; }
+.gt-oth.ans { border-color: #2e7d32; background: #e6f4e7; color: #1b5e20; } .gt-oth.miss { border-color: #c62828; background: #fdeaea; color: #b71c1c; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .gt-oth.ans { background: #1d3a20; color: #a5d6a7; } :root:not([data-theme="light"]) .gt-oth.miss { background: #3d1f1f; color: #ff8a80; } }
+:root[data-theme="dark"] .gt-oth.ans { background: #1d3a20; color: #a5d6a7; } :root[data-theme="dark"] .gt-oth.miss { background: #3d1f1f; color: #ff8a80; }
