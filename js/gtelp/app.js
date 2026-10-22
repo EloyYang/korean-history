@@ -397,6 +397,36 @@
       <div class="gt-uses"><h4>예문</h4>${ex.map(([en, ko]) => `<p>${esc(en)}${ko ? `<span>${esc(ko)}</span>` : ''}</p>`).join('')}</div>
       ${NOTE[w[0]] ? `<div class="gt-note">⚠ ${NOTE[w[0]]}</div>` : ''}`;
   }
+  // 동의어 찾기·문맥 속 의미 찾기 문제 만들기 (vz = { kind, items:[{ i, q, opts, a, ... }], k, ok, picks })
+  const shuffle = (a) => a.slice().sort(() => Math.random() - 0.5);
+  const synsOf = (i) => V[i][2].split(/[,;]/).map((x) => x.trim()).filter(Boolean);
+  const sensesOf = (i) => (USE[V[i][0]] ? USE[V[i][0]].senses : []);
+  function makeSynQuiz(pool) {
+    const ids = shuffle(pool).slice(0, 10);
+    const items = ids.map((i) => {
+      const own = synsOf(i); const a = own[Math.floor(Math.random() * own.length)];
+      const bad = shuffle(V.map((x, j) => j).filter((j) => j !== i).flatMap((j) => synsOf(j))).filter((x) => !own.includes(x));
+      const opts = []; for (const x of bad) { if (!opts.includes(x)) opts.push(x); if (opts.length === 3) break; }
+      const all = shuffle(opts.concat(a));
+      return { i, all, a: all.indexOf(a), ans: a };
+    });
+    return { kind: 'syn', items, k: 0, ok: 0, picks: [] };
+  }
+  function makeSenseQuiz(pool) {
+    const multi = pool.filter((i) => sensesOf(i).length >= 2);
+    const src = multi.length ? multi : V.map((x, j) => j).filter((j) => sensesOf(j).length >= 2);
+    const ids = shuffle(src).slice(0, 10);
+    const items = ids.map((i) => {
+      const ss = sensesOf(i); const sn = ss[Math.floor(Math.random() * ss.length)];
+      const others = shuffle(V.map((x, j) => j).filter((j) => j !== i && sensesOf(j).length).flatMap((j) => sensesOf(j).map((t) => t[0]))).filter((m) => !ss.some((t) => t[0] === m));
+      const opts = ss.map((t) => t[0]); for (const m of others) { if (opts.length >= 4) break; if (!opts.includes(m)) opts.push(m); }
+      const all = shuffle(opts);
+      return { i, sn, all, a: all.indexOf(sn[0]), b: blankOut(V[i][0], sn[2]) };
+    });
+    return { kind: 'sense', items, k: 0, ok: 0, picks: [] };
+  }
+  const vzMiss = (i) => { const l = vLog(); const w = V[i][0]; l.miss[w] = (l.miss[w] || 0) + 1; l.known = l.known.filter((x) => x !== w); S.set(K('vocab'), l); };
+  let vz = null;
   let vMode = 'card', vDay = 0, vUnknown = false, vIdx = 0, vFlip = false, vq = null, vSearch = '';
   function vPool() {
     const vl = vLog();
@@ -444,6 +474,23 @@
           ${pk != null ? `${vq.fill && sn.ko ? `<div class="gt-fillko">${esc(sn.ko)}</div>` : ''}<div class="gt-mean sm">${vq.fill ? `<b>${esc(V[i][0])}</b> ${esc(V[i][1])}` : ''}</div><div class="gt-syn">동의어 <b>${esc(V[i][2])}</b></div>${vq.fill ? '' : `<div class="gt-exs">${esc(V[i][3])}</div>`}${NOTE[V[i][0]] ? `<div class="gt-note">⚠ ${NOTE[V[i][0]]}</div>` : ''}` : ''}</div>
           ${pk != null ? '<div class="gt-bar center"><button type="button" class="gt-btn main" id="v-next">다음 →</button></div>' : ''}`;
       }
+    } else if (vMode === 'syn' || vMode === 'sense') {
+      if (!vz || vz.kind !== vMode) vz = (vMode === 'syn' ? makeSynQuiz : makeSenseQuiz)(pool.length >= 4 || vMode === 'sense' ? pool : V.map((x, j) => j));
+      if (vz.k >= vz.items.length) {
+        body = `<div class="gt-tip"><h3>${vz.items.length}문제 중 ${vz.ok}개 정답</h3>${vz.items.map((it, k) => `<div class="gt-vres ${vz.picks[k] === it.a ? 'g' : 'r'}"><b>${esc(V[it.i][0])}</b> ${vz.kind === 'syn' ? esc(V[it.i][2]) : `${esc(it.sn[0])} <small>${esc(it.sn[1])}</small><div class="gt-vsent">${it.b ? it.b.full : esc(it.sn[2])}<span>${esc(it.sn[3])}</span></div>`}</div>`).join('')}</div>
+          <div class="gt-bar center"><button type="button" class="gt-btn main" id="v-again">새 문제 10개</button></div>`;
+      } else {
+        const it = vz.items[vz.k]; const pk = vz.picks[vz.k]; const w = V[it.i];
+        const head = vz.kind === 'syn'
+          ? `<div class="gt-muted">${vz.k + 1} / ${vz.items.length} · 뜻이 가장 가까운 동의어를 고르세요</div><div class="gt-word">${esc(w[0])}</div>`
+          : `<div class="gt-muted">${vz.k + 1} / ${vz.items.length} · 이 문장에서 <b>${esc(w[0])}</b>는 어떤 뜻으로 쓰였을까요?</div><div class="gt-fillq">${it.b ? it.b.full : esc(it.sn[2])}</div>`;
+        const tail = pk == null ? '' : vz.kind === 'syn'
+          ? `<div class="gt-mean sm"><b>${esc(w[0])}</b> ${esc(w[1])}</div><div class="gt-syn">동의어 <b>${esc(w[2])}</b></div><div class="gt-uses"><p>${esc(w[3])}${USE[w[0]] && USE[w[0]].ko ? `<span>${esc(USE[w[0]].ko)}</span>` : ''}</p></div>${NOTE[w[0]] ? `<div class="gt-note">⚠ ${NOTE[w[0]]}</div>` : ''}`
+          : `<div class="gt-fillko">${esc(it.sn[3])}</div><div class="gt-mean sm"><b>${esc(it.sn[0])}</b> <small class="gt-muted">${esc(it.sn[1])}</small></div><div class="gt-senses"><h4>${esc(w[0])}의 다른 뜻</h4>${sensesOf(it.i).filter((t) => t !== it.sn).map((t) => `<div class="gt-sense"><b>${esc(t[0])}</b><small>${esc(t[1])}</small></div>`).join('')}</div>`;
+        body = `<div class="gt-flash gt-qcard">${head}
+          <ol class="gt-opts vq">${it.all.map((o, n) => `<li><button type="button" data-z="${n}" class="${pk != null ? (n === it.a ? 'ans' : n === pk ? 'miss' : '') : ''}"${pk != null ? ' disabled' : ''}><i>(${ABC[n]})</i> ${esc(o)}</button></li>`).join('')}</ol>${tail}</div>
+          ${pk != null ? '<div class="gt-bar center"><button type="button" class="gt-btn main" id="v-next">다음 →</button></div>' : ''}`;
+      }
     } else if (vMode === 'confuse') {
       body = `<div class="gt-tip">모양이나 뜻이 비슷해서 독해 어휘 문제·연결어 문제에서 자주 틀리는 단어 묶음이에요. 필수 단어 중 헷갈리기 쉬운 ${Object.keys(NOTE).length}개는 카드와 목록에 ⚠ 설명이 붙어 있어요.</div>
         <div class="gt-confs">${CONF.map(([ws, how, exs]) => `<div class="gt-conf"><h3>${ws.map(esc).join(' <small>vs</small> ')}</h3><p>${how}</p><ul>${exs.map(([e, k]) => `<li>${e}<span>${k}</span></li>`).join('')}</ul></div>`).join('')}</div>`;
@@ -457,13 +504,13 @@
     }
     root.innerHTML = `
       <h2 class="r-h">필수 단어 <small>${V.length}개 · 외운 단어 ${vl.known.length}개 · 독해 어휘 문제는 동의어를 물어요</small></h2>
-      <div class="gt-chips">${[['card', '카드 외우기'], ['fill', '빈칸 채우기'], ['quiz', '뜻 맞히기'], ['list', '단어 목록'], ['confuse', '헷갈리는 단어']].map(([m, l]) => `<button type="button" class="chip${vMode === m ? ' on' : ''}" data-vm="${m}">${l}</button>`).join('')}</div>
+      <div class="gt-chips">${[['card', '카드 외우기'], ['fill', '빈칸 채우기'], ['syn', '동의어 찾기'], ['sense', '문맥 속 의미'], ['quiz', '뜻 맞히기'], ['list', '단어 목록'], ['confuse', '헷갈리는 단어']].map(([m, l]) => `<button type="button" class="chip${vMode === m ? ' on' : ''}" data-vm="${m}">${l}</button>`).join('')}</div>
       <div class="gt-chips small"${vMode === 'confuse' ? ' hidden' : ''}><button type="button" class="chip${vDay === 0 ? ' on' : ''}" data-day="0">전체</button>${Array.from({ length: days }, (_, d) => `<button type="button" class="chip${vDay === d + 1 ? ' on' : ''}" data-day="${d + 1}">Day ${d + 1}<small>${knownIn(d + 1)}/${Math.min(DAY, V.length - d * DAY)}</small></button>`).join('')}
         <label class="chip-check"><input type="checkbox" id="v-unk"${vUnknown ? ' checked' : ''}> 모르는 단어만</label></div>
       ${body}`;
-    root.querySelectorAll('[data-vm]').forEach((b) => b.addEventListener('click', () => { vMode = b.dataset.vm; vq = null; vIdx = 0; vFlip = false; vocab(); }));
-    root.querySelectorAll('[data-day]').forEach((b) => b.addEventListener('click', () => { vDay = +b.dataset.day; vq = null; vIdx = 0; vFlip = false; vocab(); }));
-    $('#v-unk').addEventListener('change', (e) => { vUnknown = e.target.checked; vq = null; vIdx = 0; vFlip = false; vocab(); });
+    root.querySelectorAll('[data-vm]').forEach((b) => b.addEventListener('click', () => { vMode = b.dataset.vm; vq = null; vz = null; vIdx = 0; vFlip = false; vocab(); }));
+    root.querySelectorAll('[data-day]').forEach((b) => b.addEventListener('click', () => { vDay = +b.dataset.day; vq = null; vz = null; vIdx = 0; vFlip = false; vocab(); }));
+    $('#v-unk').addEventListener('change', (e) => { vUnknown = e.target.checked; vq = null; vz = null; vIdx = 0; vFlip = false; vocab(); });
     const mark = (w, known) => { const l = vLog(); l.known = l.known.filter((x) => x !== w); if (known) l.known.push(w); S.set(K('vocab'), l); };
     if (vMode === 'card' && pool.length) {
       const w = V[pool[vIdx]][0];
@@ -472,6 +519,15 @@
       $('#v-no').addEventListener('click', () => { mark(w, false); vIdx = (vIdx + 1) % pool.length; vFlip = false; vocab(); });
       $('#v-yes').addEventListener('click', () => { mark(w, true); if (!vUnknown) vIdx = (vIdx + 1) % pool.length; vFlip = false; vocab(); });
       const say = $('#v-say'); if (say) say.addEventListener('click', (e) => { e.stopPropagation(); TTS.play([['N', w]], 0.9); });
+    }
+    if (vMode === 'syn' || vMode === 'sense') {
+      root.querySelectorAll('[data-z]').forEach((b) => b.addEventListener('click', () => {
+        const it = vz.items[vz.k]; const n = +b.dataset.z; vz.picks[vz.k] = n;
+        if (n === it.a) vz.ok++; else vzMiss(it.i);
+        vocab();
+      }));
+      const nx = $('#v-next'); if (nx) nx.addEventListener('click', () => { vz.k++; vocab(); });
+      const ag = $('#v-again'); if (ag) ag.addEventListener('click', () => { vz = null; vocab(); });
     }
     if (vMode === 'quiz' || vMode === 'fill') {
       root.querySelectorAll('[data-v]').forEach((b) => b.addEventListener('click', () => {
