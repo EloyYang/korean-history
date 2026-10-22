@@ -875,20 +875,22 @@
   }
 
   // ───────── 오답 (연습 + 모의고사) ─────────
+  let wrongCat = null, wrongMock = 'all'; // 오답 탭에서 보고 있는 분류 / 모의고사 회차
   function wrong() {
-    const gl = gLog(); const out = [];
+    const gl = gLog(); const cats = {}; const mockParts = [];
+    const add = (key, n, html) => { cats[key] = cats[key] || { n: 0, html: [] }; cats[key].n += n; cats[key].html.push(html); };
     const gw = G.items.map((x, i) => [x, i]).filter(([x, i]) => gl[gKey(i)] != null && gl[gKey(i)] !== x[3]);
-    if (gw.length) out.push(`<h3 class="gt-sh">문법 연습 <small>${gw.length}문항 · 다시 풀려면 문법 › 틀린 문제만</small></h3><div class="gt-qs">${gw.map(([x, i], k) => qHtml(gKey(i), k + 1, `<span class="gt-tag">${TYPE[x[0]].name.split(' ')[0]}</span> ${blank(x[1])}`, x[2].map(esc), x[3], x[4], gl[gKey(i)], true, gKo(x, gKey(i)))).join('')}</div>`);
+    if (gw.length) add('g', gw.length, `<h3 class="gt-sh">문법 연습 <small>${gw.length}문항 · 다시 풀려면 문법 › 틀린 문제만</small></h3><div class="gt-qs">${gw.map(([x, i], k) => qHtml(gKey(i), k + 1, `<span class="gt-tag">${TYPE[x[0]].name.split(' ')[0]}</span> ${blank(x[1])}`, x[2].map(esc), x[3], x[4], gl[gKey(i)], true, gKo(x, gKey(i)))).join('')}</div>`);
     [['reading', R, '독해 연습'], ['listening', L, '청취 연습']].forEach(([kind, sets, label]) => {
       const log = sLog(kind); const rows = [];
       sets.forEach((s) => { const d = log[s.id]; if (!d) return; s.qs.forEach((q, i) => { if (d.picks[i] !== q[2]) rows.push(qHtml(`${s.id}-${i}`, i + 1, `<a class="gt-src" href="#${kind}/${s.id}">${esc(s.title)}</a> ${q[0]}`, q[1].map(esc), q[2], q[3], d.picks[i], true)); }); });
-      if (rows.length) out.push(`<h3 class="gt-sh">${label} <small>${rows.length}문항</small></h3><div class="gt-qs">${rows.join('')}</div>`);
+      if (rows.length) add(kind, rows.length, `<h3 class="gt-sh">${label} <small>${rows.length}문항</small></h3><div class="gt-qs${kind === 'listening' ? ' two rad' : ''}">${rows.join('')}</div>`);
     });
     mocks().forEach((r) => {
       const m = M.find((x) => x.id === r.mock); if (!m) return;
       const its = mockItems(m).filter((x) => r.picks[x.n] !== x.a);
       if (!its.length) return;
-      out.push(`<h3 class="gt-sh">${esc(m.title)} <small>${its.length}문항 · ${r.score}점 · <a href="#mock/res-${m.id}">지문·스크립트와 함께 보기</a></small></h3><div class="gt-qs">${its.map((x) => qHtml(x.key, x.n, `<span class="gt-tag">${SEC[x.sec]}</span> ${x.q}`, x.opts, x.a, x.ex, r.picks[x.n], true, x.ko)).join('')}</div>`);
+      mockParts.push({ id: m.id, n: its.length, title: m.title, html: `<h3 class="gt-sh">${esc(m.title)} <small>${its.length}문항 · ${r.score}점 · <a href="#mock/res-${m.id}">지문·스크립트와 함께 보기</a></small></h3><div class="gt-qs">${its.map((x) => qHtml(x.key, x.n, `<span class="gt-tag">${SEC[x.sec]}</span> ${x.q}`, x.opts, x.a, x.ex, r.picks[x.n], true, x.ko)).join('')}</div>` });
     });
     // ★ 헷갈려요 표시한 문제 (맞힌 것도 포함)
     const fk = Object.keys(flags());
@@ -902,11 +904,25 @@
         return null;
       };
       const rows = fk.map((key) => [key, lookup(key)]).filter(([, v]) => v);
-      if (rows.length) out.push(`<h3 class="gt-sh">★ 헷갈려요 표시한 문제 <small>${rows.length}문항 · 맞힌 문제도 포함 · 별을 다시 누르면 표시가 지워져요</small></h3><div class="gt-qs">${rows.map(([key, v], k) => qHtml(key, k + 1, v.q, v.opts, v.a, v.ex, v.pick, true, v.ko)).join('')}</div>`);
+      if (rows.length) add('flag', rows.length, `<h3 class="gt-sh">★ 헷갈려요 표시한 문제 <small>${rows.length}문항 · 맞힌 문제도 포함 · 별을 다시 누르면 표시가 지워져요</small></h3><div class="gt-qs">${rows.map(([key, v], k) => qHtml(key, k + 1, v.q, v.opts, v.a, v.ex, v.pick, true, v.ko)).join('')}</div>`);
     }
     const vl = vLog(); const vm = Object.entries(vl.miss).filter(([w]) => !vl.known.includes(w)).sort((a, b) => b[1] - a[1]);
-    if (vm.length) out.push(`<h3 class="gt-sh">헷갈린 단어 <small>${vm.length}개 · 뜻 맞히기에서 틀린 단어</small></h3><table class="gt-tbl gt-vtbl"><tbody>${vm.map(([w, c]) => { const v = V.find((x) => x[0] === w); return v ? `<tr><td><b>${esc(w)}</b> <small class="r">${c}번</small></td><td>${esc(v[1])}</td><td>${esc(v[2])}</td></tr>` : ''; }).join('')}</tbody></table>`);
-    root.innerHTML = `<h2 class="r-h">오답 <small>연습·모의고사에서 틀린 문제를 한곳에</small></h2>${out.join('') || '<p class="gt-muted">아직 틀린 문제가 없어요. 문법·독해·청취 연습이나 모의고사를 풀어 보세요.</p>'}<div class="ad-slot" data-ad="review"></div>`;
+    if (vm.length) add('vocab', vm.length, `<h3 class="gt-sh">헷갈린 단어 <small>${vm.length}개 · 뜻 맞히기에서 틀린 단어</small></h3><table class="gt-tbl gt-vtbl"><tbody>${vm.map(([w, c]) => { const v = V.find((x) => x[0] === w); return v ? `<tr><td><b>${esc(w)}</b> <small class="r">${c}번</small></td><td>${esc(v[1])}</td><td>${esc(v[2])}</td></tr>` : ''; }).join('')}</tbody></table>`);
+    mockParts.sort((x, y) => M.findIndex((m) => m.id === x.id) - M.findIndex((m) => m.id === y.id)); // 1회부터 차례로
+    if (mockParts.length) { cats.mock = { n: mockParts.reduce((x, y) => x + y.n, 0), html: [] }; }
+    const CATS = [['g', '문법'], ['reading', '독해'], ['listening', '청취'], ['mock', '모의고사'], ['flag', '★ 헷갈림'], ['vocab', '단어']];
+    if (!wrongCat || !cats[wrongCat]) wrongCat = (CATS.find(([k]) => cats[k]) || [null])[0];
+    let body = '<p class="gt-muted">아직 틀린 문제가 없어요. 문법·독해·청취 연습이나 모의고사를 풀어 보세요.</p>';
+    if (wrongCat === 'mock') {
+      const chips = [['all', `전체<small>${cats.mock.n}</small>`]].concat(mockParts.map((x) => [x.id, `${x.title.replace('실전 모의고사 ', '')}<small>${x.n}</small>`]));
+      if (!mockParts.some((x) => x.id === wrongMock)) wrongMock = 'all';
+      body = `<div class="gt-chips small">${chips.map(([k, l]) => `<button type="button" class="chip${wrongMock === k ? ' on' : ''}" data-wm="${k}">${l}</button>`).join('')}</div>${mockParts.filter((x) => wrongMock === 'all' || x.id === wrongMock).map((x) => x.html).join('')}`;
+    } else if (wrongCat) body = cats[wrongCat].html.join('');
+    root.innerHTML = `<h2 class="r-h">오답 <small>연습·모의고사에서 틀린 문제를 분류별로</small></h2>
+      <div class="gt-chips gt-wcats">${CATS.map(([k, l]) => `<button type="button" class="chip${wrongCat === k ? ' on' : ''}" data-wc="${k}"${cats[k] ? '' : ' disabled'}>${l}<small>${cats[k] ? cats[k].n : 0}</small></button>`).join('')}</div>
+      ${body}<div class="ad-slot" data-ad="review"></div>`;
+    root.querySelectorAll('[data-wc]').forEach((b) => b.addEventListener('click', () => { wrongCat = b.dataset.wc; wrong(); }));
+    root.querySelectorAll('[data-wm]').forEach((b) => b.addEventListener('click', () => { wrongMock = b.dataset.wm; wrong(); }));
   }
 
   nav();

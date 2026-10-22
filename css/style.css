@@ -1535,3 +1535,5 @@ body.pw-on { overflow: hidden; }
 .gt-page main a.gt-pill { color: var(--text); } .gt-page main a.gt-pill.on { color: #fff; }
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .gt-page main a.gt-pill.on { color: #0f1d27; } }
 :root[data-theme="dark"] .gt-page main a.gt-pill.on { color: #0f1d27; }
+.gt-wcats .chip:disabled { opacity: .4; cursor: default; }
+.gt-wcats { position: sticky; top: 0; z-index: 30; padding: 8px 0; background: var(--bg); }
