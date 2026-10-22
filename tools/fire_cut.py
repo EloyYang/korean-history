@@ -18,6 +18,8 @@ EXAMS = {
     '2024_car': ['소방학개론', '소방관계법규', '응급처치학개론', '화학개론', '컴퓨터일반'],
     '2025_open': ['소방학개론', '소방관계법규', '행정법총론'],
     '2025_car': ['소방학개론', '소방관계법규', '응급처치학개론', '화학개론', '컴퓨터일반'],
+    '2026_open': ['소방학개론', '소방관계법규', '행정법총론'],
+    '2026_car': ['소방학개론', '소방관계법규', '응급처치학개론', '화학개론', '컴퓨터일반'],
 }
 CIRC = '①②③④⑤'
 
@@ -63,11 +65,11 @@ def content_bottom(page):
     return y
 
 def subject_pages(doc, subs):
-    """과목마다 시작 쪽 (쪽 위에 【 과목명 】 표시가 처음 나오는 쪽)"""
+    """과목마다 시작 쪽 (쪽에 【 과목명 】 표시가 처음 나오는 쪽). 2026 공채처럼 이름이 【 】 밖에 있어도 찾는다"""
     names = [x.replace(' ', '') for x in subs]; start = [None] * len(subs); k = 0
     for pi, page in enumerate(doc):
         t = re.sub(r'\s+', '', page.get_text())
-        while k < len(subs) and ('【' + names[k] + '】') in t:
+        while k < len(subs) and (('【' + names[k] + '】') in t or (names[k] + '【】') in t):
             if start[k] is None: start[k] = pi
             k += 1
     assert all(x is not None for x in start), start
@@ -158,6 +160,7 @@ def parse_answers(exam, counts):
                 if key in res: out[s] = res[key]; break
         return out
     t = ' '.join(pymupdf.open(f'{SRC}/{exam}_a.pdf')[0].get_text().split())
+    t = re.sub(r'(?<=\d) (공개 채용|경력 채용|공통) ', ' ', t)   # 2026 정답표의 '구분' 칸 제거
     t = t.replace('모두 정답', 'ALL').replace('정답 없음', 'ALL')
     t = t.replace('①', '1').replace('②', '2').replace('③', '3').replace('④', '4')
     tok = t.split()

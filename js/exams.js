@@ -52,7 +52,7 @@ window.EXAMS = [
     level: '필기',
     mark: '消',
     color: '#b3261e',
-    desc: '2022~2025년 공개경쟁·경력경쟁 채용시험 기출 980문항: 시험별·과목별 풀기, 오답·★ 헷갈림 다시 풀기',
+    desc: '2022~2026년 공개경쟁·경력경쟁 채용시험 기출 1,240문항: 시험별·과목별 풀기, 오답·★ 헷갈림 다시 풀기',
     links: [
       { href: 'fire.html', label: '기출 풀기', main: true },
       { href: 'fire.html#wrong', label: '오답' },

@@ -1575,3 +1575,4 @@ body.pw-on { overflow: hidden; }
 :root[data-theme="dark"] .fr-fb.g, :root[data-theme="dark"] .fr-gn.ok { background: #1d3a20; color: #a5d6a7; } :root[data-theme="dark"] .fr-fb.r, :root[data-theme="dark"] .fr-gn.no { background: #3d1f1f; color: #ff8a80; } :root[data-theme="dark"] .fr-gn.cur, :root[data-theme="dark"] .fr-ans button.pick { color: #1d0b0a; }
 @media (max-width: 560px) { .fr-sum { grid-template-columns: repeat(2, 1fr); } .fr-subs { grid-template-columns: 1fr; } .fr-ans button { font-size: 22px; padding: 12px 0; } }
 .fr-ans { position: sticky; bottom: 8px; z-index: 20; padding: 8px; border-radius: 14px; background: color-mix(in srgb, var(--bg) 90%, transparent); backdrop-filter: blur(4px); box-shadow: 0 -2px 10px rgba(0,0,0,.18); }
+.fr-kinds { margin: 12px 0 4px; } .fr-kinds .chip { font-size: 14px; padding: 7px 16px; }
