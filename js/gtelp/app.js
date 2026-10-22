@@ -402,13 +402,15 @@
   const synsOf = (i) => V[i][2].split(/[,;]/).map((x) => x.trim()).filter(Boolean);
   const sensesOf = (i) => (USE[V[i][0]] ? USE[V[i][0]].senses : []);
   function makeSynQuiz(pool) {
-    const ids = shuffle(pool).slice(0, 10);
+    // 기본 예문이 보여 주는 뜻 = 동의어 칸 ';' 앞쪽 묶음이라, 정답은 그 묶음에서 고른다
+    const ids = shuffle(pool.filter((i) => blankOut(V[i][0], V[i][3]))).slice(0, 10);
     const items = ids.map((i) => {
-      const own = synsOf(i); const a = own[Math.floor(Math.random() * own.length)];
+      const own = synsOf(i); const main = V[i][2].split(';')[0].split(',').map((x) => x.trim()).filter(Boolean);
+      const a = main[Math.floor(Math.random() * main.length)];
       const bad = shuffle(V.map((x, j) => j).filter((j) => j !== i).flatMap((j) => synsOf(j))).filter((x) => !own.includes(x));
       const opts = []; for (const x of bad) { if (!opts.includes(x)) opts.push(x); if (opts.length === 3) break; }
       const all = shuffle(opts.concat(a));
-      return { i, all, a: all.indexOf(a), ans: a };
+      return { i, all, a: all.indexOf(a), ans: a, b: blankOut(V[i][0], V[i][3]) };
     });
     return { kind: 'syn', items, k: 0, ok: 0, picks: [] };
   }
@@ -477,15 +479,15 @@
     } else if (vMode === 'syn' || vMode === 'sense') {
       if (!vz || vz.kind !== vMode) vz = (vMode === 'syn' ? makeSynQuiz : makeSenseQuiz)(pool.length >= 4 || vMode === 'sense' ? pool : V.map((x, j) => j));
       if (vz.k >= vz.items.length) {
-        body = `<div class="gt-tip"><h3>${vz.items.length}문제 중 ${vz.ok}개 정답</h3>${vz.items.map((it, k) => `<div class="gt-vres ${vz.picks[k] === it.a ? 'g' : 'r'}"><b>${esc(V[it.i][0])}</b> ${vz.kind === 'syn' ? esc(V[it.i][2]) : `${esc(it.sn[0])} <small>${esc(it.sn[1])}</small><div class="gt-vsent">${it.b ? it.b.full : esc(it.sn[2])}<span>${esc(it.sn[3])}</span></div>`}</div>`).join('')}</div>
+        body = `<div class="gt-tip"><h3>${vz.items.length}문제 중 ${vz.ok}개 정답</h3>${vz.items.map((it, k) => `<div class="gt-vres ${vz.picks[k] === it.a ? 'g' : 'r'}"><b>${esc(V[it.i][0])}</b> ${vz.kind === 'syn' ? `${esc(V[it.i][2])}<div class="gt-vsent">${it.b.full}${USE[V[it.i][0]] && USE[V[it.i][0]].ko ? `<span>${esc(USE[V[it.i][0]].ko)}</span>` : ''}</div>` : `${esc(it.sn[0])} <small>${esc(it.sn[1])}</small><div class="gt-vsent">${it.b ? it.b.full : esc(it.sn[2])}<span>${esc(it.sn[3])}</span></div>`}</div>`).join('')}</div>
           <div class="gt-bar center"><button type="button" class="gt-btn main" id="v-again">새 문제 10개</button></div>`;
       } else {
         const it = vz.items[vz.k]; const pk = vz.picks[vz.k]; const w = V[it.i];
         const head = vz.kind === 'syn'
-          ? `<div class="gt-muted">${vz.k + 1} / ${vz.items.length} · 뜻이 가장 가까운 동의어를 고르세요</div><div class="gt-word">${esc(w[0])}</div>`
+          ? `<div class="gt-muted">${vz.k + 1} / ${vz.items.length} · 문장 속 <b>${esc(w[0])}</b>와(과) 뜻이 가장 가까운 단어는?</div><div class="gt-fillq">${pk != null ? it.b.full : it.b.full.replace('class="gt-hit"', 'class="gt-hit u"')}</div>`
           : `<div class="gt-muted">${vz.k + 1} / ${vz.items.length} · 이 문장에서 <b>${esc(w[0])}</b>는 어떤 뜻으로 쓰였을까요?</div><div class="gt-fillq">${it.b ? it.b.full : esc(it.sn[2])}</div>`;
         const tail = pk == null ? '' : vz.kind === 'syn'
-          ? `<div class="gt-mean sm"><b>${esc(w[0])}</b> ${esc(w[1])}</div><div class="gt-syn">동의어 <b>${esc(w[2])}</b></div><div class="gt-uses"><p>${esc(w[3])}${USE[w[0]] && USE[w[0]].ko ? `<span>${esc(USE[w[0]].ko)}</span>` : ''}</p></div>${NOTE[w[0]] ? `<div class="gt-note">⚠ ${NOTE[w[0]]}</div>` : ''}`
+          ? `${USE[w[0]] && USE[w[0]].ko ? `<div class="gt-fillko">${esc(USE[w[0]].ko)}</div>` : ''}<div class="gt-mean sm"><b>${esc(w[0])}</b> ${esc(w[1])}</div><div class="gt-syn">동의어 <b>${esc(w[2])}</b></div>${NOTE[w[0]] ? `<div class="gt-note">⚠ ${NOTE[w[0]]}</div>` : ''}`
           : `<div class="gt-fillko">${esc(it.sn[3])}</div><div class="gt-mean sm"><b>${esc(it.sn[0])}</b> <small class="gt-muted">${esc(it.sn[1])}</small></div><div class="gt-senses"><h4>${esc(w[0])}의 다른 뜻</h4>${sensesOf(it.i).filter((t) => t !== it.sn).map((t) => `<div class="gt-sense"><b>${esc(t[0])}</b><small>${esc(t[1])}</small></div>`).join('')}</div>`;
         body = `<div class="gt-flash gt-qcard">${head}
           <ol class="gt-opts vq">${it.all.map((o, n) => `<li><button type="button" data-z="${n}" class="${pk != null ? (n === it.a ? 'ans' : n === pk ? 'miss' : '') : ''}"${pk != null ? ' disabled' : ''}><i>(${ABC[n]})</i> ${esc(o)}</button></li>`).join('')}</ol>${tail}</div>
