@@ -27,7 +27,7 @@ window.EXAMS = [
     level: 'Level 2',
     mark: 'G',
     color: '#1f5f8b',
-    desc: '문법 유형 공식과 연습 80문항, 독해·청취(원어민 음성) 각 8세트, 필수 단어·헷갈리는 단어, 90분 실전 모의고사 3회',
+    desc: '문법 유형 공식과 연습 130문항, 독해·청취(원어민 음성) 각 30세트, 필수 단어·헷갈리는 단어, 90분 실전 모의고사 10회',
     links: [
       { href: 'gtelp.html#plan', label: '10일 플랜', main: true },
       { href: 'gtelp.html#mock', label: '모의고사' },

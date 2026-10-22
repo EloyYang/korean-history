@@ -211,7 +211,7 @@
   }
 
   // ───────── 10일 플랜 ─────────
-  // 하루: 문법 8문항(유형 섞음) + 단어 Day n, 독해·청취 한 세트씩, 4·8·10일째는 실전 모의고사
+  // 하루: 문법(유형 섞음) + 단어 Day n + 독해·청취 연습 세트, 4·8·10일째는 실전 모의고사
   // 문법은 유형마다 10일에 고르게 나눈다 (그 유형이 가장 적은 날 → 하루 문항 수가 적은 날 순서)
   const G_DAY = (() => {
     const day = [], total = Array(10).fill(0);
@@ -228,18 +228,31 @@
   })();
   const gDayItems = (d) => G.items.map((x, i) => i).filter((i) => G_DAY[i] === d - 1);
   const vDayWords = (d) => V.slice((d - 1) * DAY, d * DAY).map((w) => w[0]);
+  // 독해·청취 세트는 Part 1→2→3→4 가 골고루 섞이게 줄 세운 뒤 날마다 나눈다 (모의고사 날은 줄이거나 뺀다)
+  const interleave = (sets) => {
+    const by = [1, 2, 3, 4].map((p) => sets.filter((x) => x.part === p));
+    const out = []; for (let i = 0; i < Math.max(...by.map((a) => a.length)); i++) by.forEach((a) => { if (a[i]) out.push(a[i]); });
+    return out;
+  };
+  const SETS_PER_DAY = (() => { // 하루에 푸는 세트 수 (독해·청취 각각)
+    const total = Math.max(R.length, L.length); const mockDays = [4, 8, 10];
+    const base = Array(10).fill(0).map((_, k) => (mockDays.includes(k + 1) ? 0 : 1)); // 평일 1, 모의고사 날 0
+    let left = total - base.reduce((a, b) => a + b, 0), k = 0;
+    while (left > 0) { const d = k % 10; if (!mockDays.includes(d + 1)) { base[d]++; left--; } else if (k % 10 === 3 && left > 0 && base[3] < 2) { base[3]++; left--; } k++; }
+    return base;
+  })();
   const PLAN = (() => {
-    const setDays = [1, 2, 3, 5, 6, 7, 9, 9]; // 독해·청취 세트 i 를 푸는 날
-    const mockDays = [4, 8, 10];
+    const mockDays = [4, 8, 10]; const rs = interleave(R), ls = interleave(L);
+    let ri = 0, li = 0;
     return Array.from({ length: 10 }, (_, k) => {
       const d = k + 1; const t = [{ k: 'g' }, { k: 'v' }];
-      setDays.forEach((sd, i) => { if (sd === d) { if (R[i]) t.push({ k: 'r', id: R[i].id }); if (L[i]) t.push({ k: 'l', id: L[i].id }); } });
+      for (let n = 0; n < SETS_PER_DAY[k]; n++) { if (rs[ri]) t.push({ k: 'r', id: rs[ri++].id }); if (ls[li]) t.push({ k: 'l', id: ls[li++].id }); }
       mockDays.forEach((md, i) => { if (md === d && M[i]) t.push({ k: 'm', id: M[i].id }); });
       if (d === 10) t.push({ k: 'w' });
       return t;
     });
   })();
-  const MIN = { g: 15, v: 20, r: 15, l: 15, m: 90, w: 30 };
+  const MIN = { g: 2, v: 20, r: 15, l: 15, m: 90, w: 30 }; // g 는 문항당 분
   function taskInfo(t, d) {
     if (t.k === 'g') { const ids = gDayItems(d); const gl = gLog(); const n = ids.filter((i) => gl[gKey(i)] != null).length; const ok = ids.filter((i) => gl[gKey(i)] === G.items[i][3]).length; return { label: `문법 ${ids.length}문항`, sub: '여러 유형 섞어서', href: `#grammar/day${d}`, done: n === ids.length, prog: `${n}/${ids.length}${n ? ` · ${ok}개 정답` : ''}` }; }
     if (t.k === 'v') { const ws = vDayWords(d); const kn = vLog().known; const n = ws.filter((w) => kn.includes(w)).length; return { label: `단어 Day ${d}`, sub: `${ws.length}개 · 카드로 외우고 '알아요' 표시`, href: `#vocab/day${d}`, done: n === ws.length, prog: `${n}/${ws.length} 외움` }; }
@@ -270,7 +283,7 @@
     const open = planOpen || td || 1;
     const days = PLAN.map((ts, k) => {
       const d = k + 1; const st = dayStat(d); const info = ts.map((t) => taskInfo(t, d));
-      const min = ts.reduce((a, t) => a + MIN[t.k], 0);
+      const min = ts.reduce((a, t) => a + (t.k === 'g' ? MIN.g * gDayItems(d).length : MIN[t.k]), 0);
       const cls = [st.done === st.n ? 'done' : '', d === td ? 'today' : '', d === open ? 'open' : ''].filter(Boolean).join(' ');
       return `<section class="gt-day ${cls}" data-day="${d}">
         <button type="button" class="gt-dayhead" data-open="${d}"><b>Day ${d}</b>${d === td ? '<em>오늘</em>' : ''}<span>${info.map((x) => x.label).join(' · ')}</span><i>${st.done === st.n ? '✓ 완료' : `${st.done}/${st.n}`} · 약 ${Math.round(min / 10) * 10}분</i></button>
@@ -279,10 +292,10 @@
     }).join('');
     const all = PLAN.reduce((a, _, k) => { const s = dayStat(k + 1); return [a[0] + s.done, a[1] + s.n]; }, [0, 0]);
     root.innerHTML = `
-      <h2 class="r-h">10일 완성 플랜 <small>하루 분량만 따라가면 연습 문제·단어·모의고사 3회를 모두 끝내요</small></h2>
+      <h2 class="r-h">10일 완성 플랜 <small>하루 분량만 따라가면 문법·독해·청취 연습과 단어를 모두 끝내고 모의고사 3회를 봐요</small></h2>
       <div class="gt-tip">
         ${td ? `<b>${esc(planState().start)}</b>에 시작했어요. 오늘은 <b>Day ${td}</b>예요. 전체 ${all[1]}개 할 일 중 <b>${all[0]}개</b> 완료.` : '시작하기를 누르면 오늘이 Day 1이 되고, 날짜에 맞춰 그날 할 일을 보여 줘요. 밀리면 지난 Day를 펼쳐서 이어서 하면 돼요.'}
-        <ul><li>매일: 문법 8문항(여러 유형 섞음) + 필수 단어 하루치(${DAY}개)</li><li>독해·청취: Part 1~4 연습 세트를 하루 한 세트씩 (Day 9는 두 세트)</li><li>Day 4·8·10: 90분 실전 모의고사 1·2·3회, Day 10은 오답 총정리까지</li></ul>
+        <ul><li>매일: 문법 ${gDayItems(1).length}문항(여러 유형 섞음) + 필수 단어 하루치(${DAY}개)</li><li>독해·청취: 연습 세트 ${R.length}개·${L.length}개를 Part 1~4가 섞이게 나눠서 (하루 ${Math.max(...SETS_PER_DAY)}세트까지, 모의고사 날은 줄임)</li><li>Day 4·8·10: 90분 실전 모의고사 1·2·3회, Day 10은 오답 총정리까지</li><li>모의고사 4~${M.length}회는 플랜을 마친 뒤 실력 확인과 반복 연습용이에요</li></ul>
         <div class="gt-bar">${td ? '<button type="button" class="gt-btn" id="pl-reset">시작일 다시 정하기</button>' : '<button type="button" class="gt-btn main" id="pl-start">오늘부터 시작하기</button>'}</div>
       </div>
       <div class="gt-days">${days}</div>`;
@@ -330,7 +343,8 @@
   function setPage(kind, id) {
     const sets = kind === 'reading' ? R : L; const log = sLog(kind);
     const cur = sets.find((s) => s.id === id);
-    const list = `<div class="gt-sets">${sets.map((s) => `<a class="gt-set${cur && cur.id === s.id ? ' on' : ''}" href="#${kind}/${s.id}"><small>Part ${s.part} · ${s.kind}</small><b>${esc(s.title)}</b>${log[s.id] ? `<em>${log[s.id].score}점</em>` : ''}</a>`).join('')}</div>`;
+    const card = (s) => `<a class="gt-set${cur && cur.id === s.id ? ' on' : ''}" href="#${kind}/${s.id}"><small>${s.kind}</small><b>${esc(s.title)}</b>${log[s.id] ? `<em>${log[s.id].score}점</em>` : ''}</a>`;
+    const list = [1, 2, 3, 4].map((p) => { const g = sets.filter((x) => x.part === p); if (!g.length) return ''; const dn = g.filter((x) => log[x.id]).length; return `<h3 class="gt-sh">Part ${p} <small>${g[0].kind} · ${dn}/${g.length} 풀음</small></h3><div class="gt-sets">${g.map(card).join('')}</div>`; }).join('');
     const head = kind === 'reading'
       ? '<h2 class="r-h">독해 <small>지문마다 7문항 · 마지막 두 문항은 문맥상 같은 뜻 고르기</small></h2>'
       : '<h2 class="r-h">청취 <small>▶ 듣기로 미국 원어민 억양(AI 음성) 대화·발표를 듣고 풀어요 · 채점 뒤 스크립트 확인</small></h2>';
