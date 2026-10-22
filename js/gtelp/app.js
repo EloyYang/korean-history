@@ -19,7 +19,9 @@
   const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
   const ABC = 'abcd';
   const $ = (sel) => document.querySelector(sel);
-  const root = $('#gt');
+  const MAIN = $('#gt');
+  let root = MAIN; // 10일 플랜 안에서 풀 때는 플랜 화면 안쪽 칸으로 바뀐다
+  let emb = false;
   const TYPE = Object.fromEntries(G.types.map((t) => [t.id, t]));
   const MOCK_MIN = 90;
   const pct = (a, b) => (b ? Math.round((a / b) * 100) : 0);
@@ -158,6 +160,7 @@
   const route = () => { const [t, a] = location.hash.replace(/^#/, '').split('/'); return { tab: TABS.some((x) => x[0] === t) ? t : 'home', arg: a ? decodeURIComponent(a) : '' }; };
   let timer = null;
   function render() {
+    root = MAIN; emb = false;
     TTS.stop(); clearInterval(timer);
     const { tab, arg } = route();
     // 10일 플랜에서 온 링크(#grammar/day3, #vocab/day3)는 그날 범위로 열고 주소는 탭 이름만 남긴다
@@ -253,12 +256,12 @@
     });
   })();
   const MIN = { g: 2, v: 20, r: 15, l: 15, m: 90, w: 30 }; // g 는 문항당 분
-  function taskInfo(t, d) {
-    if (t.k === 'g') { const ids = gDayItems(d); const gl = gLog(); const n = ids.filter((i) => gl[gKey(i)] != null).length; const ok = ids.filter((i) => gl[gKey(i)] === G.items[i][3]).length; return { label: `문법 ${ids.length}문항`, sub: '여러 유형 섞어서', href: `#grammar/day${d}`, done: n === ids.length, prog: `${n}/${ids.length}${n ? ` · ${ok}개 정답` : ''}` }; }
-    if (t.k === 'v') { const ws = vDayWords(d); const kn = vLog().known; const n = ws.filter((w) => kn.includes(w)).length; return { label: `단어 Day ${d}`, sub: `${ws.length}개 · 카드로 외우고 '알아요' 표시`, href: `#vocab/day${d}`, done: n === ws.length, prog: `${n}/${ws.length} 외움` }; }
-    if (t.k === 'r' || t.k === 'l') { const kind = t.k === 'r' ? 'reading' : 'listening'; const s = (t.k === 'r' ? R : L).find((x) => x.id === t.id); const lg = sLog(kind)[t.id]; return { label: `${t.k === 'r' ? '독해' : '청취'} Part ${s.part}`, sub: s.title, href: `#${kind}/${t.id}`, done: !!lg, prog: lg ? `${lg.score}점` : '' }; }
+  function taskInfo(t, d, idx) {
+    if (t.k === 'g') { const ids = gDayItems(d); const gl = gLog(); const n = ids.filter((i) => gl[gKey(i)] != null).length; const ok = ids.filter((i) => gl[gKey(i)] === G.items[i][3]).length; return { label: `문법 ${ids.length}문항`, sub: '여러 유형 섞어서', href: `#plan/day${d}.${idx}`, done: n === ids.length, prog: `${n}/${ids.length}${n ? ` · ${ok}개 정답` : ''}` }; }
+    if (t.k === 'v') { const ws = vDayWords(d); const kn = vLog().known; const n = ws.filter((w) => kn.includes(w)).length; return { label: `단어 Day ${d}`, sub: `${ws.length}개 · 카드로 외우고 '알아요' 표시`, href: `#plan/day${d}.${idx}`, done: n === ws.length, prog: `${n}/${ws.length} 외움` }; }
+    if (t.k === 'r' || t.k === 'l') { const kind = t.k === 'r' ? 'reading' : 'listening'; const s = (t.k === 'r' ? R : L).find((x) => x.id === t.id); const lg = sLog(kind)[t.id]; return { label: `${t.k === 'r' ? '독해' : '청취'} Part ${s.part}`, sub: s.title, href: `#plan/day${d}.${idx}`, done: !!lg, prog: lg ? `${lg.score}점` : '' }; }
     if (t.k === 'm') { const m = M.find((x) => x.id === t.id); const r = mocks().find((x) => x.mock === t.id); return { label: m.title, sub: '90분 실전 · 문법→청취→독해', href: r ? `#mock/res-${t.id}` : '#mock', done: !!r, prog: r ? `${r.score}점` : '', main: true }; }
-    return { label: '오답 총정리', sub: '연습·모의고사에서 틀린 문제와 헷갈린 단어 다시 보기', href: '#wrong', done: null, prog: '' };
+    return { label: '오답 총정리', sub: '연습·모의고사에서 틀린 문제와 헷갈린 단어 다시 보기', href: `#plan/day${d}.${idx}`, done: null, prog: '' };
   }
   const planState = () => S.get(K('plan'), null);
   // 시작한 날부터 오늘이 며칠째인지 (10일이 넘으면 10)
@@ -268,21 +271,48 @@
     return Math.max(1, Math.min(10, diff + 1));
   }
   function dayStat(d) {
-    const ts = PLAN[d - 1].map((t) => taskInfo(t, d)).filter((x) => x.done !== null);
+    const ts = PLAN[d - 1].map((t, i) => taskInfo(t, d, i)).filter((x) => x.done !== null);
     return { done: ts.filter((x) => x.done).length, n: ts.length };
   }
   function planCard() {
     const td = todayDay();
     if (!td) return `<a class="gt-plancard" href="#plan"><b>10일 완성 플랜</b><span>하루 분량으로 나눈 문법·단어·독해·청취·모의고사를 10일 동안 차례로 풀어요</span><em>시작하기 →</em></a>`;
     const st = dayStat(td);
-    return `<a class="gt-plancard" href="#plan"><b>오늘은 Day ${td}</b><span>${PLAN[td - 1].map((t) => taskInfo(t, td).label).join(' · ')}</span><em>${st.done}/${st.n} 완료 →</em></a>`;
+    return `<a class="gt-plancard" href="#plan"><b>오늘은 Day ${td}</b><span>${PLAN[td - 1].map((t, i) => taskInfo(t, td, i).label).join(' · ')}</span><em>${st.done}/${st.n} 완료 →</em></a>`;
   }
   let planOpen = 0;
+  // 플랜 안에서 풀기: 위쪽에서 Day·할 일을 고르면 그 아래에 문제 화면이 그대로 열린다 (다른 탭으로 가지 않는다)
+  function planBarHtml(d, i) {
+    const ts = PLAN[d - 1]; const info = ts.map((t, j) => taskInfo(t, d, j));
+    const days = Array.from({ length: 10 }, (_, k) => { const st = dayStat(k + 1); return `<a class="chip${k + 1 === d ? ' on' : ''}${st.done === st.n ? ' fin' : ''}" href="#plan/day${k + 1}.0">Day ${k + 1}${st.done === st.n ? ' ✓' : `<small>${st.done}/${st.n}</small>`}</a>`; }).join('');
+    const tks = info.map((x, j) => (ts[j].k === 'm'
+      ? `<a class="gt-tk mock" href="${x.href}">${x.done ? '✓ ' : ''}${esc(x.label)} <small>모의고사 화면으로 ↗</small></a>`
+      : `<a class="gt-tk${j === i ? ' on' : ''}${x.done ? ' ok' : ''}" href="#plan/day${d}.${j}">${x.done ? '✓ ' : ''}${esc(x.label)}<small>${esc(x.prog || x.sub)}</small></a>`)).join('');
+    return `<a class="gt-link" href="#plan">← 10일 플랜 전체 보기</a><div class="gt-chips small gt-pdays">${days}</div><div class="gt-tks">${tks}</div>`;
+  }
+  function planTask(d, i) {
+    d = Math.min(10, Math.max(1, d)); const ts = PLAN[d - 1];
+    let k = ts.findIndex((t, j) => j >= i && t.k !== 'm'); if (k < 0) k = ts.findIndex((t) => t.k !== 'm');
+    const t = ts[k];
+    root = MAIN; emb = false;
+    root.innerHTML = `<div class="gt-planbar">${planBarHtml(d, k)}</div><div id="plan-body"></div>`;
+    root = $('#plan-body'); emb = true;
+    if (t.k === 'g') { gDay = d; gOnlyWrong = false; grammar(); }
+    else if (t.k === 'v') { vDay = d; vMode = 'card'; vUnknown = false; vIdx = 0; vFlip = false; vq = null; vz = null; vocab(); }
+    else if (t.k === 'r') setPage('reading', t.id);
+    else if (t.k === 'l') setPage('listening', t.id);
+    else wrong();
+    // 문제를 풀 때마다 위쪽 진행 표시(✓)를 새로 고친다
+    root.addEventListener('click', () => setTimeout(() => { const b = $('.gt-planbar'); if (b) b.innerHTML = planBarHtml(d, k); }, 120));
+    root.addEventListener('change', () => setTimeout(() => { const b = $('.gt-planbar'); if (b) b.innerHTML = planBarHtml(d, k); }, 120));
+  }
   function plan() {
+    const pm = /^day(\d+)\.(\d+)$/.exec(route().arg);
+    if (pm) return planTask(+pm[1], +pm[2]);
     const td = todayDay();
     const open = planOpen || td || 1;
     const days = PLAN.map((ts, k) => {
-      const d = k + 1; const st = dayStat(d); const info = ts.map((t) => taskInfo(t, d));
+      const d = k + 1; const st = dayStat(d); const info = ts.map((t, i) => taskInfo(t, d, i));
       const min = ts.reduce((a, t) => a + (t.k === 'g' ? MIN.g * gDayItems(d).length : MIN[t.k]), 0);
       const cls = [st.done === st.n ? 'done' : '', d === td ? 'today' : '', d === open ? 'open' : ''].filter(Boolean).join(' ');
       return `<section class="gt-day ${cls}" data-day="${d}">
@@ -317,8 +347,8 @@
     const t = gDay ? null : TYPE[gType];
     root.innerHTML = `
       <h2 class="r-h">문법 <small>보기를 고르면 바로 채점하고 해설이 보여요</small></h2>
-      ${gDay ? `<div class="gt-dayban"><b>Day ${gDay} 문법</b> ${gDayItems(gDay).length}문항 · 여러 유형이 섞여 있어요 <a href="#plan">← 10일 플랜</a></div>` : ''}
-      <div class="gt-chips">${['all'].concat(G.types.map((x) => x.id)).map((id) => { const s = stat(id); return `<button type="button" class="chip${!gDay && gType === id ? ' on' : ''}" data-ty="${id}">${id === 'all' ? '전체' : TYPE[id].name}<small>${s.d}/${s.n}${s.d ? ` · ${pct(s.ok, s.d)}%` : ''}</small></button>`; }).join('')}</div>
+      ${gDay ? `<div class="gt-dayban"><b>Day ${gDay} 문법</b> ${gDayItems(gDay).length}문항 · 여러 유형이 섞여 있어요 ${emb ? '' : '<a href="#plan">← 10일 플랜</a>'}</div>` : ''}
+      <div class="gt-chips"${emb ? ' hidden' : ''}>${['all'].concat(G.types.map((x) => x.id)).map((id) => { const s = stat(id); return `<button type="button" class="chip${!gDay && gType === id ? ' on' : ''}" data-ty="${id}">${id === 'all' ? '전체' : TYPE[id].name}<small>${s.d}/${s.n}${s.d ? ` · ${pct(s.ok, s.d)}%` : ''}</small></button>`; }).join('')}</div>
       ${gDay ? '' : t ? `<div class="gt-tip"><h3>${t.name} <small>실제 시험 ${t.n}문항</small></h3>${t.tip}</div>` : '<div class="gt-tip"><h3>문법 26문항 공략</h3>지텔프 문법은 <b>유형이 정해져 있어요</b>. 위에서 유형을 고르면 정답 찾는 공식이 보여요. 시제·가정법·준동사 18문항만 확실히 잡아도 문법 점수가 크게 올라요.</div>'}
       <div class="gt-bar"><label class="chip-check"><input type="checkbox" id="g-wrong"${gOnlyWrong ? ' checked' : ''}> 틀린 문제만</label>
         <button type="button" class="gt-btn" id="g-reset">${gDay ? `Day ${gDay}` : gType === 'all' ? '전체' : TYPE[gType].name} 기록 지우고 다시 풀기</button></div>
@@ -356,7 +386,7 @@
       ? `<article class="gt-passage"><h3>${esc(cur.title)}</h3>${parasHtml(cur.paras, ko)}</article>`
       : `<article class="gt-passage">${playerHtml(cur.id, cur.lines)}
           <button type="button" class="gt-link" id="s-tog">${showScript ? '스크립트 접기' : '스크립트 보기'}</button>${scriptHtml(cur.lines, showScript, ko)}</article>`;
-    root.innerHTML = head + list + (done ? koBar() : '') + `
+    root.innerHTML = (emb ? `<h3 class="gt-sh">${esc(cur.title)} <small>Part ${cur.part} · ${cur.kind}</small></h3>` : head + list) + (done ? koBar() : '') + `
       <div class="gt-work ${kind}">
         ${body}
         <div class="gt-side">
@@ -521,7 +551,7 @@
     root.innerHTML = `
       <h2 class="r-h">필수 단어 <small>${V.length}개 · 외운 단어 ${vl.known.length}개 · 독해 어휘 문제는 동의어를 물어요</small></h2>
       <div class="gt-chips">${[['card', '카드 외우기'], ['fill', '빈칸 채우기'], ['syn', '동의어 찾기'], ['sense', '문맥 속 의미'], ['quiz', '뜻 맞히기'], ['list', '단어 목록'], ['confuse', '헷갈리는 단어']].map(([m, l]) => `<button type="button" class="chip${vMode === m ? ' on' : ''}" data-vm="${m}">${l}</button>`).join('')}</div>
-      <div class="gt-chips small"${vMode === 'confuse' ? ' hidden' : ''}><button type="button" class="chip${vDay === 0 ? ' on' : ''}" data-day="0">전체</button>${Array.from({ length: days }, (_, d) => `<button type="button" class="chip${vDay === d + 1 ? ' on' : ''}" data-day="${d + 1}">Day ${d + 1}<small>${knownIn(d + 1)}/${Math.min(DAY, V.length - d * DAY)}</small></button>`).join('')}
+      <div class="gt-chips small"${vMode === 'confuse' || emb ? ' hidden' : ''}><button type="button" class="chip${vDay === 0 ? ' on' : ''}" data-day="0">전체</button>${Array.from({ length: days }, (_, d) => `<button type="button" class="chip${vDay === d + 1 ? ' on' : ''}" data-day="${d + 1}">Day ${d + 1}<small>${knownIn(d + 1)}/${Math.min(DAY, V.length - d * DAY)}</small></button>`).join('')}
         <label class="chip-check"><input type="checkbox" id="v-unk"${vUnknown ? ' checked' : ''}> 모르는 단어만</label></div>
       ${body}`;
     root.querySelectorAll('[data-vm]').forEach((b) => b.addEventListener('click', () => { vMode = b.dataset.vm; vq = null; vz = null; vIdx = 0; vFlip = false; vocab(); }));
