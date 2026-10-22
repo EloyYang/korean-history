@@ -441,16 +441,24 @@
 
   // ───────── 독해 · 청취 (연습 지문) ─────────
   const draftOf = {}; // 채점 전 고른 답 (화면 안에서만)
+  const selPart = { reading: null, listening: null }; // 지문 고르기에서 보고 있는 Part (현재 지문의 Part와 다를 수 있다)
   const retryOf = {}; // '다시 풀기' 중인 지문: { 'kind:id': { open: Set(문항 번호), picks: [...] } }
   function setPage(kind, id) {
     const sets = kind === 'reading' ? R : L; const log = sLog(kind);
-    const cur = sets.find((s) => s.id === id);
-    const card = (s) => `<a class="gt-set${cur && cur.id === s.id ? ' on' : ''}" href="#${kind}/${s.id}"><small>${s.kind}</small><b>${esc(s.title)}</b>${log[s.id] ? `<em>${log[s.id].score}점</em>` : ''}</a>`;
-    const list = [1, 2, 3, 4].map((p) => { const g = sets.filter((x) => x.part === p); if (!g.length) return ''; const dn = g.filter((x) => log[x.id]).length; return `<h3 class="gt-sh">Part ${p} <small>${g[0].kind} · ${dn}/${g.length} 풀음</small></h3><div class="gt-sets">${g.map(card).join('')}</div>`; }).join('');
+    const ordered = [1, 2, 3, 4].flatMap((p) => sets.filter((x) => x.part === p)); // Part 순서로 줄 세운 목록
+    let cur = sets.find((x) => x.id === id);
+    if (!cur) cur = ordered.find((x) => !log[x.id]) || ordered[0]; // 번호를 안 골랐으면 아직 안 푼 첫 지문을 바로 연다
+    // 지문 고르기: Part 칩 + 번호 칩 (한 줄씩만 차지해서 문제가 바로 아래에 보인다)
+    const viewPart = selPart[kind] || cur.part;
+    const partChips = [1, 2, 3, 4].map((p) => { const g = sets.filter((x) => x.part === p); if (!g.length) return ''; const dn = g.filter((x) => log[x.id]).length; return `<button type="button" class="chip${p === viewPart ? ' on' : ''}" data-pt="${p}">Part ${p}<small>${dn}/${g.length}</small></button>`; }).join('');
+    const pills = sets.filter((x) => x.part === viewPart).map((x, i) => `<a class="gt-pill${x.id === cur.id ? ' on' : ''}${log[x.id] ? ' done' : ''}" href="#${kind}/${x.id}" title="${esc(x.title)}${log[x.id] ? ` · ${log[x.id].score}점` : ''}">${i + 1}${log[x.id] ? '<i>✓</i>' : ''}</a>`).join('');
+    const ci = ordered.indexOf(cur); const prv = ordered[ci - 1], nxt = ordered[ci + 1];
+    const list = `<div class="gt-pick"><div class="gt-chips small">${partChips}</div><div class="gt-pills">${pills}</div>
+      <div class="gt-pickcur"><b>${esc(cur.title)}</b><small>Part ${cur.part} · ${cur.kind}${log[cur.id] ? ` · ${log[cur.id].score}점` : ''}</small>
+      <span class="gt-pn">${prv ? `<a href="#${kind}/${prv.id}">← 이전</a>` : '<span></span>'}${nxt ? `<a href="#${kind}/${nxt.id}">다음 →</a>` : ''}</span></div></div>`;
     const head = kind === 'reading'
       ? '<h2 class="r-h">독해 <small>지문마다 7문항 · 마지막 두 문항은 문맥상 같은 뜻 고르기</small></h2>'
       : '<h2 class="r-h">청취 <small>▶ 듣기로 미국 원어민 억양(AI 음성) 대화·발표를 듣고 풀어요 · 채점 뒤 스크립트 확인</small></h2>';
-    if (!cur) { root.innerHTML = head + list + '<p class="gt-muted">위에서 지문을 고르세요.</p><div class="ad-slot" data-ad="list"></div>'; return; }
     const done = log[cur.id]; const rk = kind + ':' + cur.id; const rt = done ? retryOf[rk] : null; const retrying = !!rt;
     const picks = done ? (retrying ? rt.picks : done.picks) : (draftOf[cur.id] = draftOf[cur.id] || []);
     const isOpen = (i) => !done || (retrying && rt.open.has(i));
@@ -479,6 +487,8 @@
             : '<button type="button" class="gt-btn main" id="s-grade">채점하기</button>'}</div>
         </div>
       </div>`;
+    root.querySelectorAll('[data-pt]').forEach((b) => b.addEventListener('click', () => { selPart[kind] = +b.dataset.pt; setPage(kind, cur.id); }));
+    root.querySelectorAll('.gt-pill, .gt-pn a').forEach((a) => a.addEventListener('click', () => { selPart[kind] = null; }));
     if (kind === 'listening') {
       bindPlayer(root, cur.lines);
       $('#s-tog').addEventListener('click', () => { if (done) { root.querySelector('.gt-script').classList.toggle('hide'); return; } draftOf['s-' + cur.id] = !draftOf['s-' + cur.id]; setPage(kind, id); });
@@ -731,9 +741,9 @@
     const m = M.find((x) => x.id === d.id); if (!m) { S.remove ? S.remove(K('mockDraft')) : S.set(K('mockDraft'), null); return mock(''); }
     const its = mockItems(m);
     const t0 = Date.now(); // 이번에 화면을 연 시각 (나가 있던 시간은 빼고 잰다)
-    const save = () => { d.used = (d.used || 0) + (Date.now() - (d._t || t0)); d._t = Date.now(); S.set(K('mockDraft'), d); };
+    const save = () => { if (!d.paused) d.used = (d.used || 0) + (Date.now() - (d._t || t0)); d._t = Date.now(); S.set(K('mockDraft'), d); };
     d._t = t0;
-    const left = () => MOCK_MIN * 60000 - (d.used + (Date.now() - d._t));
+    const left = () => MOCK_MIN * 60000 - (d.used + (d.paused ? 0 : Date.now() - d._t));
     const cnt = (s) => its.filter((x) => x.sec === s && d.picks[x.n] != null).length;
     const tot = (s) => its.filter((x) => x.sec === s).length;
     let body = '';
@@ -748,16 +758,18 @@
         return `<div class="gt-work ${d.sec === 'l' ? 'listening' : 'reading'}" data-part="${p.id}">${left_}<div class="gt-side"><div class="gt-qs${d.sec === 'l' ? ' two rad' : ''}">${qs.map((x) => qHtml(x.key, x.n, x.q, x.opts, x.a, '', d.picks[x.n], false)).join('')}</div></div></div>`;
       }).join('');
     }
+    if (d.paused) body = `<div class="gt-pause"><b>⏸ 일시정지 중</b><p>시간이 멈췄어요. 문제는 가려 두었어요. 준비되면 계속하기를 눌러 주세요.</p><button type="button" class="gt-btn main" id="mk-resume">▶ 계속하기</button></div>`;
     root.innerHTML = `
       <div class="gt-mbar">
         <b>${esc(m.title)}</b>
-        <span class="gt-time" id="mk-time">${fmt(left())}</span>
-        <div class="gt-chips">${'glr'.split('').map((s) => `<button type="button" class="chip${d.sec === s ? ' on' : ''}" data-sec="${s}">${SEC[s]}<small>${cnt(s)}/${tot(s)}</small></button>`).join('')}</div>
+        <span class="gt-time${d.paused ? ' paused' : ''}" id="mk-time">${fmt(left())}</span>
+        <button type="button" class="gt-btn" id="mk-pause">${d.paused ? '▶ 계속하기' : '⏸ 일시정지'}</button>
+        <div class="gt-chips"${d.paused ? ' hidden' : ''}>${'glr'.split('').map((s) => `<button type="button" class="chip${d.sec === s ? ' on' : ''}" data-sec="${s}">${SEC[s]}<small>${cnt(s)}/${tot(s)}</small></button>`).join('')}</div>
         <button type="button" class="gt-btn main" id="mk-submit">제출·채점</button>
         <button type="button" class="gt-btn" id="mk-quit">그만두기</button>
       </div>
       ${body}
-      <div class="gt-bar center">${d.sec !== 'r' ? `<button type="button" class="gt-btn main" id="mk-next">다음: ${SEC[d.sec === 'g' ? 'l' : 'r']} →</button>` : '<button type="button" class="gt-btn main" id="mk-submit2">제출·채점</button>'}</div>`;
+      <div class="gt-bar center"${d.paused ? ' hidden' : ''}>${d.sec !== 'r' ? `<button type="button" class="gt-btn main" id="mk-next">다음: ${SEC[d.sec === 'g' ? 'l' : 'r']} →</button>` : '<button type="button" class="gt-btn main" id="mk-submit2">제출·채점</button>'}</div>`;
     const tick = () => { const el = $('#mk-time'); if (!el) return clearInterval(timer); const l = left(); el.textContent = l > 0 ? fmt(l) : '시간 끝 ' + fmt(-l); el.classList.toggle('over', l <= 0); el.classList.toggle('warn', l > 0 && l < 10 * 60000); };
     timer = setInterval(tick, 1000); tick();
     window.onbeforeunload = () => { if (S.get(K('mockDraft'), null)) save(); };
@@ -767,8 +779,15 @@
       d.picks[n] = +b.dataset.o; b.closest('.gt-opts').querySelectorAll('button').forEach((x) => x.classList.toggle('pick', x === b));
       save(); const c = root.querySelector(`[data-sec="${d.sec}"] small`); if (c) c.textContent = `${cnt(d.sec)}/${tot(d.sec)}`;
     }));
-    if (d.sec === 'l') m.listening.forEach((p) => bindPlayer(root.querySelector(`[data-part="${p.id}"]`), p.lines, () => { d.plays[p.id] = (d.plays[p.id] || 0) + 1; save(); const s = root.querySelector(`[data-part="${p.id}"] .gt-player > .gt-muted`); if (s) s.textContent = `들은 횟수 ${d.plays[p.id]} / 실제 시험은 1번`; }));
-    const go = (s) => { save(); d.sec = s; S.set(K('mockDraft'), d); clearInterval(timer); TTS.stop(); mockRun(d); window.scrollTo(0, 0); };
+    const togglePause = () => {
+      if (d.paused) { d.paused = false; d._t = Date.now(); S.set(K('mockDraft'), d); }
+      else { save(); d.paused = true; S.set(K('mockDraft'), d); TTS.stop(); }
+      clearInterval(timer); mockRun(d);
+    };
+    $('#mk-pause').addEventListener('click', togglePause);
+    const rsm = $('#mk-resume'); if (rsm) rsm.addEventListener('click', togglePause);
+    if (d.sec === 'l' && !d.paused) m.listening.forEach((p) => bindPlayer(root.querySelector(`[data-part="${p.id}"]`), p.lines, () => { d.plays[p.id] = (d.plays[p.id] || 0) + 1; save(); const s = root.querySelector(`[data-part="${p.id}"] .gt-player > .gt-muted`); if (s) s.textContent = `들은 횟수 ${d.plays[p.id]} / 실제 시험은 1번`; }));
+    const go = (s) => { if (d.paused) return; save(); d.sec = s; S.set(K('mockDraft'), d); clearInterval(timer); TTS.stop(); mockRun(d); window.scrollTo(0, 0); };
     root.querySelectorAll('[data-sec]').forEach((b) => b.addEventListener('click', () => go(b.dataset.sec)));
     const nx = $('#mk-next'); if (nx) nx.addEventListener('click', () => go(d.sec === 'g' ? 'l' : 'r'));
     const submit = () => {
