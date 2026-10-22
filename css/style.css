@@ -1491,3 +1491,9 @@ body.pw-on { overflow: hidden; }
 .gt-tk.ok { border-color: #2e7d32; }
 .gt-tk.mock { border-style: dashed; }
 #plan-body .gt-sh { margin-top: 6px; }
+.gt-q { position: relative; }
+.gt-flag { float: right; margin: 0 0 4px 8px; padding: 2px 9px; border: 1px solid var(--line); border-radius: 999px; background: var(--surface-2); color: var(--muted); font-size: 12px; font-weight: 700; cursor: pointer; font-family: inherit; }
+.gt-flag.on { background: #fff4cc; border-color: #e0a800; color: #8a5a00; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .gt-flag.on { background: #3a3114; color: #ffd866; border-color: #a07a00; } }
+:root[data-theme="dark"] .gt-flag.on { background: #3a3114; color: #ffd866; border-color: #a07a00; }
+.gt-btn:disabled { opacity: .45; cursor: default; }
