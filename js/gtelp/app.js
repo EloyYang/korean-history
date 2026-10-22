@@ -133,7 +133,28 @@
     return `<div class="gt-script${show ? '' : ' hide'}">${lines.map(([sp, t], i) => `<p data-li="${i}">${who[sp] ? `<b class="sp-${sp}">${who[sp]}</b> ` : ''}${esc(t)}</p>${ko && ko[i] ? `<p class="gt-ko">${ko[i]}</p>` : ''}`).join('')}</div>`;
   }
   // 독해 지문 (채점 뒤 ko 를 주면 문단마다 해석)
-  const parasHtml = (paras, ko) => paras.map((t, i) => `<p>${t}</p>${ko && ko[i] ? `<p class="gt-ko">${ko[i]}</p>` : ''}`).join('');
+  // 어휘 문제(<u>단어</u>)의 단어를 지문 속에서 찾아 굵은 글씨 + 밑줄로 표시한다 (처음 나오는 곳 하나)
+  function hlParas(paras, qs) {
+    const out = paras.slice(); const used = new Set();
+    (qs || []).forEach((q) => {
+      const m = /<u>(.+?)<\/u>/.exec(q[0]); if (!m) return;
+      const phrase = m[1].trim(); const words = phrase.split(/\s+/);
+      const esc_ = (x) => x.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const tries = [new RegExp('\\b' + words.map(esc_).join('\\s+') + '\\b', 'i'), new RegExp('\\b' + esc_(stemOf(words[0].toLowerCase())) + '\\w*', 'i')];
+      for (const re of tries) {
+        let hit = false;
+        for (let i = 0; i < out.length && !hit; i++) {
+          out[i] = out[i].split(/(<[^>]+>)/).map((seg) => {
+            if (hit || seg.startsWith('<')) return seg;
+            return seg.replace(re, (t) => { hit = true; return `<u class="gt-vw"><b>${t}</b></u>`; });
+          }).join('');
+        }
+        if (hit) break;
+      }
+    });
+    return out;
+  }
+  const parasHtml = (paras, ko, qs) => hlParas(paras, qs).map((t, i) => `<p>${t}</p>${ko && ko[i] ? `<p class="gt-ko">${ko[i]}</p>` : ''}`).join('');
   // 채점 뒤 '전체 해설' 켜고 끄기
   const koBar = () => `<div class="gt-kobar"><button type="button" class="gt-btn${showKo ? ' main' : ''}" data-ko>${showKo ? '📖 전체 해설·해석 켜짐' : '📖 전체 해설·해석 보기'}</button><span class="gt-muted">지문·대본·문장 해석과 문항별 근거를 함께 보여 줘요</span></div>`;
   function bindKo(again) { root.querySelectorAll('[data-ko]').forEach((b) => b.addEventListener('click', () => { setShowKo(!showKo); again(); })); }
@@ -419,7 +440,7 @@
     const showScript = (!!done && !retrying) || !!draftOf['s-' + cur.id];
     const ko = done && !retrying && showKo ? koOf(cur) : null;
     const body = kind === 'reading'
-      ? `<article class="gt-passage"><h3>${esc(cur.title)}</h3>${parasHtml(cur.paras, ko)}</article>`
+      ? `<article class="gt-passage"><h3>${esc(cur.title)}</h3>${parasHtml(cur.paras, ko, cur.qs)}</article>`
       : `<article class="gt-passage">${playerHtml(cur.id, cur.lines)}
           <button type="button" class="gt-link" id="s-tog">${showScript ? '스크립트 접기' : '스크립트 보기'}</button>${scriptHtml(cur.lines, showScript, ko)}</article>`;
     root.innerHTML = (emb ? `<h3 class="gt-sh">${esc(cur.title)} <small>Part ${cur.part} · ${cur.kind}</small></h3>` : head + list) + (done && !retrying ? koBar() : '') + `
@@ -705,7 +726,7 @@
         const qs = its.filter((x) => x.part === p.id);
         const left_ = d.sec === 'l'
           ? `<article class="gt-passage"><h3>Part ${p.part} <small>${p.kind}</small></h3>${playerHtml(p.id, p.lines, { count: d.plays[p.id] || 0, limit: 1 })}<p class="gt-muted">문제 ${qs[0].n}–${qs[qs.length - 1].n} · 스크립트는 채점 뒤에 볼 수 있어요</p></article>`
-          : `<article class="gt-passage"><h3><small>Part ${p.part} · ${p.kind}</small><br>${esc(p.title)}</h3>${p.paras.map((t) => `<p>${t}</p>`).join('')}</article>`;
+          : `<article class="gt-passage"><h3><small>Part ${p.part} · ${p.kind}</small><br>${esc(p.title)}</h3>${parasHtml(p.paras, null, p.qs)}</article>`;
         return `<div class="gt-work ${d.sec === 'l' ? 'listening' : 'reading'}" data-part="${p.id}">${left_}<div class="gt-side"><div class="gt-qs">${qs.map((x) => qHtml(x.key, x.n, x.q, x.opts, x.a, '', d.picks[x.n], false)).join('')}</div></div></div>`;
       }).join('');
     }
@@ -768,7 +789,7 @@
         const qs = its.filter((x) => x.part === p.id && show(x)); if (!qs.length) return;
         const ko = showKo && !retrying ? koOf(p) : null;
         const left_ = s === 'l' ? `<article class="gt-passage"><h3>Part ${p.part} <small>${p.kind}</small></h3>${playerHtml(p.id, p.lines)}${scriptHtml(p.lines, !retrying, ko)}</article>`
-          : `<article class="gt-passage"><h3><small>Part ${p.part} · ${p.kind}</small><br>${esc(p.title)}</h3>${parasHtml(p.paras, ko)}</article>`;
+          : `<article class="gt-passage"><h3><small>Part ${p.part} · ${p.kind}</small><br>${esc(p.title)}</h3>${parasHtml(p.paras, ko, p.qs)}</article>`;
         blocks.push(`<div class="gt-work ${s === 'l' ? 'listening' : 'reading'}" data-part="${p.id}">${left_}<div class="gt-side"><div class="gt-qs${exCls}">${qs.map((x) => qHtml(x.key, x.n, x.q, x.opts, x.a, x.ex, picks[x.n], !isOpen(x))).join('')}</div></div></div>`);
       });
     });

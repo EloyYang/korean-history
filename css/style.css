@@ -1497,3 +1497,5 @@ body.pw-on { overflow: hidden; }
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .gt-flag.on { background: #3a3114; color: #ffd866; border-color: #a07a00; } }
 :root[data-theme="dark"] .gt-flag.on { background: #3a3114; color: #ffd866; border-color: #a07a00; }
 .gt-btn:disabled { opacity: .45; cursor: default; }
+.gt-passage u.gt-vw { text-decoration-thickness: 2px; text-underline-offset: 3px; text-decoration-color: var(--accent); background: var(--accent-soft); border-radius: 3px; padding: 0 2px; }
+.gt-passage u.gt-vw b { font-weight: 900; }
