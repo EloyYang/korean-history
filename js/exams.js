@@ -46,6 +46,25 @@ window.EXAMS = [
     },
     ready: true,
   },
+  {
+    id: 'fire',
+    name: '소방공무원',
+    level: '필기',
+    mark: '消',
+    color: '#b3261e',
+    desc: '2022~2025년 공개경쟁·경력경쟁 채용시험 기출 980문항: 시험별·과목별 풀기, 오답·★ 헷갈림 다시 풀기',
+    links: [
+      { href: 'fire.html', label: '기출 풀기', main: true },
+      { href: 'fire.html#wrong', label: '오답' },
+      { href: 'fire.html#stats', label: '기록' },
+    ],
+    stats(S) {
+      const q = S.get('study.fire.q', {}) || {}; const ks = Object.keys(q);
+      const done = ks.filter((k) => q[k].t).length; const ok = ks.filter((k) => q[k].t && q[k].ok).length;
+      return [[done, '푼 문항'], [done ? Math.round((ok / done) * 100) + '%' : '-', '최근 정답률'], [ks.filter((k) => q[k].ok === false && !q[k].m).length, '틀린 문항'], [Object.keys(S.get('study.fire.flags', {}) || {}).length, '★ 헷갈림']];
+    },
+    ready: true,
+  },
 ];
 
 window.examById = function (id) {
