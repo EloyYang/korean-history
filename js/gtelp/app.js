@@ -376,6 +376,27 @@
 
   // ───────── 필수 단어 ─────────
   const DAY = Math.ceil(V.length / 10); // 필수 단어를 10일로 나눈 하루 분량
+  // 단어 쓰임 (예문·해석·자주 쓰는 짝·상황별 뜻) — vocab-use*.js
+  const USE = window.GT_VOCAB_USE || {};
+  const STEM = { deny: 'den', imply: 'impl', overcome: 'overc', withdraw: 'withdr', arise: 'aris', seek: 'seek', undergo: 'undergo' }; // 활용형이 달라지는 단어
+  const stemOf = (w) => { if (STEM[w]) return STEM[w]; const t = w.replace(/(e|y|ion|ly)$/, ''); return t.length >= 4 ? t : w; };
+  // 단어 i 의 문장들 [[영어, 해석]] — 기본 예문 + 추가 예문
+  const sentsOf = (i) => { const u = USE[V[i][0]]; return [[V[i][3], u ? u.ko : '']].concat(u ? u.ex : []); };
+  // 문장에서 단어(활용형 포함)를 찾아 빈칸으로. 못 찾으면 null
+  function blankOut(w, en) {
+    const m = new RegExp('\\b(' + stemOf(w) + '\\w*)', 'i').exec(en); if (!m) return null;
+    return { form: m[1], q: esc(en.slice(0, m.index)) + '<span class="gt-blank">______</span>' + esc(en.slice(m.index + m[1].length)), full: esc(en.slice(0, m.index)) + '<b class="gt-hit">' + esc(m[1]) + '</b>' + esc(en.slice(m.index + m[1].length)) };
+  }
+  // 카드 뒷면: 뜻 · 상황별 뜻 · 자주 쓰는 짝 · 예문(해석)
+  function cardBack(w) {
+    const u = USE[w[0]];
+    const ss = u && u.senses.length > 1 ? `<div class="gt-senses"><h4>상황별 뜻</h4>${u.senses.map(([m, when, en, ko]) => `<div class="gt-sense"><b>${esc(m)}</b><small>${esc(when)}</small><i>${esc(en)}</i><span>${esc(ko)}</span></div>`).join('')}</div>` : '';
+    const ex = [[w[3], u ? u.ko : '']].concat(u ? u.ex : []);
+    return `<div class="gt-mean">${esc(w[1])}</div><div class="gt-syn">동의어 <b>${esc(w[2])}</b></div>${ss}
+      ${u ? `<div class="gt-col"><h4>자주 쓰는 표현</h4>${esc(u.col)}</div>` : ''}
+      <div class="gt-uses"><h4>예문</h4>${ex.map(([en, ko]) => `<p>${esc(en)}${ko ? `<span>${esc(ko)}</span>` : ''}</p>`).join('')}</div>
+      ${NOTE[w[0]] ? `<div class="gt-note">⚠ ${NOTE[w[0]]}</div>` : ''}`;
+  }
   let vMode = 'card', vDay = 0, vUnknown = false, vIdx = 0, vFlip = false, vq = null, vSearch = '';
   function vPool() {
     const vl = vLog();
@@ -393,28 +414,34 @@
       const i = pool[vIdx]; const w = V[i];
       body = !pool.length ? '<p class="gt-muted">이 범위의 단어를 모두 외웠어요! 👏 범위를 바꾸거나 \'모르는 단어만\'을 끄세요.</p>' : `
         <div class="gt-flash${vFlip ? ' flip' : ''}" id="v-card">
+          ${TTS.ok ? '<button type="button" class="gt-say" id="v-say" title="발음 듣기" aria-label="발음 듣기">🔊</button>' : ''}
           <div class="gt-word">${esc(w[0])}${vl.known.includes(w[0]) ? ' <small class="g">외움</small>' : ''}</div>
-          ${vFlip ? `<div class="gt-mean">${esc(w[1])}</div><div class="gt-syn">동의어 <b>${esc(w[2])}</b></div><div class="gt-exs">${esc(w[3])}</div>${NOTE[w[0]] ? `<div class="gt-note">⚠ ${NOTE[w[0]]}</div>` : ''}` : `<div class="gt-muted">눌러서 뜻 보기${NOTE[w[0]] ? ' · <b class="r">헷갈리기 쉬운 단어</b>' : ''}</div>`}
+          ${vFlip ? cardBack(w) : `<div class="gt-muted">눌러서 뜻 보기${NOTE[w[0]] ? ' · <b class="r">헷갈리기 쉬운 단어</b>' : ''}</div>`}
         </div>
-        <div class="gt-bar center"><span class="gt-muted">${vIdx + 1} / ${pool.length}</span>
-          <button type="button" class="gt-btn" id="v-prev">← 이전</button>
-          <button type="button" class="gt-btn" id="v-no">다시 볼래요</button>
-          <button type="button" class="gt-btn main" id="v-yes">알아요 ✓</button>
-          ${TTS.ok ? '<button type="button" class="gt-btn" id="v-say">🔊 발음</button>' : ''}</div>`;
-    } else if (vMode === 'quiz') {
+        <div class="gt-vnav"><button type="button" class="gt-link" id="v-prev">← 이전 단어</button><span class="gt-muted">${vIdx + 1} / ${pool.length}</span></div>
+        <div class="gt-vans"><button type="button" class="gt-ans no" id="v-no">다시 볼래요</button><button type="button" class="gt-ans yes" id="v-yes">알아요 ✓</button></div>`;
+    } else if (vMode === 'quiz' || vMode === 'fill') {
       if (!vq) {
         const src = pool.length >= 4 ? pool : V.map((w, i) => i);
-        const ids = src.slice().sort(() => Math.random() - 0.5).slice(0, Math.min(10, src.length));
-        vq = { ids, k: 0, ok: 0, picks: [], qs: ids.map((i) => { const wrong = V.map((w, j) => j).filter((j) => j !== i).sort(() => Math.random() - 0.5).slice(0, 3); return [i].concat(wrong).sort(() => Math.random() - 0.5); }) };
+        // 빈칸 문제는 문장에서 단어를 찾을 수 있는 단어만
+        const okFill = (i) => sentsOf(i).some(([en]) => blankOut(V[i][0], en));
+        const ids = src.filter((i) => vMode !== 'fill' || okFill(i)).sort(() => Math.random() - 0.5).slice(0, Math.min(10, src.length));
+        vq = { fill: vMode === 'fill', sent: [], ids, k: 0, ok: 0, picks: [], qs: ids.map((i) => { const wrong = V.map((w, j) => j).filter((j) => j !== i).sort(() => Math.random() - 0.5).slice(0, 3); return [i].concat(wrong).sort(() => Math.random() - 0.5); }) };
+      }
+      if (vq.fill && vq.k < vq.ids.length && !vq.sent[vq.k]) {
+        const cand = sentsOf(vq.ids[vq.k]).map(([en, ko]) => ({ en, ko, b: blankOut(V[vq.ids[vq.k]][0], en) })).filter((x) => x.b);
+        vq.sent[vq.k] = cand[Math.floor(Math.random() * cand.length)];
       }
       if (vq.k >= vq.ids.length) {
-        body = `<div class="gt-tip"><h3>${vq.ids.length}문제 중 ${vq.ok}개 정답</h3>${vq.ids.map((i, k) => `<div class="gt-vres ${vq.picks[k] === i ? 'g' : 'r'}"><b>${esc(V[i][0])}</b> ${esc(V[i][1])} <small>${esc(V[i][2])}</small></div>`).join('')}</div>
+        body = `<div class="gt-tip"><h3>${vq.ids.length}문제 중 ${vq.ok}개 정답</h3>${vq.ids.map((i, k) => `<div class="gt-vres ${vq.picks[k] === i ? 'g' : 'r'}"><b>${esc(V[i][0])}</b> ${esc(V[i][1])} <small>${esc(V[i][2])}</small>${vq.fill && vq.sent[k] ? `<div class="gt-vsent">${vq.sent[k].b.full}${vq.sent[k].ko ? `<span>${esc(vq.sent[k].ko)}</span>` : ''}</div>` : ''}</div>`).join('')}</div>
           <div class="gt-bar center"><button type="button" class="gt-btn main" id="v-again">새 문제 10개</button></div>`;
       } else {
         const i = vq.ids[vq.k]; const ch = vq.qs[vq.k]; const pk = vq.picks[vq.k];
-        body = `<div class="gt-flash"><div class="gt-muted">${vq.k + 1} / ${vq.ids.length}</div><div class="gt-word">${esc(V[i][0])}</div>
-          <ol class="gt-opts vq">${ch.map((j, n) => `<li><button type="button" data-v="${j}" class="${pk != null ? (j === i ? 'ans' : j === pk ? 'miss' : '') : ''}"${pk != null ? ' disabled' : ''}><i>(${ABC[n]})</i> ${esc(V[j][1])}</button></li>`).join('')}</ol>
-          ${pk != null ? `<div class="gt-syn">동의어 <b>${esc(V[i][2])}</b></div><div class="gt-exs">${esc(V[i][3])}</div>${NOTE[V[i][0]] ? `<div class="gt-note">⚠ ${NOTE[V[i][0]]}</div>` : ''}` : ''}</div>
+        const sn = vq.fill ? vq.sent[vq.k] : null;
+        body = `<div class="gt-flash gt-qcard"><div class="gt-muted">${vq.k + 1} / ${vq.ids.length}${vq.fill ? ' · 문장의 빈칸에 알맞은 단어 (형태는 문장에 맞게 바꿔 읽어요)' : ''}</div>
+          ${vq.fill ? `<div class="gt-fillq">${pk != null ? sn.b.full : sn.b.q}</div>` : `<div class="gt-word">${esc(V[i][0])}</div>`}
+          <ol class="gt-opts vq">${ch.map((j, n) => `<li><button type="button" data-v="${j}" class="${pk != null ? (j === i ? 'ans' : j === pk ? 'miss' : '') : ''}"${pk != null ? ' disabled' : ''}><i>(${ABC[n]})</i> ${vq.fill ? esc(V[j][0]) : esc(V[j][1])}</button></li>`).join('')}</ol>
+          ${pk != null ? `${vq.fill && sn.ko ? `<div class="gt-fillko">${esc(sn.ko)}</div>` : ''}<div class="gt-mean sm">${vq.fill ? `<b>${esc(V[i][0])}</b> ${esc(V[i][1])}` : ''}</div><div class="gt-syn">동의어 <b>${esc(V[i][2])}</b></div>${vq.fill ? '' : `<div class="gt-exs">${esc(V[i][3])}</div>`}${NOTE[V[i][0]] ? `<div class="gt-note">⚠ ${NOTE[V[i][0]]}</div>` : ''}` : ''}</div>
           ${pk != null ? '<div class="gt-bar center"><button type="button" class="gt-btn main" id="v-next">다음 →</button></div>' : ''}`;
       }
     } else if (vMode === 'confuse') {
@@ -430,7 +457,7 @@
     }
     root.innerHTML = `
       <h2 class="r-h">필수 단어 <small>${V.length}개 · 외운 단어 ${vl.known.length}개 · 독해 어휘 문제는 동의어를 물어요</small></h2>
-      <div class="gt-chips">${[['card', '카드 외우기'], ['quiz', '뜻 맞히기'], ['list', '단어 목록'], ['confuse', '헷갈리는 단어']].map(([m, l]) => `<button type="button" class="chip${vMode === m ? ' on' : ''}" data-vm="${m}">${l}</button>`).join('')}</div>
+      <div class="gt-chips">${[['card', '카드 외우기'], ['fill', '빈칸 채우기'], ['quiz', '뜻 맞히기'], ['list', '단어 목록'], ['confuse', '헷갈리는 단어']].map(([m, l]) => `<button type="button" class="chip${vMode === m ? ' on' : ''}" data-vm="${m}">${l}</button>`).join('')}</div>
       <div class="gt-chips small"${vMode === 'confuse' ? ' hidden' : ''}><button type="button" class="chip${vDay === 0 ? ' on' : ''}" data-day="0">전체</button>${Array.from({ length: days }, (_, d) => `<button type="button" class="chip${vDay === d + 1 ? ' on' : ''}" data-day="${d + 1}">Day ${d + 1}<small>${knownIn(d + 1)}/${Math.min(DAY, V.length - d * DAY)}</small></button>`).join('')}
         <label class="chip-check"><input type="checkbox" id="v-unk"${vUnknown ? ' checked' : ''}> 모르는 단어만</label></div>
       ${body}`;
@@ -444,9 +471,9 @@
       $('#v-prev').addEventListener('click', () => { vIdx = (vIdx - 1 + pool.length) % pool.length; vFlip = false; vocab(); });
       $('#v-no').addEventListener('click', () => { mark(w, false); vIdx = (vIdx + 1) % pool.length; vFlip = false; vocab(); });
       $('#v-yes').addEventListener('click', () => { mark(w, true); if (!vUnknown) vIdx = (vIdx + 1) % pool.length; vFlip = false; vocab(); });
-      const say = $('#v-say'); if (say) say.addEventListener('click', () => TTS.play([['N', w]], 0.9));
+      const say = $('#v-say'); if (say) say.addEventListener('click', (e) => { e.stopPropagation(); TTS.play([['N', w]], 0.9); });
     }
-    if (vMode === 'quiz') {
+    if (vMode === 'quiz' || vMode === 'fill') {
       root.querySelectorAll('[data-v]').forEach((b) => b.addEventListener('click', () => {
         const i = vq.ids[vq.k]; const j = +b.dataset.v; vq.picks[vq.k] = j;
         const l = vLog(); const w = V[i][0];
@@ -455,6 +482,7 @@
       }));
       const nx = $('#v-next'); if (nx) nx.addEventListener('click', () => { vq.k++; vocab(); });
       const ag = $('#v-again'); if (ag) ag.addEventListener('click', () => { vq = null; vocab(); });
+      if (vq && vq.fill && vq.picks[vq.k] != null) { const say = $('#v-say2'); if (say) say.addEventListener('click', () => TTS.play([['N', vq.sent[vq.k].en]], 0.9)); }
     }
     if (vMode === 'list') {
       const s = $('#v-search');

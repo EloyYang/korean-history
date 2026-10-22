@@ -1448,3 +1448,29 @@ body.pw-on { overflow: hidden; }
 .gt-dayban a { margin-left: 8px; }
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .gt-plancard, :root:not([data-theme="light"]) .gt-dayhead em { color: #0f1d27; } }
 :root[data-theme="dark"] .gt-plancard, :root[data-theme="dark"] .gt-dayhead em { color: #0f1d27; }
+.gt-flash { position: relative; }
+.gt-say { position: absolute; top: 10px; right: 10px; width: 38px; height: 38px; border: 1px solid var(--line); border-radius: 50%; background: var(--surface-2); font-size: 17px; cursor: pointer; }
+.gt-say:hover { border-color: var(--accent); }
+.gt-vnav { display: flex; justify-content: space-between; align-items: center; max-width: 520px; margin: 8px auto 0; }
+.gt-vans { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; max-width: 520px; margin: 8px auto 0; }
+.gt-ans { padding: 14px 10px; border: 0; border-radius: 12px; font-size: 16px; font-weight: 900; color: #fff; cursor: pointer; font-family: inherit; }
+.gt-ans.no { background: #c62828; } .gt-ans.yes { background: #2e7d32; }
+.gt-ans:hover { filter: brightness(1.1); }
+.gt-flash { text-align: left; }
+.gt-flash .gt-word, .gt-flash .gt-mean { text-align: center; }
+.gt-flash > .gt-muted { text-align: center; }
+.gt-flash h4 { margin: 12px 0 4px; font-size: 12.5px; color: var(--accent); letter-spacing: .02em; }
+.gt-senses { margin-top: 6px; }
+.gt-sense { display: grid; gap: 1px; padding: 8px 10px; margin-bottom: 6px; border-left: 3px solid var(--accent); background: var(--accent-soft); border-radius: 0 8px 8px 0; font-size: 14px; }
+.gt-sense b { font-size: 15px; } .gt-sense small { color: var(--muted); font-size: 12.5px; } .gt-sense i { font-style: italic; } .gt-sense span { color: var(--muted); font-size: 13px; }
+.gt-col { font-size: 14px; line-height: 1.6; }
+.gt-uses p { margin: 0 0 8px; font-size: 14.5px; font-style: italic; line-height: 1.5; }
+.gt-uses p span { display: block; font-style: normal; color: var(--muted); font-size: 13px; }
+.gt-fillq { margin: 10px 0 14px; font-size: 18px; line-height: 1.6; text-align: left; }
+.gt-fillq .gt-blank { min-width: 90px; }
+.gt-hit { color: var(--accent); border-bottom: 2px solid var(--accent); }
+.gt-fillko { margin: 8px 0; padding: 6px 10px; border-left: 3px solid var(--accent); background: var(--accent-soft); font-size: 13.5px; }
+.gt-mean.sm { font-size: 15px; margin: 6px 0; text-align: left; }
+.gt-vsent { margin-top: 4px; font-size: 13.5px; font-style: italic; } .gt-vsent span { display: block; font-style: normal; color: var(--muted); font-size: 12.5px; }
+.gt-qcard { cursor: default; }
+.gt-vans { position: sticky; bottom: 8px; z-index: 5; padding: 6px; border-radius: 14px; background: color-mix(in srgb, var(--bg) 88%, transparent); backdrop-filter: blur(4px); }
