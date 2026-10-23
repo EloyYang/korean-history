@@ -352,7 +352,7 @@
     box.innerHTML = `<div class="qv-box fv-box" role="dialog" aria-modal="true" aria-label="풀었던 문제 보기">
       <div class="qv-top"><div class="qv-ttl"><b>${esc(l.title)} · ${p} / ${total}</b><span>${l.date ? esc(l.date) + ' 풀이 · ' : ''}${l.score != null ? `${l.score}점${l.isSet && l.max ? `/${l.max}` : ''} · ` : ''}맞힘 ${total - l.wrong.length} · 틀림 ${l.wrong.length}</span></div>
         <button type="button" class="qv-x" data-fv-close aria-label="닫기">✕</button></div>
-      <div class="fv-filter r-chips">${FILTERS.map(([key, label]) => `<button type="button" data-fv-filter="${key}" aria-pressed="${fv.filter === key}">${label}</button>`).join('')}</div>
+      <div class="fv-filter">${FILTER.modes('data-fv-filter', FILTERS, fv.filter)}</div>
       <div class="fv-head"><b>${p}번</b>${l.isSet ? `<span class="q-src">${r}회 ${n}번</span>` : ''}${q.pt ? `<span>${q.pt}점</span>` : ''}
         ${sh ? `<span class="fv-res ${wrong ? 'ng' : 'ok'}">${wrong ? (pick ? `오답 (고른 답 ${NUMS[pick - 1]})` : pick === 0 ? '안 품' : '오답') : '정답'} · 정답 ${right ? NUMS[right - 1] : '-'}</span>` : `<span class="fv-res mine">내가 고른 답 ${pick ? NUMS[pick - 1] : pick === 0 ? '없음' : '-'}</span>`}
         ${t ? `<span>머문 시간 ${mmss(t)}</span>` : ''}${FL.has(q.id) ? '<span>🚩 헷갈림</span>' : ''}<span class="rq-tag">${esc(q.theme)}</span></div>
@@ -389,7 +389,7 @@
     const shownRows = rows.filter(F[full.filter][1]);
     const cnt = (key) => rows.filter(F[key][1]).length;
     return `<h2 class="r-h" id="full-h">풀었던 시험 전체 보기 <small>기출 풀기의 '전체 문제 보기'처럼 한 문제씩 넘겨 보며 내 답·정답·메모를 확인해요</small></h2>
-      <div class="fx-tools"><span class="r-chips">${LOG.map((x) => `<button type="button" data-full-round="${x.round}" aria-pressed="${x.round === l.round}">${x.round}회${x.date ? ` <small>${esc(x.date.replace(/^\d{4}-/, '').replace('-', '/'))}</small>` : ''}</button>`).join('')}</span></div>
+      <div class="f-filters">${FILTER.pick('data-full-round', '회차', LOG.map((x) => [x.round, `${x.round}회${x.date ? ' · ' + esc(x.date.replace(/^\d{4}-/, '').replace('-', '/')) : ''}`]), l.round)}</div>
       <div class="fx-open-btns"><button type="button" class="rt-go" data-fv-open="${l.round}" data-fv-f="all">▶ ${l.round}회 전체 문제 보기</button><button type="button" data-fv-open="${l.round}" data-fv-f="wrong" ${l.wrong.length ? '' : 'disabled'}>틀린 문제 보기</button><button type="button" data-fv-open="${l.round}" data-fv-f="flag" ${cnt('flag') ? '' : 'disabled'}>🚩 헷갈린 문제 보기</button><button type="button" data-fv-open="${l.round}" data-fv-f="memo" ${cnt('memo') ? '' : 'disabled'}>메모 남긴 문제 보기</button></div>
       <p class="r-scope-note">${l.round}회 · ${l.score != null ? `${l.score}점 · ` : ''}맞힘 ${total - l.wrong.length} · 틀림 ${l.wrong.length}${l.answers ? '' : ' · 채팅으로 알려 준 기록이라 고른 답은 없어요'}${oldN ? ` · 이전 풀이 메모 ${oldN}회분도 함께 보여요` : ''}</p>`;
   }
@@ -435,7 +435,7 @@
     myWeak().forEach((w) => { const i = perOfW(w); if (i >= 0 && !perCnt.has(i)) perCnt.set(i, 0); });
     [...state.periods].forEach((v) => { if (!perCnt.has(+v)) state.periods.delete(v); });
     const pBtn = (v, label, n) => `<button data-period="${v}" aria-pressed="${v === 'all' ? !state.periods.size : state.periods.has(String(v))}">${label}${n != null ? ` <small>${n}</small>` : ''}</button>`;
-    const perRow = perCnt.size ? `<div class="r-view-row"><span class="r-view-lab">시기별</span><span class="r-chips">${pBtn('all', '모든 시기')}${[...perCnt.entries()].sort((a, b) => a[0] - b[0]).map(([i, n]) => pBtn(i, periodName(i), n || null)).join('')}</span></div>` : '';
+    const perRow = perCnt.size ? FILTER.multi('rper', '시기', state.periods.size ? `${state.periods.size}개 선택` : '모든 시기', `<span class="r-chips">${pBtn('all', '모든 시기')}${[...perCnt.entries()].sort((a, b) => a[0] - b[0]).map(([i, n]) => pBtn(i, periodName(i), n || null)).join('')}</span>`) : '';
     const perName = !state.periods.size ? '' : ` · ${[...state.periods].map(Number).sort((a, b) => a - b).map(periodName).join(' + ')}`;
     const pTargets = pq(vTargets), pOthers = pq(others), pWrongs = pq(vWrongs), pFlags = pq(vFlags), pSlow = pq(vSlow);
     // 문제 종류: 고른 것들의 합집합 (같은 문제는 한 번만)
@@ -519,12 +519,16 @@
         ${ptLogs.length > 1 ? ptLogs.map(({ l, c }) => `<tr><th>${l.round}회</th>${PTS.map((p, i) => ptCell(c[i].all, c[i].wr.length, p, c[i].wr)).join('')}<td><b>−${PTS.reduce((a, p, i) => a + c[i].wr.length * p, 0)}</b>점</td></tr>`).join('') : `<tr><th>틀린 번호</th>${PTS.map((p, i) => `<td><span class="pt-nums">${ptLogs[0].c[i].wr.map((n) => `<span>${n}</span>`).join('') || '-'}</span></td>`).join('')}<td></td></tr>`}</tbody>
       </table></div>` : '<p class="r-empty">아직 푼 회차가 없어요</p>';
     const btn = (v, label, n) => `<button data-era-round="${esc(v)}" aria-pressed="${v === 'all' ? !anyView : state.views.has(v)}">${label}${n ? ` <small>${n}</small>` : ''}</button>`;
+    const nSel = (re) => [...state.views].filter((v) => re.test(v)).length;
+    const selTxt = (n) => (n ? `${n}개 선택` : '전체');
     const eraSeg = eraRounds.length || SETLOG.length ? `<section class="r-view">
-      <div class="r-view-row"><span class="r-view-lab">전체</span><span class="r-chips">${btn('all', `전체 기록`, `${eraRounds.length}회차`)}</span></div>
-      ${dates.length ? `<div class="r-view-row"><span class="r-view-lab">날짜별</span><span class="r-chips">${dates.map((d) => { const ls = LOG.filter((l) => l.date === d); return btn('d:' + d, d.replace(/^\d{4}-/, '').replace('-', '/'), `${ls.map((l) => l.round + '회').join('·')} · 틀림 ${ls.reduce((a, l) => a + l.wrong.length, 0)}`); }).join('')}</span></div>` : ''}
-      <div class="r-view-row"><span class="r-view-lab">회차별</span><span class="r-chips">${eraRounds.map((r) => btn(String(r), `${r}회`)).join('')}</span></div>
-      ${SETLOG.length ? `<div class="r-view-row"><span class="r-view-lab">모의고사</span><span class="r-chips">${SETLOG.map((l) => btn('s:' + l.id, esc(l.title.replace(/ · .*$/, '')), `틀림 ${(l.wrong || []).length}`)).join('')}</span></div>` : ''}
-      ${perRow}
+      <div class="f-filters">
+        <button type="button" class="f-pill" data-era-round="all" aria-pressed="${!anyView}">전체 기록 <small>${eraRounds.length}회차</small></button>
+        ${dates.length ? FILTER.multi('rdate', '날짜별', selTxt(nSel(/^d:/)), `<span class="r-chips">${dates.map((d) => { const ls = LOG.filter((l) => l.date === d); return btn('d:' + d, d.replace(/^\d{4}-/, '').replace('-', '/'), `${ls.map((l) => l.round + '회').join('·')} · 틀림 ${ls.reduce((a, l) => a + l.wrong.length, 0)}`); }).join('')}</span>`) : ''}
+        ${FILTER.multi('rround', '회차별', selTxt(nSel(/^\d+$/)), `<span class="r-chips">${eraRounds.map((r) => btn(String(r), `${r}회`)).join('')}</span>`)}
+        ${SETLOG.length ? FILTER.multi('rset', '모의고사', selTxt(nSel(/^s:/)), `<span class="r-chips">${SETLOG.map((l) => btn('s:' + l.id, esc(l.title.replace(/ · .*$/, '')), `틀림 ${(l.wrong || []).length}`)).join('')}</span>`) : ''}
+        ${perRow}
+      </div>
       <p class="r-view-sum"><b>${esc(viewName)}</b> — ${FLOG.length}개 회차${FSETS.length ? ` + 모의고사 ${FSETS.length}개` : ''} ${sumAll}문항 중 <b>${sumWr}</b>문항 틀림 (오답률 ${pct(sumWr, sumAll)}%) · 복습 대상 ${vTargets.length} · 어렵거나 빈도 낮음 ${others.length} · 헷갈림 ${vFlags.length} · 오래 고민 ${vSlow.length}</p>
     </section>` : '';
 
@@ -660,7 +664,7 @@
       <div class="ad-slot" data-ad="review"></div>
       <h2 class="r-h">암기가 부족한 기출 포인트 <small>${esc(viewName + perName)}</small></h2>
       <div class="r-tools">
-        <span class="seg">${[['target', '복습 대상', pTargets.length, '★★ 이상 · 난이도 하·중인 틀린 문제'], ['other', '어렵거나 빈도 낮은 문제', pOthers.length, '출제빈도 ★ 또는 난이도 중상·상·특인 틀린 문제'], ['flag', '🚩 헷갈린 문제', pFlags.length, '기출 풀기에서 헷갈림 표시한 문제 (맞힌 문제 포함)'], ['slow', '⏱ 오래 고민한 문제', pSlow.length, `회차 평균의 ${SLOW_X}배 이상(1분 초과) 또는 3분 이상 걸린 문제`]].map(([k, label, n, tip]) => `<button data-scope="${k}" aria-pressed="${SC.has(k)}" title="${tip}">${label} (${n})</button>`).join('')}</span>
+        <div class="f-modes wrap">${[['target', '복습 대상', pTargets.length, '★★ 이상 · 난이도 하·중인 틀린 문제'], ['other', '어렵거나 빈도 낮은 문제', pOthers.length, '출제빈도 ★ 또는 난이도 중상·상·특인 틀린 문제'], ['flag', '🚩 헷갈린 문제', pFlags.length, '기출 풀기에서 헷갈림 표시한 문제 (맞힌 문제 포함)'], ['slow', '⏱ 오래 고민한 문제', pSlow.length, `회차 평균의 ${SLOW_X}배 이상(1분 초과) 또는 3분 이상 걸린 문제`]].map(([k, label, n, tip]) => `<button data-scope="${k}" aria-pressed="${SC.has(k)}" title="${tip}">${label}<small>${n}</small></button>`).join('')}</div>
         <p class="r-scope-note">여러 개를 함께 고를 수 있어요 (다시 누르면 해제). ${SC.size ? `지금 <b>${shown.length}</b>문항` : `아무것도 고르지 않아 전부 보여요 — <b>${shown.length}</b>문항`}${SC.has('target') && SC.has('other') ? ' · 복습 대상 + 어렵거나 빈도 낮은 문제 = 틀린 문제 전체' : ''}</p>
         ${SC.has('slow') ? `<p class="r-scope-note">${timedN ? `기출 풀기로 시간을 잰 ${timedN}개 회차에서 그 회차 평균의 ${SLOW_X}배 이상(1분 초과) 또는 3분 이상 걸린 문제예요. 오래 걸린 순 — 맞힘 ${pSlow.filter((q) => q.slowSt === 'right').length} · 틀림 ${pSlow.filter((q) => q.slowSt === 'wrong').length}` : '시간 기록이 있는 회차가 없어요. 기출 풀기에서 풀면 문제별 시간이 기록돼요 (채팅으로 알려 준 기록은 시간이 없어요).'}</p>` : ''}
         ${SC.has('flag') ? `<p class="r-scope-note">기출 풀기에서 헷갈림 표시한 문제예요. 맞혔어도 확실히 알지 못한 문제라 같이 복습하면 좋아요 — 맞힘 ${pFlags.filter((q) => q.flagSt === 'right').length} · 틀림 ${pFlags.filter((q) => q.flagSt === 'wrong').length} · 채점 전 ${pFlags.filter((q) => q.flagSt === 'none').length}</p>` : ''}

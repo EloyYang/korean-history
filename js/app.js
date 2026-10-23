@@ -657,7 +657,7 @@
     return `
       <div class="section-title">기출 문장 모아 보기 <small>(이 시대 선택지 · 70~79회)</small></div>
       <div class="top-tools">
-        <span class="seg"><button data-top="n" aria-pressed="${!byK}">많이 나온 순</button><button data-top="k" aria-pressed="${byK}">정답 많은 순</button></span>
+        ${FILTER.modes('data-top', [['n', '많이 나온 순'], ['k', '정답 많은 순']], byK ? 'k' : 'n')}
         <span class="top-help">${byK ? '정답 선택지로 나온 횟수 순 (같으면 정답률 높은 순)' : '선택지로 나온 횟수 순 (정답·오답 모두)'}</span>
       </div>
       <ol class="top-list">${shown.map(([t, c, k, rs], i) => `
@@ -877,9 +877,9 @@
         <div class="step-now"><b>${cur ? esc(cur.r.name) : ''}</b><small>${pos + 1} / ${RULER_SEQ.length} · ${cur ? esc(ERAS[cur.ei].name) : ''}</small></div>
         <button data-step="1" ${pos >= RULER_SEQ.length - 1 ? 'disabled' : ''}>다음 ▶</button>
       </div>
+      ${multi ? FILTER.modes('data-view', [['list', '목록'], ['grid', '동시대 나란히']], grid ? 'grid' : 'list') : ''}
       <div class="ruler-tools">
-        ${multi ? `<span class="seg"><button data-view="list" aria-pressed="${!grid}">목록</button><button data-view="grid" aria-pressed="${grid}">동시대 나란히</button></span>` : ''}
-        ${multi && !grid ? ['all', ...states].map((st) => `<button data-filter="${esc(st)}" aria-pressed="${state.rulerFilter === st}">${st === 'all' ? '전체' : esc(st)}</button>`).join('') : ''}
+        ${multi && !grid ? FILTER.pick('data-filter', '나라', ['all', ...states].map((st) => [st, st === 'all' ? '전체' : esc(st)]), state.rulerFilter) : ''}
         <span class="spacer"></span>
         ${grid ? '' : `<button data-act="rquiz" aria-pressed="${state.rulerQuiz}">정책 가리기</button>`}
       </div>

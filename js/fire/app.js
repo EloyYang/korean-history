@@ -30,7 +30,7 @@
   const KIND = { open: '공개경쟁채용', car: '경력경쟁채용', all: '전체' };
   const kindOf = (k) => EX[parse(k).e].kind;
   const inKind = (k) => curKind === 'all' || kindOf(k) === curKind;
-  const kindChips = (attr) => `<div class="gt-chips fr-kinds">${['open', 'car', 'all'].map((x) => `<button type="button" class="chip${curKind === x ? ' on' : ''}" ${attr}="${x}">${KIND[x]}</button>`).join('')}</div>`;
+  const kindChips = (attr) => FILTER.modes(attr, ['open', 'car', 'all'].map((x) => [x, KIND[x]]), curKind);
   const setKind = (x) => { curKind = x; S.set(K('kind'), x); };
   const ALL = D.exams.flatMap((e) => e.subjects.flatMap((s) => Array.from({ length: s.count }, (_, i) => keyOf(e.id, s.id, i + 1))));
 
@@ -93,9 +93,7 @@
       <div class="fr-sum"><div><b>${all.done}</b><span>푼 문항 / ${KA.length}</span></div><div><b>${all.done ? pct(all.ok, all.done) + '%' : '-'}</b><span>정답률</span></div><div><b>${wrongN}</b><span>틀린 문항</span></div><div><b>${flagN}</b><span>★ 헷갈림</span></div></div>
       <h2 class="r-h">과목 모아 풀기 <small>${KIND[curKind]} 여러 해의 같은 과목에서 골라 풀어요</small></h2>
       <div class="gt-tip fr-build">
-        <div class="gt-chips">${subjects.map((s) => `<button type="button" class="chip${bSubj === s ? ' on' : ''}" data-bs="${s}">${SUBN[s]}</button>`).join('')}</div>
-        <div class="gt-bar"><span class="gt-muted">문항 수</span>${[10, 20, 30, 50].map((n) => `<button type="button" class="chip${bCount === n ? ' on' : ''}" data-bc="${n}">${n}</button>`).join('')}
-          <span class="gt-muted">고르는 방식</span>${[['rand', '무작위'], ['wrong', '틀린 문제 위주'], ['new', '안 푼 문제 위주'], ['flag', '★ 헷갈림']].map(([k, l]) => `<button type="button" class="chip${bSrc === k ? ' on' : ''}" data-bm="${k}">${l}</button>`).join('')}</div>
+        <div class="f-filters">${FILTER.pick('data-bs', '과목', subjects.map((x) => [x, SUBN[x]]), bSubj)}${FILTER.pick('data-bc', '문항 수', [10, 20, 30, 50].map((n) => [n, n + '문항']), bCount)}${FILTER.pick('data-bm', '고르는 방식', [['rand', '무작위'], ['wrong', '틀린 문제 위주'], ['new', '안 푼 문제 위주'], ['flag', '★ 헷갈림']], bSrc)}</div>
         <div class="gt-bar"><button type="button" class="gt-btn main" id="fr-build">${SUBN[bSubj]} ${bCount}문제 풀기</button><span class="gt-muted" id="fr-bnote"></span></div>
       </div>
       <h2 class="r-h">시험별 풀기 <small>과목을 누르면 그 시험의 문제를 번호 순서대로 풀어요</small></h2>
@@ -110,10 +108,10 @@
       if (dr && !confirm('풀던 시험이 있어요. 지우고 새로 시작할까요?')) return;
       start(`${ex.label} · ${s === '*' ? '전 과목' : SUBN[s]}`, keys);
     }));
-    root.querySelectorAll('[data-kind]').forEach((b) => b.addEventListener('click', () => { setKind(b.dataset.kind); home(); }));
-    root.querySelectorAll('[data-bs]').forEach((b) => b.addEventListener('click', () => { bSubj = b.dataset.bs; home(); }));
-    root.querySelectorAll('[data-bc]').forEach((b) => b.addEventListener('click', () => { bCount = +b.dataset.bc; home(); }));
-    root.querySelectorAll('[data-bm]').forEach((b) => b.addEventListener('click', () => { bSrc = b.dataset.bm; home(); }));
+    FILTER.bind(root, 'data-kind', (v) => { setKind(v); home(); });
+    FILTER.bind(root, 'data-bs', (v) => { bSubj = v; home(); });
+    FILTER.bind(root, 'data-bc', (v) => { bCount = +v; home(); });
+    FILTER.bind(root, 'data-bm', (v) => { bSrc = v; home(); });
     $('#fr-build').addEventListener('click', () => {
       const pool = KA.filter((k) => parse(k).s === bSubj);
       let pick;
@@ -217,11 +215,11 @@
       ${Object.keys(bySub).length > 1 ? `<div class="gt-tip"><h3>과목별</h3><div class="gt-types">${Object.entries(bySub).map(([s, v]) => `<span class="${v[0] < v[1] ? 'r' : 'g'}">${SUBN[s]} <b>${v[0]}/${v[1]}</b> (${pct(v[0], v[1])}점)</span>`).join('')}</div></div>` : ''}
       <div class="gt-bar"><button type="button" class="gt-btn main" id="rs-wrong"${wrongK.length ? '' : ' disabled'}>틀린 문제만 다시 풀기 (${wrongK.length})</button>
         <button type="button" class="gt-btn" id="rs-both"${bothK.length ? '' : ' disabled'}>틀린+★ 다시 풀기 (${bothK.length})</button><a class="gt-btn" href="#home">풀기 화면으로</a></div>
-      <div class="gt-chips">${[['wrong', `틀린 문제 ${wrongK.length}`], ['flag', `★ 헷갈림 ${flagK.length}`], ['all', `전체 ${r.keys.length}`]].map(([k, l]) => `<button type="button" class="chip${resFilter === k ? ' on' : ''}" data-rf="${k}">${l}</button>`).join('')}</div>
+      ${FILTER.modes('data-rf', [['wrong', '틀린 문제', wrongK.length], ['flag', '★ 헷갈림', flagK.length], ['all', '전체', r.keys.length]], resFilter)}
       <div class="fr-grid">${r.keys.map((x, i) => `<a class="fr-gn ${isOk(x, r.picks[x]) ? 'ok' : 'no'}${FL()[x] ? ' fl' : ''}" href="#result" data-jump="${x}">${i + 1}</a>`).join('')}</div>
       <div class="fr-list">${show.length ? show.map((k) => itemHtml(k, r.picks[k])).join('') : '<p class="gt-muted">해당하는 문제가 없어요.</p>'}</div>
       <div class="ad-slot" data-ad="result"></div>`;
-    root.querySelectorAll('[data-rf]').forEach((b) => b.addEventListener('click', () => { resFilter = b.dataset.rf; result(); }));
+    FILTER.bind(root, 'data-rf', (v) => { resFilter = v; result(); });
     root.querySelectorAll('[data-jump]').forEach((a) => a.addEventListener('click', (e) => { e.preventDefault(); resFilter = 'all'; const k = a.dataset.jump; result(); const el = document.querySelector(`.fr-item[data-k="${k}"]`); if (el) el.scrollIntoView(); }));
     const redo = (keys, t) => { if (!keys.length) return; start(t, keys); };
     $('#rs-wrong').addEventListener('click', () => redo(wrongK, `${r.title} · 틀린 문제 다시 풀기`));
@@ -248,14 +246,14 @@
     root.innerHTML = `
       <h2 class="r-h">오답 <small>틀린 문제와 ★ 헷갈림 표시한 문제를 과목별로</small></h2>
       ${kindChips('data-wk')}
-      <div class="gt-chips gt-wcats"><button type="button" class="chip${!wFlagOnly ? ' on' : ''}" data-wm="0">틀린 문제<small>${wrongK.length}</small></button><button type="button" class="chip${wFlagOnly ? ' on' : ''}" data-wm="1">★ 헷갈림<small>${flagK.length}</small></button></div>
-      <div class="gt-chips small"><button type="button" class="chip${wCat === 'all' ? ' on' : ''}" data-wc="all">전체<small>${pool.length}</small></button>${subs.map((s) => `<button type="button" class="chip${wCat === s ? ' on' : ''}" data-wc="${s}">${SUBN[s]}<small>${pool.filter((k) => parse(k).s === s).length}</small></button>`).join('')}</div>
+      ${FILTER.modes('data-wm', [['0', '틀린 문제', wrongK.length], ['1', '★ 헷갈림', flagK.length]], wFlagOnly ? '1' : '0')}
+      <div class="f-filters">${FILTER.pick('data-wc', '과목', [['all', `전체 (${pool.length})`]].concat(subs.map((x) => [x, `${SUBN[x]} (${pool.filter((k) => parse(k).s === x).length})`])), wCat)}</div>
       <div class="gt-bar"><button type="button" class="gt-btn main" id="w-redo"${list.length ? '' : ' disabled'}>이 목록 다시 풀기 (${Math.min(list.length, 60)}문제)</button><span class="gt-muted">다시 맞히면 오답에서 빠져요. 외웠으면 '해결 ✓'를 눌러 지울 수도 있어요.</span></div>
       <div class="fr-list">${list.length ? list.slice(0, wMore).map((k) => itemHtml(k, q[k] ? q[k].last : null, `<button type="button" class="gt-btn fr-solve" data-solve="${k}">해결 ✓</button>`)).join('') : '<p class="gt-muted">아직 틀린 문제가 없어요. 기출을 풀어 보세요.</p>'}</div>
       ${list.length > wMore ? `<div class="gt-bar center"><button type="button" class="gt-btn" id="w-more">더 보기 (${list.length - wMore}문항 남음)</button></div>` : ''}`;
-    root.querySelectorAll('[data-wk]').forEach((b) => b.addEventListener('click', () => { setKind(b.dataset.wk); wCat = 'all'; wMore = 15; wrong(); }));
-    root.querySelectorAll('[data-wm]').forEach((b) => b.addEventListener('click', () => { wFlagOnly = b.dataset.wm === '1'; wMore = 15; wrong(); }));
-    root.querySelectorAll('[data-wc]').forEach((b) => b.addEventListener('click', () => { wCat = b.dataset.wc; wMore = 15; wrong(); }));
+    FILTER.bind(root, 'data-wk', (v) => { setKind(v); wCat = 'all'; wMore = 15; wrong(); });
+    FILTER.bind(root, 'data-wm', (v) => { wFlagOnly = v === '1'; wMore = 15; wrong(); });
+    FILTER.bind(root, 'data-wc', (v) => { wCat = v; wMore = 15; wrong(); });
     const mb = $('#w-more'); if (mb) mb.addEventListener('click', () => { wMore += 15; wrong(); });
     $('#w-redo').addEventListener('click', () => { if (!list.length) return; if (draftOf() && !confirm('풀던 시험이 있어요. 지우고 새로 시작할까요?')) return; start(`${wFlagOnly ? '★ 헷갈림' : '오답'} 다시 풀기${wCat === 'all' ? '' : ' · ' + SUBN[wCat]}`, rnd(list).slice(0, 60)); });
     root.querySelectorAll('[data-solve]').forEach((b) => b.addEventListener('click', () => { const qq = Object.assign({}, Q()); const k = b.dataset.solve; if (qq[k]) { qq[k].m = true; qq[k].ok = true; } S.set(K('q'), qq); wrong(); }));

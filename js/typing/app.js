@@ -117,19 +117,19 @@
   const showTarget = () => opt().mode === 'copy' || st.phase === 'retype';
 
   // ── 화면 ──
-  // 무엇을 칠지(답 종류)는 큰 버튼으로 위에, 나머지 필터는 한 줄 선택 상자로
+  // 무엇을 칠지(답 종류)는 큰 버튼으로 위에, 나머지 필터는 한 줄 선택 상자로 (공통 모양은 css .f-*)
   function modes(name, list, val) {
-    return `<div class="ty-modes">${list.map(([v, l]) => `<button type="button" class="${val === v ? 'on' : ''}" data-o="${name}" data-v="${v}">${esc(l)}</button>`).join('')}</div>`;
+    return `<div class="f-modes">${list.map(([v, l]) => `<button type="button" class="${val === v ? 'on' : ''}" data-o="${name}" data-v="${v}">${esc(l)}</button>`).join('')}</div>`;
   }
   function pick(name, label, list, val) {
-    return `<label class="ty-sel"><span>${label}</span><select data-o="${name}">${list.map(([v, l]) => `<option value="${v}"${val === v ? ' selected' : ''}>${esc(l)}</option>`).join('')}</select></label>`;
+    return `<label class="f-sel"><span>${label}</span><select data-o="${name}">${list.map(([v, l]) => `<option value="${v}"${val === v ? ' selected' : ''}>${esc(l)}</option>`).join('')}</select></label>`;
   }
   function render() {
     document.querySelectorAll('.gt-tabs a').forEach((a) => a.classList.toggle('on', a.dataset.t === tab()));
     const o = opt();
     const bar = `<section class="ty-bar">
       ${tab() === 'art' ? modes('target', [['era', '시대 치기'], ['name', '유물 이름 치기']], o.target) : modes('ans', [['king', '왕(지도자) 치기'], ['nation', '나라·시대 치기']], o.ans)}
-      <div class="ty-filters">
+      <div class="f-filters">
         ${tab() === 'ev' ? pick('group', '시대', [['all', '전체']].concat(E.groups.map((g) => [g[0], g[1]])), o.group) : ''}
         ${pick('mode', '방식', [['quiz', '맞히기'], ['copy', '보고 치기']], o.mode)}
         ${pick('scope', '문제', [['all', '전체'], ['wrong', '타자에서 틀린 것']].concat(tab() === 'ev' ? [['ki', '기출 오답']] : []), o.scope)}

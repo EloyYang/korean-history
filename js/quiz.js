@@ -275,13 +275,15 @@
       const P = scoped ? pool(ui.rounds) : rounds; const cnt = {};
       P.forEach((r) => { for (let n = 1; n <= N(r); n++) { const p = periodOfQ(r, n); cnt[p] = (cnt[p] || 0) + 1; } });
       const ps = ui.periods.map(Number); const total = ps.length ? ps.reduce((a, p) => a + (cnt[p] || 0), 0) : Object.values(cnt).reduce((a, b) => a + b, 0);
-      const modeRow = `<div class="q-row"><span class="q-lab">문제 구성</span><span class="r-chips">${[['even', '골고루 랜덤'], ['weak', '틀린 문제 위주'], ['weakflag', '틀림 + 헷갈림 위주']].map(([k, l]) => chip('data-qmmode', k, ui.mockMode === k, l, k === 'even' ? null : weakCount(k, P))).join('')}</span></div>`;
+      const modeRow = FILTER.modes('data-qmmode', [['even', '골고루 랜덤'], ['weak', '틀린 문제 위주', weakCount('weak', P)], ['weakflag', '틀림 + 헷갈림 위주', weakCount('weakflag', P)]], ui.mockMode);
       body = `<div class="q-builder">
-        <div class="q-row"><span class="q-lab">범위</span><span class="r-chips">${chip('data-qscope', 'all', !scoped, '전체 랜덤 (실전형 50문항·100점)')}${chip('data-qscope', 'scope', scoped, '시대·회차를 골라서')}</span></div>
+        ${FILTER.modes('data-qscope', [['all', '전체 랜덤 (실전형 50문항·100점)'], ['scope', '시대·회차를 골라서']], scoped ? 'scope' : 'all')}
         ${scoped ? `
-        <div class="q-row"><span class="q-lab">시대</span><span class="r-chips">${chip('data-qper', 'all', !ps.length, '모든 시대')}${[...PERIODS.keys(), -1].filter((i) => cnt[i]).map((i) => chip('data-qper', i, ps.includes(i), pname(i), cnt[i])).join('')}</span></div>
-        <div class="q-row"><span class="q-lab">회차</span><span class="r-chips">${chip('data-qround', 'all', !ui.rounds.length, '전체 회차')}${rounds.map((r) => chip('data-qround', r, ui.rounds.includes(r), r + '회')).join('')}</span></div>
-        <div class="q-row"><span class="q-lab">문항 수</span><span class="r-chips">${[10, 20, 30, 50, 0].map((c) => chip('data-qcount', c, ui.count === c, c ? `${c}문항` : '전부')).join('')}</span></div>
+        <div class="f-filters">
+          ${FILTER.multi('per', '시대', ps.length ? `${ps.length}개 선택` : '모든 시대', `<span class="r-chips">${chip('data-qper', 'all', !ps.length, '모든 시대')}${[...PERIODS.keys(), -1].filter((i) => cnt[i]).map((i) => chip('data-qper', i, ps.includes(i), pname(i), cnt[i])).join('')}</span>`)}
+          ${FILTER.multi('round', '회차', ui.rounds.length ? `${ui.rounds.length}개 선택` : '전체 회차', `<span class="r-chips">${chip('data-qround', 'all', !ui.rounds.length, '전체 회차')}${rounds.map((r) => chip('data-qround', r, ui.rounds.includes(r), r + '회')).join('')}</span>`)}
+          ${FILTER.pick('data-qcount', '문항 수', [10, 20, 30, 50, 0].map((c) => [c, c ? `${c}문항` : '전부']), ui.count)}
+        </div>
         ${modeRow}
         <p class="q-desc">고른 범위 안에서 무작위로 뽑고, 문제는 <b>시대 순서대로</b>(선사 → 광복 이후) 놓아요.</p>
         <div class="q-row"><button type="button" class="q-make" data-qmake="period" ${total ? '' : 'disabled'}>▶ ${total ? `${ui.count ? Math.min(ui.count, total) : total}문항 만들기` : '고른 범위에 문제가 없어요'}</button></div>`

@@ -404,7 +404,7 @@
     root.innerHTML = `
       <h2 class="r-h">문법 <small>보기를 고르면 바로 채점하고 해설이 보여요</small></h2>
       ${gDay ? `<div class="gt-dayban"><b>Day ${gDay} 문법</b> ${gDayItems(gDay).length}문항 · 여러 유형이 섞여 있어요 ${emb ? '' : '<a href="#plan">← 10일 플랜</a>'}</div>` : ''}
-      <div class="gt-chips"${emb ? ' hidden' : ''}>${['all'].concat(G.types.map((x) => x.id)).map((id) => { const s = stat(id); return `<button type="button" class="chip${!gDay && gType === id ? ' on' : ''}" data-ty="${id}">${id === 'all' ? '전체' : TYPE[id].name}<small>${s.d}/${s.n}${s.d ? ` · ${pct(s.ok, s.d)}%` : ''}</small></button>`; }).join('')}</div>
+      <div class="f-filters"${emb ? ' hidden' : ''}>${FILTER.pick('data-ty', '유형', (gDay ? [['', `Day ${gDay} 묶음`]] : []).concat(['all'].concat(G.types.map((x) => x.id)).map((id) => { const s = stat(id); return [id, `${id === 'all' ? '전체' : TYPE[id].name} (${s.d}/${s.n}${s.d ? ` · ${pct(s.ok, s.d)}%` : ''})`]; })), gDay ? '' : gType)}</div>
       ${gDay ? '' : t ? `<div class="gt-tip"><h3>${t.name} <small>실제 시험 ${t.n}문항</small></h3>${t.tip}</div>` : '<div class="gt-tip"><h3>문법 26문항 공략</h3>지텔프 문법은 <b>유형이 정해져 있어요</b>. 위에서 유형을 고르면 정답 찾는 공식이 보여요. 시제·가정법·준동사 18문항만 확실히 잡아도 문법 점수가 크게 올라요.</div>'}
       ${gRetry ? `<div class="gt-dayban"><b>다시 푸는 중</b> ${gRetry.length}문제 (<span class="gt-rtn">${gRetry.filter((i) => gl[gKey(i)] != null).length}개 풀었어요</span>) <button type="button" class="gt-link" id="g-rt-end">전체 문제 보기</button></div>` : ''}
       <div class="gt-bar"><label class="chip-check"><input type="checkbox" id="g-wrong"${gOnlyWrong ? ' checked' : ''}> 틀린 문제만 보기</label>
@@ -412,7 +412,7 @@
         <button type="button" class="gt-btn" id="g-rt-both"${both.length ? '' : ' disabled'} title="틀린 문제와 ★ 헷갈려요 표시한 문제">틀린+★ 다시 풀기 (${both.length})</button>
         <button type="button" class="gt-btn" id="g-reset">${gDay ? `Day ${gDay}` : gType === 'all' ? '전체' : TYPE[gType].name} 기록 지우고 다시 풀기</button></div>
       <div class="gt-qs">${list.length ? list.map(([x, i], k) => qHtml(gKey(i), k + 1, `${gl[gKey(i)] != null ? `<span class="gt-tag">${TYPE[x[0]].name.split(' ')[0]}</span> ` : ''}${blank(x[1])}`, x[2].map(esc), x[3], x[4], gl[gKey(i)], gl[gKey(i)] != null, gKo(x, gKey(i)))).join('') : '<p class="gt-muted">해당하는 문제가 없어요.</p>'}</div>`;
-    root.querySelectorAll('[data-ty]').forEach((b) => b.addEventListener('click', () => { gType = b.dataset.ty; gDay = 0; gRetry = null; grammar(); }));
+    FILTER.bind(root, 'data-ty', (v) => { if (!v) return; gType = v; gDay = 0; gRetry = null; grammar(); });
     const retry = (idx) => { if (!idx.length) return; const l = gLog(); idx.forEach((i) => { delete l[gKey(i)]; }); S.set(K('grammar'), l); gRetry = idx; grammar(); };
     $('#g-rt-wrong').addEventListener('click', () => retry(wrongIn));
     $('#g-rt-both').addEventListener('click', () => retry(both));
@@ -450,10 +450,10 @@
     if (!cur) cur = ordered.find((x) => !log[x.id]) || ordered[0]; // 번호를 안 골랐으면 아직 안 푼 첫 지문을 바로 연다
     // 지문 고르기: Part 칩 + 번호 칩 (한 줄씩만 차지해서 문제가 바로 아래에 보인다)
     const viewPart = selPart[kind] || cur.part;
-    const partChips = [1, 2, 3, 4].map((p) => { const g = sets.filter((x) => x.part === p); if (!g.length) return ''; const dn = g.filter((x) => log[x.id]).length; return `<button type="button" class="chip${p === viewPart ? ' on' : ''}" data-pt="${p}">Part ${p}<small>${dn}/${g.length}</small></button>`; }).join('');
+    const partChips = FILTER.modes('data-pt', [1, 2, 3, 4].map((p) => { const g = sets.filter((x) => x.part === p); if (!g.length) return null; const dn = g.filter((x) => log[x.id]).length; return [p, `Part ${p}`, `${dn}/${g.length}`]; }).filter(Boolean), viewPart);
     const pills = sets.filter((x) => x.part === viewPart).map((x, i) => `<a class="gt-pill${x.id === cur.id ? ' on' : ''}${log[x.id] ? ' done' : ''}" href="#${kind}/${x.id}" title="${esc(x.title)}${log[x.id] ? ` · ${log[x.id].score}점` : ''}">${i + 1}${log[x.id] ? '<i>✓</i>' : ''}</a>`).join('');
     const ci = ordered.indexOf(cur); const prv = ordered[ci - 1], nxt = ordered[ci + 1];
-    const list = `<div class="gt-pick"><div class="gt-chips small">${partChips}</div><div class="gt-pills">${pills}</div>
+    const list = `<div class="gt-pick">${partChips}<div class="gt-pills">${pills}</div>
       <div class="gt-pickcur"><b>${esc(cur.title)}</b><small>Part ${cur.part} · ${cur.kind}${log[cur.id] ? ` · ${log[cur.id].score}점` : ''}</small>
       <span class="gt-pn">${prv ? `<a href="#${kind}/${prv.id}">← 이전</a>` : '<span></span>'}${nxt ? `<a href="#${kind}/${nxt.id}">다음 →</a>` : ''}</span></div></div>`;
     const head = kind === 'reading'
@@ -487,7 +487,7 @@
             : '<button type="button" class="gt-btn main" id="s-grade">채점하기</button>'}</div>
         </div>
       </div>`;
-    root.querySelectorAll('[data-pt]').forEach((b) => b.addEventListener('click', () => { selPart[kind] = +b.dataset.pt; setPage(kind, cur.id); }));
+    FILTER.bind(root, 'data-pt', (v) => { selPart[kind] = +v; setPage(kind, cur.id); });
     root.querySelectorAll('.gt-pill, .gt-pn a').forEach((a) => a.addEventListener('click', () => { selPart[kind] = null; }));
     if (kind === 'listening') {
       bindPlayer(root, cur.lines);
@@ -655,12 +655,12 @@
     }
     root.innerHTML = `
       <h2 class="r-h">필수 단어 <small>${V.length}개 · 외운 단어 ${vl.known.length}개 · 독해 어휘 문제는 동의어를 물어요</small></h2>
-      <div class="gt-chips">${[['card', '카드 외우기'], ['fill', '빈칸 채우기'], ['syn', '동의어 찾기'], ['sense', '문맥 속 의미'], ['quiz', '뜻 맞히기'], ['list', '단어 목록'], ['confuse', '헷갈리는 단어']].map(([m, l]) => `<button type="button" class="chip${vMode === m ? ' on' : ''}" data-vm="${m}">${l}</button>`).join('')}</div>
-      <div class="gt-chips small"${vMode === 'confuse' || emb ? ' hidden' : ''}><button type="button" class="chip${vDay === 0 ? ' on' : ''}" data-day="0">전체</button>${Array.from({ length: days }, (_, d) => `<button type="button" class="chip${vDay === d + 1 ? ' on' : ''}" data-day="${d + 1}">Day ${d + 1}<small>${knownIn(d + 1)}/${Math.min(DAY, V.length - d * DAY)}</small></button>`).join('')}
+      ${FILTER.modes('data-vm', [['card', '카드 외우기'], ['fill', '빈칸 채우기'], ['syn', '동의어 찾기'], ['sense', '문맥 속 의미'], ['quiz', '뜻 맞히기'], ['list', '단어 목록'], ['confuse', '헷갈리는 단어']], vMode, 'wrap')}
+      <div class="f-filters"${vMode === 'confuse' || emb ? ' hidden' : ''}>${FILTER.pick('data-day', '범위', [[0, '전체']].concat(Array.from({ length: days }, (_, d) => [d + 1, `Day ${d + 1} (${knownIn(d + 1)}/${Math.min(DAY, V.length - d * DAY)})`])), vDay)}
         <label class="chip-check"><input type="checkbox" id="v-unk"${vUnknown ? ' checked' : ''}> 모르는 단어만</label></div>
       ${body}`;
-    root.querySelectorAll('[data-vm]').forEach((b) => b.addEventListener('click', () => { vMode = b.dataset.vm; vq = null; vz = null; vIdx = 0; vFlip = false; vocab(); }));
-    root.querySelectorAll('[data-day]').forEach((b) => b.addEventListener('click', () => { vDay = +b.dataset.day; vq = null; vz = null; vIdx = 0; vFlip = false; vocab(); }));
+    FILTER.bind(root, 'data-vm', (v) => { vMode = v; vq = null; vz = null; vIdx = 0; vFlip = false; vocab(); });
+    FILTER.bind(root, 'data-day', (v) => { vDay = +v; vq = null; vz = null; vIdx = 0; vFlip = false; vocab(); });
     $('#v-unk').addEventListener('change', (e) => { vUnknown = e.target.checked; vq = null; vz = null; vIdx = 0; vFlip = false; vocab(); });
     const mark = (w, known) => { const l = vLog(); l.known = l.known.filter((x) => x !== w); if (known) l.known.push(w); S.set(K('vocab'), l); };
     if (vMode === 'card' && pool.length) {
@@ -764,7 +764,7 @@
         <b>${esc(m.title)}</b>
         <span class="gt-time${d.paused ? ' paused' : ''}" id="mk-time">${fmt(left())}</span>
         <button type="button" class="gt-btn" id="mk-pause">${d.paused ? '▶ 계속하기' : '⏸ 일시정지'}</button>
-        <div class="gt-chips"${d.paused ? ' hidden' : ''}>${'glr'.split('').map((s) => `<button type="button" class="chip${d.sec === s ? ' on' : ''}" data-sec="${s}">${SEC[s]}<small>${cnt(s)}/${tot(s)}</small></button>`).join('')}</div>
+        <div${d.paused ? ' hidden' : ''}>${FILTER.modes('data-sec', 'glr'.split('').map((s) => [s, SEC[s], `${cnt(s)}/${tot(s)}`]), d.sec)}</div>
         <button type="button" class="gt-btn main" id="mk-submit">제출·채점</button>
         <button type="button" class="gt-btn" id="mk-quit">그만두기</button>
       </div>
@@ -788,7 +788,7 @@
     const rsm = $('#mk-resume'); if (rsm) rsm.addEventListener('click', togglePause);
     if (d.sec === 'l' && !d.paused) m.listening.forEach((p) => bindPlayer(root.querySelector(`[data-part="${p.id}"]`), p.lines, () => { d.plays[p.id] = (d.plays[p.id] || 0) + 1; save(); const s = root.querySelector(`[data-part="${p.id}"] .gt-player > .gt-muted`); if (s) s.textContent = `들은 횟수 ${d.plays[p.id]} / 실제 시험은 1번`; }));
     const go = (s) => { if (d.paused) return; save(); d.sec = s; S.set(K('mockDraft'), d); clearInterval(timer); TTS.stop(); mockRun(d); window.scrollTo(0, 0); };
-    root.querySelectorAll('[data-sec]').forEach((b) => b.addEventListener('click', () => go(b.dataset.sec)));
+    FILTER.bind(root, 'data-sec', (v) => go(v));
     const nx = $('#mk-next'); if (nx) nx.addEventListener('click', () => go(d.sec === 'g' ? 'l' : 'r'));
     const submit = () => {
       const miss = its.length - Object.keys(d.picks).length;
@@ -843,7 +843,8 @@
       <div class="gt-tip"><h3>문법 유형별</h3><div class="gt-types">${G.types.map((t) => ty[t.id] ? `<span class="${ty[t.id][0] < ty[t.id][1] ? 'r' : 'g'}">${t.name.split(' ')[0]} <b>${ty[t.id][0]}/${ty[t.id][1]}</b></span>` : '').join('')}</div>
         ${Object.entries(ty).filter(([, v]) => v[0] < v[1]).length ? `<p class="gt-muted">틀린 유형은 <a href="#grammar">문법</a>에서 공식을 다시 보고 연습 문제로 채워 보세요.</p>` : ''}</div>
       <div class="ad-slot" data-ad="result"></div>
-      <div class="gt-bar"><div class="gt-chips">${[['all', '전체'], ['g', '문법'], ['l', '청취'], ['r', '독해']].map(([s, l]) => `<button type="button" class="chip${resSec === s ? ' on' : ''}" data-rs="${s}">${l}</button>`).join('')}</div>
+      ${FILTER.modes('data-rs', [['all', '전체'], ['g', '문법'], ['l', '청취'], ['r', '독해']], resSec)}
+      <div class="gt-bar">
         <label class="chip-check"><input type="checkbox" id="rs-wrong"${resWrong ? ' checked' : ''}> 틀린 문제만 보기</label>
         <a class="gt-btn" href="#mock">모의고사 목록</a></div>
       ${retrying ? `<div class="gt-bar"><span class="gt-muted">다시 푸는 중 · ${mRetry.open.size}문제 (청취는 스크립트를 숨겼어요)</span> <button type="button" class="gt-btn main" id="mr-grade">다시 채점하기</button> <button type="button" class="gt-btn" id="mr-cancel">취소</button></div>`
@@ -869,7 +870,7 @@
         mRetry = null; mockResult(id); window.scrollTo(0, 0);
       });
     }
-    root.querySelectorAll('[data-rs]').forEach((b) => b.addEventListener('click', () => { resSec = b.dataset.rs; mockResult(id); }));
+    FILTER.bind(root, 'data-rs', (v) => { resSec = v; mockResult(id); });
     $('#rs-wrong').addEventListener('change', (e) => { resWrong = e.target.checked; mockResult(id); });
     m.listening.forEach((p) => { const box = root.querySelector(`[data-part="${p.id}"]`); if (box) bindPlayer(box, p.lines); });
   }
@@ -916,13 +917,13 @@
     if (wrongCat === 'mock') {
       const chips = [['all', `전체<small>${cats.mock.n}</small>`]].concat(mockParts.map((x) => [x.id, `${x.title.replace('실전 모의고사 ', '')}<small>${x.n}</small>`]));
       if (!mockParts.some((x) => x.id === wrongMock)) wrongMock = 'all';
-      body = `<div class="gt-chips small">${chips.map(([k, l]) => `<button type="button" class="chip${wrongMock === k ? ' on' : ''}" data-wm="${k}">${l}</button>`).join('')}</div>${mockParts.filter((x) => wrongMock === 'all' || x.id === wrongMock).map((x) => x.html).join('')}`;
+      body = `<div class="f-filters">${FILTER.pick('data-wm', '회차', chips.map(([k, l]) => [k, l.replace(/<small>(.*?)<\/small>/, ' ($1)')]), wrongMock)}</div>${mockParts.filter((x) => wrongMock === 'all' || x.id === wrongMock).map((x) => x.html).join('')}`;
     } else if (wrongCat) body = cats[wrongCat].html.join('');
     root.innerHTML = `<h2 class="r-h">오답 <small>연습·모의고사에서 틀린 문제를 분류별로</small></h2>
-      <div class="gt-chips gt-wcats">${CATS.map(([k, l]) => `<button type="button" class="chip${wrongCat === k ? ' on' : ''}" data-wc="${k}"${cats[k] ? '' : ' disabled'}>${l}<small>${cats[k] ? cats[k].n : 0}</small></button>`).join('')}</div>
+      ${FILTER.modes('data-wc', CATS.map(([k, l]) => [k, l, cats[k] ? cats[k].n : 0, !cats[k]]), wrongCat, 'wrap')}
       ${body}<div class="ad-slot" data-ad="review"></div>`;
-    root.querySelectorAll('[data-wc]').forEach((b) => b.addEventListener('click', () => { wrongCat = b.dataset.wc; wrong(); }));
-    root.querySelectorAll('[data-wm]').forEach((b) => b.addEventListener('click', () => { wrongMock = b.dataset.wm; wrong(); }));
+    FILTER.bind(root, 'data-wc', (v) => { wrongCat = v; wrong(); });
+    FILTER.bind(root, 'data-wm', (v) => { wrongMock = v; wrong(); });
   }
 
   nav();
