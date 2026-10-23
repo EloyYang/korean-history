@@ -47,13 +47,12 @@
     });
   }
   // 왕 이름에서 답으로 받아 줄 이름들 — 앞의 것이 '정답'으로 보인다
-  const EXTRA = { '태조 왕건': ['왕건', '태조'], '장면 내각': ['장면 내각', '장면'], '흥선 대원군': ['대원군'], '태종 무열왕': ['무열왕'] };
+  const EXTRA = { '태조 왕건': ['왕건', '태조'], '장면 내각': ['장면'], '흥선 대원군': ['대원군'], '태종 무열왕': ['무열왕'] };
   const SKIP_PAREN = /통일 과정|집권자|섭정|무신 집권기|복위|^\d+대$|대통령/;
   function aliases(name) {
     const base = name.replace(/\s*\(.*?\)\s*/g, ' ').trim();
     const paren = (name.match(/\((.*?)\)/g) || []).map((p) => p.slice(1, -1)).filter((p) => !SKIP_PAREN.test(p));
-    const pres = (name.match(/\(([^)]*?)\s*대통령\)/) || [])[1]; // '장면 내각 (윤보선 대통령)' → 대통령 이름이 정답
-    const out = (pres ? [pres] : []).concat([base], EXTRA[base] || [], paren);
+    const out = [base].concat(EXTRA[base] || [], paren);
     out.slice().forEach((a) => { if (/\s대왕$/.test(a)) out.push(a.replace(/\s대왕$/, '왕')); }); // 광개토 대왕 → 광개토왕
     return [...new Set(out)];
   }
@@ -85,7 +84,7 @@
       const base = { id: `${ans === 'king' ? 'k' : 'n'}:${i}`, wrongQ: mine.length > 0 };
       if (ans === 'king') {
         const al = aliases(x.k);
-        out.push(Object.assign(base, { badge: E.names[x.e] || x.e, prompt: maskWith(x.s, al), answer: al[0], accepts: al, html: `<b>${esc(al[0])}</b>${al[0] !== x.k.replace(/\s*\(.*?\)/, '') ? ` (${esc(x.k.replace(/\s*\(.*?\)/, ''))})` : ''}${r ? ` (${esc(r.reign)})${r.key ? ' — ' + esc(r.key) : ''}` : ''}<br>${meta}` }));
+        out.push(Object.assign(base, { badge: E.names[x.e] || x.e, prompt: maskWith(x.s, al), answer: al[0], accepts: al, html: `<b>${esc(x.k.replace(/\s*\(.*?\)/, ''))}</b>${r ? ` (${esc(r.reign)})${r.key ? ' — ' + esc(r.key) : ''}` : ''}<br>${meta}` }));
       } else {
         const al = [x.n].concat(x.na);
         out.push(Object.assign(base, { badge: '', prompt: maskWith(x.s, al), answer: x.n, accepts: al, html: `<b>${esc(x.n)}</b>${r ? ` · ${esc(x.k.replace(/\s*\(.*?\)/, ''))} (${esc(r.reign)})` : ''}<br>${meta}` }));
