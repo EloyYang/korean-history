@@ -72,8 +72,8 @@
   }
   const qLabel = (id) => { const [r, n] = id.split('-'); return `${r}회 ${n}번`; };
 
-  function evItems(group, ans) {
-    const g = E.groups.find((x) => x[0] === group); const eras = g ? g[2] : E.groups.flatMap((x) => x[2]);
+  function evItems(groups, ans) {
+    const eras = E.groups.filter((x) => !groups.length || groups.includes(x[0])).flatMap((x) => x[2]);
     const where = window.EX_WHERE || {}; const wr = wrongSet();
     const out = [];
     (window.TY_SENT || []).forEach((x, i) => {
@@ -97,8 +97,15 @@
   // ── 설정 ──
   const TABS = [['art', '유물 사진 → 시대'], ['ev', '기출 문장 → 왕·나라']];
   const tab = () => (location.hash === '#ev' ? 'ev' : 'art');
-  const OPT0 = { art: { target: 'era', mode: 'quiz', scope: 'all' }, ev: { group: 'all', ans: 'king', mode: 'quiz', scope: 'all' } };
-  const opt = () => Object.assign({}, OPT0[tab()], (S.get(K('opt'), {}) || {})[tab()]);
+  const OPT0 = { art: { target: 'era', mode: 'quiz', scope: 'all' }, ev: { groups: [], ans: 'king', mode: 'quiz', scopes: [] } };
+  const opt = () => {
+    const o = Object.assign({}, OPT0[tab()], (S.get(K('opt'), {}) || {})[tab()]);
+    if (tab() === 'ev') { // 시대·문제는 여러 개를 고를 수 있다 (비어 있으면 전체) — 예전 단일 값은 옮긴다
+      if (!Array.isArray(o.groups)) o.groups = [];
+      if (!Array.isArray(o.scopes)) o.scopes = [];
+    }
+    return o;
+  };
   const setOpt = (k, v) => { const o = S.get(K('opt'), {}) || {}; o[tab()] = Object.assign(opt(), { [k]: v }); S.set(K('opt'), o); };
   const rec = () => S.get(K('rec'), {}) || {};
   const ROUND = 20;
@@ -107,9 +114,9 @@
   let st = null; // { items, i, phase: 'type'|'retype'|'done', ok, wrong:[], keys, ms, t0, typed, back, hint }
   function newRound() {
     const o = opt(); const R0 = rec();
-    let items = tab() === 'art' ? artItems(o.target) : evItems(o.group, o.ans);
-    if (o.scope === 'wrong') items = items.filter((x) => R0[x.id] && R0[x.id].ok === false);
-    else if (o.scope === 'ki') items = items.filter((x) => x.wrongQ);
+    let items = tab() === 'art' ? artItems(o.target) : evItems(o.groups, o.ans);
+    if (tab() === 'art') { if (o.scope === 'wrong') items = items.filter((x) => R0[x.id] && R0[x.id].ok === false); }
+    else if (o.scopes.length) items = items.filter((x) => (o.scopes.includes('wrong') && R0[x.id] && R0[x.id].ok === false) || (o.scopes.includes('ki') && x.wrongQ));
     st = { items: rnd(items).slice(0, ROUND), i: 0, phase: 'type', ok: 0, wrong: [], keys: 0, ms: 0, t0: 0, typed: 0, back: 0, hint: false, total: items.length };
     render();
   }
@@ -124,19 +131,24 @@
   function pick(name, label, list, val) {
     return `<label class="f-sel"><span>${label}</span><select data-o="${name}">${list.map(([v, l]) => `<option value="${v}"${val === v ? ' selected' : ''}>${esc(l)}</option>`).join('')}</select></label>`;
   }
+  // 여러 개를 고르는 필터 (아무것도 안 고르면 전체)
+  function multi(name, label, list, vals) {
+    const names = list.filter(([v]) => vals.includes(v)).map(([, l]) => l);
+    return FILTER.multi('ty' + name, label, names.length ? esc(names.join(' · ')) : '전체', `<span class="r-chips"><button type="button" data-m="${name}" data-v="" aria-pressed="${!vals.length}">전체</button>${list.map(([v, l]) => `<button type="button" data-m="${name}" data-v="${v}" aria-pressed="${vals.includes(v)}">${esc(l)}</button>`).join('')}</span>`);
+  }
   function render() {
     document.querySelectorAll('.gt-tabs a').forEach((a) => a.classList.toggle('on', a.dataset.t === tab()));
     const o = opt();
     const bar = `<section class="ty-bar">
       ${tab() === 'art' ? modes('target', [['era', '시대 치기'], ['name', '유물 이름 치기']], o.target) : modes('ans', [['king', '왕(지도자) 치기'], ['nation', '나라·시대 치기']], o.ans)}
       <div class="f-filters">
-        ${tab() === 'ev' ? pick('group', '시대', [['all', '전체']].concat(E.groups.map((g) => [g[0], g[1]])), o.group) : ''}
+        ${tab() === 'ev' ? multi('groups', '시대', E.groups.map((g) => [g[0], g[1]]), o.groups) : ''}
         ${pick('mode', '방식', [['quiz', '맞히기'], ['copy', '보고 치기']], o.mode)}
-        ${pick('scope', '문제', [['all', '전체'], ['wrong', '타자에서 틀린 것']].concat(tab() === 'ev' ? [['ki', '기출 오답']] : []), o.scope)}
+        ${tab() === 'ev' ? multi('scopes', '문제', [['wrong', '타자에서 틀린 것'], ['ki', '기출 오답']], o.scopes) : pick('scope', '문제', [['all', '전체'], ['wrong', '타자에서 틀린 것']], o.scope)}
       </div>
     </section>`;
     if (!st.items.length) {
-      MAIN.innerHTML = bar + `<div class="ty-stage ty-empty"><p>${o.scope === 'ki' ? '기출 풀기에서 틀린 문제에 나온 문장이 없어요. (오답 노트에서 ‘외웠어요’로 표시한 문제는 빼요. 로그인하면 다른 기기의 기록도 불러와요.)' : o.scope === 'wrong' ? '아직 타자에서 틀린 문제가 없어요. 전체 문제로 먼저 풀어 보세요.' : '문제가 없어요.'}</p></div>`;
+      MAIN.innerHTML = bar + `<div class="ty-stage ty-empty"><p>${(o.scopes || []).includes('ki') ? '기출 풀기에서 틀린 문제에 나온 문장이 없어요. (오답 노트에서 ‘외웠어요’로 표시한 문제는 빼요. 로그인하면 다른 기기의 기록도 불러와요.)' : (o.scopes || []).includes('wrong') || o.scope === 'wrong' ? '아직 타자에서 틀린 문제가 없어요. 전체 문제로 먼저 풀어 보세요.' : '문제가 없어요.'}</p></div>`;
       return;
     }
     if (st.i >= st.items.length) { MAIN.innerHTML = bar + summary(); return; }
@@ -265,17 +277,19 @@
   MAIN.addEventListener('click', (e) => {
     const c = e.target.closest('button[data-o]');
     if (c) { setOpt(c.dataset.o, c.dataset.v); newRound(); return; }
+    const m = e.target.closest('button[data-m]');
+    if (m) { const cur0 = opt()[m.dataset.m]; const v = m.dataset.v; setOpt(m.dataset.m, !v ? [] : cur0.includes(v) ? cur0.filter((x) => x !== v) : cur0.concat(v)); newRound(); return; }
     const a = e.target.closest('[data-a]'); if (!a) return;
     const act = a.dataset.a;
     if (act === 'next') next();
     else if (act === 'restart') newRound();
-    else if (act === 'wrongonly') { setOpt('scope', 'wrong'); newRound(); }
+    else if (act === 'wrongonly') { if (tab() === 'ev') setOpt('scopes', ['wrong']); else setOpt('scope', 'wrong'); newRound(); }
     else if (act === 'hint') { st.hint = true; paint(); document.getElementById('ty-in').focus(); }
     else if (act === 'skip') finish(false, '');
   });
   // 빈 곳을 눌러도 입력칸으로
   MAIN.addEventListener('mouseup', (e) => {
-    if (e.target.closest('button, a, input') || window.getSelection().toString()) return;
+    if (e.target.closest('button, a, input, select, option, label, details, summary') || window.getSelection().toString()) return;
     const inp = document.getElementById('ty-in'); if (inp && !inp.readOnly) inp.focus();
   });
 
