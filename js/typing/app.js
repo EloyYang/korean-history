@@ -117,17 +117,23 @@
   const showTarget = () => opt().mode === 'copy' || st.phase === 'retype';
 
   // ── 화면 ──
-  function chips(name, list, val) {
-    return `<div class="gt-chips">${list.map(([v, l]) => `<button type="button" class="chip${val === v ? ' on' : ''}" data-o="${name}" data-v="${v}">${esc(l)}</button>`).join('')}</div>`;
+  // 무엇을 칠지(답 종류)는 큰 버튼으로 위에, 나머지 필터는 한 줄 선택 상자로
+  function modes(name, list, val) {
+    return `<div class="ty-modes">${list.map(([v, l]) => `<button type="button" class="${val === v ? 'on' : ''}" data-o="${name}" data-v="${v}">${esc(l)}</button>`).join('')}</div>`;
+  }
+  function pick(name, label, list, val) {
+    return `<label class="ty-sel"><span>${label}</span><select data-o="${name}">${list.map(([v, l]) => `<option value="${v}"${val === v ? ' selected' : ''}>${esc(l)}</option>`).join('')}</select></label>`;
   }
   function render() {
     document.querySelectorAll('.gt-tabs a').forEach((a) => a.classList.toggle('on', a.dataset.t === tab()));
     const o = opt();
     const bar = `<section class="ty-bar">
-      ${tab() === 'art' ? chips('target', [['era', '시대 치기'], ['name', '유물 이름 치기']], o.target)
-        : chips('group', [['all', '전체']].concat(E.groups.map((g) => [g[0], g[1]])), o.group) + chips('ans', [['king', '왕(지도자) 치기'], ['nation', '나라·시대 치기']], o.ans)}
-      ${chips('mode', [['quiz', '맞히기'], ['copy', '보고 치기']], o.mode)}
-      ${chips('scope', [['all', '전체 문제'], ['wrong', '타자에서 틀린 것']].concat(tab() === 'ev' ? [['ki', '기출 오답']] : []), o.scope)}
+      ${tab() === 'art' ? modes('target', [['era', '시대 치기'], ['name', '유물 이름 치기']], o.target) : modes('ans', [['king', '왕(지도자) 치기'], ['nation', '나라·시대 치기']], o.ans)}
+      <div class="ty-filters">
+        ${tab() === 'ev' ? pick('group', '시대', [['all', '전체']].concat(E.groups.map((g) => [g[0], g[1]])), o.group) : ''}
+        ${pick('mode', '방식', [['quiz', '맞히기'], ['copy', '보고 치기']], o.mode)}
+        ${pick('scope', '문제', [['all', '전체'], ['wrong', '타자에서 틀린 것']].concat(tab() === 'ev' ? [['ki', '기출 오답']] : []), o.scope)}
+      </div>
     </section>`;
     if (!st.items.length) {
       MAIN.innerHTML = bar + `<div class="ty-stage ty-empty"><p>${o.scope === 'ki' ? '기출 풀기에서 틀린 문제에 나온 문장이 없어요. (오답 노트에서 ‘외웠어요’로 표시한 문제는 빼요. 로그인하면 다른 기기의 기록도 불러와요.)' : o.scope === 'wrong' ? '아직 타자에서 틀린 문제가 없어요. 전체 문제로 먼저 풀어 보세요.' : '문제가 없어요.'}</p></div>`;
@@ -255,8 +261,9 @@
     if (st && st.i >= st.items.length && st.items.length) { e.preventDefault(); newRound(); }
   });
 
+  MAIN.addEventListener('change', (e) => { const c = e.target.closest('select[data-o]'); if (c) { setOpt(c.dataset.o, c.value); newRound(); } });
   MAIN.addEventListener('click', (e) => {
-    const c = e.target.closest('[data-o]');
+    const c = e.target.closest('button[data-o]');
     if (c) { setOpt(c.dataset.o, c.dataset.v); newRound(); return; }
     const a = e.target.closest('[data-a]'); if (!a) return;
     const act = a.dataset.a;
