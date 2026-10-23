@@ -1,7 +1,9 @@
 /*
  * 한국사 타자 연습
  *   #art : 유물 사진을 보고 시대(또는 유물 이름)를 친다 — 사진·설명은 notes.js ARTIFACTS, 시대는 js/typing/data.js TY_ART
- *   #ev  : 사건·정책을 보고 그때의 왕(대통령)을 친다 — rulers.js RULERS 의 items 에서 문제를 만든다
+ *   #ev  : 기출 문장('기출 문장 모아 보기'의 선택지 70~79회)을 보고 그때의 왕(대통령) 또는 나라·시대를 친다
+ *          문장↔왕·나라 연결은 js/typing/kings.js (TY_SENT, tools/typing_kings.js 로 생성), 문장이 나온 문항은 ex-where.js
+ *          '기출 오답' 범위 = 기출 풀기에서 틀린 문항(khmap.quizLog·setLog, '외웠어요' 표시한 것 제외)에 나온 문장만
  *   방식 : 맞히기(답을 가리고 Enter 로 채점, 틀리면 정답을 한 번 따라 쳐야 넘어감) · 보고 치기(정답이 보이고 다 치면 끝)
  *   화면 키보드는 두벌식 자판 — 보고 치기에서는 다음에 누를 키를 밝혀 준다
  *   기록은 study.typing.* (UserStore → 로그인하면 계정에 동기화)
@@ -17,7 +19,6 @@
   const rnd = (a) => a.slice().sort(() => Math.random() - 0.5);
   const norm = (s) => String(s || '').replace(/[\s·.,()]/g, '');
   const reEsc = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  const plain = (h) => String(h).replace(/\{\{([^}|]+)(?:\|([^}]*))?\}\}/g, (_, n, l) => l || n).replace(/<[^>]+>/g, '').replace(/&amp;/g, '&').replace(/\|/g, ' ');
 
   // ── 한글 → 두벌식 키 ──
   // 키 하나 = 소문자(그냥) · 대문자(Shift) · 숫자 · ' '(스페이스) · 그 밖의 글자(화면 키보드에 없음)
@@ -41,41 +42,63 @@
   function artItems(target) {
     return (window.TY_ART || []).filter((x) => artSrc(x.k)).map((x) => {
       const name = x.name || x.k; const cap = ART[x.k].caption || '';
-      if (target === 'name') return { id: 'n:' + x.k, img: artSrc(x.k), badge: x.era, prompt: '', answer: name, accepts: [name, x.k], info: cap };
+      if (target === 'name') return { id: 'n:' + x.k, img: artSrc(x.k), badge: x.era, prompt: '', answer: name, accepts: [name, x.k], html: esc(cap) };
       const hide = [x.era].concat(x.alt || []).sort((a, b) => b.length - a.length);
       const shown = hide.reduce((s, w) => s.replace(new RegExp(reEsc(w), 'g'), '○○'), name);
-      return { id: 'a:' + x.k, img: artSrc(x.k), badge: '', prompt: shown, answer: x.era, accepts: [x.era].concat(x.alt || []), info: cap };
+      return { id: 'a:' + x.k, img: artSrc(x.k), badge: '', prompt: shown, answer: x.era, accepts: [x.era].concat(x.alt || []), html: esc(cap) };
     });
   }
   // 왕 이름에서 답으로 받아 줄 이름들 — 앞의 것이 '정답'으로 보인다
-  const EXTRA = { '태조 왕건': ['왕건', '태조'], '장면 내각': ['장면'], '흥선 대원군': ['대원군'], '부왕 · 준왕': ['부왕', '준왕'] };
+  const EXTRA = { '태조 왕건': ['왕건', '태조'], '장면 내각': ['장면'], '흥선 대원군': ['대원군'], '태종 무열왕': ['무열왕'] };
   const SKIP_PAREN = /통일 과정|집권자|섭정|무신 집권기|복위|^\d+대$|대통령/;
   function aliases(name) {
     const base = name.replace(/\s*\(.*?\)\s*/g, ' ').trim();
     const paren = (name.match(/\((.*?)\)/g) || []).map((p) => p.slice(1, -1)).filter((p) => !SKIP_PAREN.test(p));
-    let out = EXTRA[base] ? EXTRA[base].concat(base) : [base];
-    out = out.concat(paren);
-    out.forEach((a) => { if (/\s대왕$/.test(a)) out.push(a.replace(/\s대왕$/, '왕')); }); // 광개토 대왕 → 광개토왕
+    const out = [base].concat(EXTRA[base] || [], paren);
+    out.slice().forEach((a) => { if (/\s대왕$/.test(a)) out.push(a.replace(/\s대왕$/, '왕')); }); // 광개토 대왕 → 광개토왕
     return [...new Set(out)];
   }
-  function evItems(group) {
-    const g = E.groups.find((x) => x[0] === group); const ids = g ? g[2] : E.groups.flatMap((x) => x[2]);
+  const maskRe = (words) => words.filter((a) => a.length >= 2).sort((a, b) => b.length - a.length).map((a) => new RegExp(Array.from(a.replace(/\s/g, '')).map(reEsc).join('\\s*'), 'g'));
+  const maskWith = (text, words) => maskRe(words).reduce((s, re) => s.replace(re, '○○'), text);
+  const rulerOf = (name, era) => (R[era] || []).find((r) => r.name === name);
+
+  // 기출 풀기에서 틀린 문항 ('회차-번호') — 오답 노트와 같은 기준 (외웠어요 표시한 것은 뺀다)
+  function wrongSet() {
+    const set = new Set();
+    const A = window.ATTEMPTS_FOR ? window.ATTEMPTS_FOR('history').all() : [];
+    A.forEach((l) => (l.wrong || []).forEach((n) => set.add(`${l.round}-${n}`)));
+    (S.get('khmap.setLog', []) || []).forEach((l) => (l.wrong || []).forEach((p) => { const it = (l.items || [])[p - 1]; if (it) set.add(`${it[0]}-${it[1]}`); }));
+    (S.get('khmap.mastered', []) || []).forEach((id) => set.delete(id));
+    return set;
+  }
+  const qLabel = (id) => { const [r, n] = id.split('-'); return `${r}회 ${n}번`; };
+
+  function evItems(group, ans) {
+    const g = E.groups.find((x) => x[0] === group); const eras = g ? g[2] : E.groups.flatMap((x) => x[2]);
+    const where = window.EX_WHERE || {}; const wr = wrongSet();
     const out = [];
-    ids.forEach((era) => (R[era] || []).forEach((r, ri) => {
-      const al = aliases(r.name);
-      const mask = al.filter((a) => a.length >= 2).sort((a, b) => b.length - a.length).map((a) => new RegExp(Array.from(a.replace(/\s/g, '')).map(reEsc).join('\\s*'), 'g'));
-      r.items.forEach((it, ii) => {
-        const text = mask.reduce((s, re) => s.replace(re, '○○'), plain(it));
-        out.push({ id: `e:${era}:${ri}:${ii}`, badge: `${r.state} · ${E.names[era] || era}`, prompt: text, answer: al[0], accepts: al, info: `<b>${esc(r.name)}</b> (${esc(r.reign)})${r.key ? ' — ' + esc(r.key) : ''}` });
-      });
-    }));
+    (window.TY_SENT || []).forEach((x, i) => {
+      if (!eras.includes(x.e) || (ans === 'king' ? !x.k : !x.n)) return;
+      const qids = where[x.s] || []; const mine = qids.filter((id) => wr.has(id));
+      const rounds = [...new Set(qids.map((id) => id.split('-')[0]))].sort((a, b) => b - a);
+      const meta = `<span class="ty-meta">기출 <b>${x.c}회</b> 출제${rounds.length ? ' · ' + rounds.map((r) => r + '회').join(' ') : ''}${mine.length ? ` · <em>내가 틀린 문제 ${mine.map(qLabel).join(', ')}</em>` : ''}</span>`;
+      const r = x.k ? rulerOf(x.k, x.ke) : null;
+      const base = { id: `${ans === 'king' ? 'k' : 'n'}:${i}`, wrongQ: mine.length > 0 };
+      if (ans === 'king') {
+        const al = aliases(x.k);
+        out.push(Object.assign(base, { badge: E.names[x.e] || x.e, prompt: maskWith(x.s, al), answer: al[0], accepts: al, html: `<b>${esc(x.k.replace(/\s*\(.*?\)/, ''))}</b>${r ? ` (${esc(r.reign)})${r.key ? ' — ' + esc(r.key) : ''}` : ''}<br>${meta}` }));
+      } else {
+        const al = [x.n].concat(x.na);
+        out.push(Object.assign(base, { badge: '', prompt: maskWith(x.s, al), answer: x.n, accepts: al, html: `<b>${esc(x.n)}</b>${r ? ` · ${esc(x.k.replace(/\s*\(.*?\)/, ''))} (${esc(r.reign)})` : ''}<br>${meta}` }));
+      }
+    });
     return out;
   }
 
   // ── 설정 ──
-  const TABS = [['art', '유물 사진 → 시대'], ['ev', '사건 → 왕']];
+  const TABS = [['art', '유물 사진 → 시대'], ['ev', '기출 문장 → 왕·나라']];
   const tab = () => (location.hash === '#ev' ? 'ev' : 'art');
-  const OPT0 = { art: { target: 'era', mode: 'quiz', scope: 'all' }, ev: { group: 'all', mode: 'quiz', scope: 'all' } };
+  const OPT0 = { art: { target: 'era', mode: 'quiz', scope: 'all' }, ev: { group: 'all', ans: 'king', mode: 'quiz', scope: 'all' } };
   const opt = () => Object.assign({}, OPT0[tab()], (S.get(K('opt'), {}) || {})[tab()]);
   const setOpt = (k, v) => { const o = S.get(K('opt'), {}) || {}; o[tab()] = Object.assign(opt(), { [k]: v }); S.set(K('opt'), o); };
   const rec = () => S.get(K('rec'), {}) || {};
@@ -85,8 +108,9 @@
   let st = null; // { items, i, phase: 'type'|'retype'|'done', ok, wrong:[], keys, ms, t0, typed, back, hint }
   function newRound() {
     const o = opt(); const R0 = rec();
-    let items = tab() === 'art' ? artItems(o.target) : evItems(o.group);
+    let items = tab() === 'art' ? artItems(o.target) : evItems(o.group, o.ans);
     if (o.scope === 'wrong') items = items.filter((x) => R0[x.id] && R0[x.id].ok === false);
+    else if (o.scope === 'ki') items = items.filter((x) => x.wrongQ);
     st = { items: rnd(items).slice(0, ROUND), i: 0, phase: 'type', ok: 0, wrong: [], keys: 0, ms: 0, t0: 0, typed: 0, back: 0, hint: false, total: items.length };
     render();
   }
@@ -102,12 +126,12 @@
     const o = opt();
     const bar = `<section class="ty-bar">
       ${tab() === 'art' ? chips('target', [['era', '시대 치기'], ['name', '유물 이름 치기']], o.target)
-        : chips('group', [['all', '전체']].concat(E.groups.map((g) => [g[0], g[1]])), o.group)}
+        : chips('group', [['all', '전체']].concat(E.groups.map((g) => [g[0], g[1]])), o.group) + chips('ans', [['king', '왕(지도자) 치기'], ['nation', '나라·시대 치기']], o.ans)}
       ${chips('mode', [['quiz', '맞히기'], ['copy', '보고 치기']], o.mode)}
-      ${chips('scope', [['all', '전체 문제'], ['wrong', '틀린 문제만']], o.scope)}
+      ${chips('scope', [['all', '전체 문제'], ['wrong', '타자에서 틀린 것']].concat(tab() === 'ev' ? [['ki', '기출 오답']] : []), o.scope)}
     </section>`;
     if (!st.items.length) {
-      MAIN.innerHTML = bar + `<div class="ty-stage ty-empty"><p>${o.scope === 'wrong' ? '아직 틀린 문제가 없어요. 전체 문제로 먼저 풀어 보세요.' : '문제가 없어요.'}</p></div>`;
+      MAIN.innerHTML = bar + `<div class="ty-stage ty-empty"><p>${o.scope === 'ki' ? '기출 풀기에서 틀린 문제에 나온 문장이 없어요. (오답 노트에서 ‘외웠어요’로 표시한 문제는 빼요. 로그인하면 다른 기기의 기록도 불러와요.)' : o.scope === 'wrong' ? '아직 타자에서 틀린 문제가 없어요. 전체 문제로 먼저 풀어 보세요.' : '문제가 없어요.'}</p></div>`;
       return;
     }
     if (st.i >= st.items.length) { MAIN.innerHTML = bar + summary(); return; }
@@ -123,7 +147,7 @@
       ? `<div class="ty-media"><div class="ty-side">${side(st.i - 1)}</div><img class="ty-main" src="${esc(it.img)}" alt="문제 사진"><div class="ty-side">${side(st.i + 1)}</div></div>`
       : `<div class="ty-event">${it.badge ? `<span class="ty-badge">${esc(it.badge)}</span>` : ''}<p>${esc(it.prompt)}</p></div>`;
     const q = it.img ? (tab() === 'art' && opt().target === 'era' ? `<p class="ty-q">${esc(it.prompt)} <small>· 어느 시대?</small></p>` : `<p class="ty-q"><small>${done ? esc(it.badge) + ' · ' : ''}이 유물의 이름은?</small></p>`)
-      : '<p class="ty-q"><small>이 일이 있었던 때의 왕(지도자)은?</small></p>';
+      : `<p class="ty-q"><small>${opt().ans === 'nation' ? '어느 나라(시대)의 일일까요?' : '이 일이 있었던 때의 왕(지도자)은?'}</small></p>`;
     const msg = st.phase === 'retype' ? '<p class="ty-msg r">틀렸어요 — 정답을 한 번 따라 쳐 보세요</p>'
       : done ? `<p class="ty-msg ${st.lastOk ? 'g' : 'r'}">${st.lastOk ? '정답!' : '오답'} <span>${st.lastOk ? '' : `내 답: ${esc(st.lastIn || '(모름)')}`}</span></p>` : '';
     return `<section class="ty-stage">
@@ -133,7 +157,7 @@
       <div class="ty-line" id="ty-line"></div>
       <input id="ty-in" class="ty-in" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="${showTarget() ? '위 글자를 따라 치세요' : '답을 치고 Enter'}" ${done ? 'readonly' : ''}>
       ${msg}
-      ${done ? `<div class="ty-info">${it.img ? esc(it.info) : it.info}</div>` : ''}
+      ${done ? `<div class="ty-info">${it.html}</div>` : ''}
       <div class="ty-acts">
         ${done ? '<button type="button" class="gt-btn main" data-a="next">다음 (Enter)</button>'
           : `${!showTarget() ? `<button type="button" class="gt-btn" data-a="hint">초성 힌트</button><button type="button" class="gt-btn" data-a="skip">모르겠어요</button>` : ''}`}

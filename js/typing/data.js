@@ -3,7 +3,7 @@
  *   TY_ART   : 유물 사진 → 시대. k = notes.js 의 window.ARTIFACTS 이름 (사진·설명은 거기서 가져온다)
  *              era = 쳐야 할 답, alt = 같이 맞다고 볼 답, name = 화면에 보일 이름(없으면 k)
  *              새 사진은 ARTIFACTS 에 등록한 뒤 여기에 한 줄 추가하면 된다.
- *   TY_ERAS  : 사건 → 왕 문제에서 rulers.js 시대 id 의 이름과 묶음
+ *   TY_ERAS  : 기출 문장 문제의 시대 이름과 묶음 (문장→왕·나라 연결은 kings.js)
  */
 window.TY_ART = [
   { k: '막집', era: '구석기' },
@@ -51,14 +51,14 @@ window.TY_ART = [
 
 window.TY_ERAS = {
   names: {
-    gojoseon: '고조선', states: '여러 나라의 성장', c4: '4세기', c5: '5세기', c6: '6세기', c7: '7세기 · 삼국 통일',
+    prehistoric: '선사 시대', gojoseon: '고조선', states: '여러 나라의 성장', c4: '4세기', c5: '5세기', c6: '6세기', c7: '7세기 · 삼국 통일',
     nambuk: '남북국 시대', husamguk: '후삼국 시대', goryeo1: '고려 전기', goryeo2: '고려 후기',
-    joseon1: '조선 전기', imjin: '임진왜란', horan: '조선 후기 (호란 이후)', gaehang: '조선 후기 · 개항기', modern: '광복 이후',
+    joseon1: '조선 전기', imjin: '임진왜란', horan: '조선 후기 (호란 이후)', gaehang: '조선 후기 · 개항기', colonial: '일제 강점기', modern: '광복 이후',
   },
   groups: [
-    ['ancient', '고대', ['gojoseon', 'states', 'c4', 'c5', 'c6', 'c7', 'nambuk', 'husamguk']],
+    ['ancient', '고대', ['prehistoric', 'gojoseon', 'states', 'c4', 'c5', 'c6', 'c7', 'nambuk', 'husamguk']],
     ['goryeo', '고려', ['goryeo1', 'goryeo2']],
     ['joseon', '조선', ['joseon1', 'imjin', 'horan', 'gaehang']],
-    ['modern', '현대 (대통령)', ['modern']],
+    ['modern', '근현대', ['colonial', 'modern']],
   ],
 };

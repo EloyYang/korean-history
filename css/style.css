@@ -1642,3 +1642,6 @@ body.pw-on { overflow: hidden; }
   .ty-event p { font-size: 18px; }
   .ty-nums { grid-template-columns: repeat(2, 1fr); }
 }
+
+.ty-meta { display: block; margin-top: 4px; font-size: 12.5px; color: #9aa6ba; }
+.ty-meta b { color: #dfe5ee; } .ty-meta em { font-style: normal; color: #ffb4a2; font-weight: 700; }
