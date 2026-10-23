@@ -1663,3 +1663,9 @@ body.pw-on { overflow: hidden; }
 .f-pill[aria-pressed="true"] small { color: rgba(255, 255, 255, .85); }
 .fv-filter .f-modes { margin: 6px 0; }
 .top-tools .f-modes { margin: 0; max-width: 320px; } .top-tools .f-modes button { font-size: 13px; padding: 6px 10px; }
+
+/* 타자 연습: 다중 선택 목록은 다른 필터를 밀어내지 않고 버튼 아래에 떠서 펼쳐진다 */
+.ty-page .f-multi[open] { flex-basis: auto; }
+.ty-page .f-multi-list { position: absolute; top: 100%; left: 0; z-index: 20; width: max-content; max-width: min(92vw, 380px); margin: 4px 0 0; box-shadow: 0 8px 24px rgba(0, 0, 0, .18); }
+.ty-page .f-filters { align-items: flex-start; }
+.ty-clues { margin: 6px 0 4px; padding-left: 20px; text-align: left; font-size: 14px; } .ty-clues li { margin: 1px 0; }
