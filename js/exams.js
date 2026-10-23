@@ -46,25 +46,27 @@ window.EXAMS = [
     },
     ready: true,
   },
-  {
-    id: 'fire',
-    name: '소방공무원',
+  // 소방공무원은 공개경쟁채용·경력경쟁채용을 따로 준비하는 별개 시험으로 둔다 (같은 fire.html, ?kind= 로 구분)
+  ...[['open', '공개경쟁채용', '#b3261e', '2022~2026년 공개경쟁채용 필기 기출'], ['car', '경력경쟁채용', '#8e3a2f', '2022~2026년 경력경쟁채용 필기 기출']].map(([kind, name, color, desc]) => ({
+    id: 'fire-' + kind,
+    name: '소방공무원 ' + name,
     level: '필기',
     mark: '消',
-    color: '#b3261e',
-    desc: '2022~2026년 공개경쟁·경력경쟁 채용시험 기출 1,240문항: 시험별·과목별 풀기, 오답·★ 헷갈림 다시 풀기',
+    color,
+    desc: desc + ': 시험별·과목별 풀기, 오답·★ 헷갈림 다시 풀기',
     links: [
-      { href: 'fire.html', label: '기출 풀기', main: true },
-      { href: 'fire.html#wrong', label: '오답' },
-      { href: 'fire.html#stats', label: '기록' },
+      { href: `fire.html?kind=${kind}`, label: '기출 풀기', main: true },
+      { href: `fire.html?kind=${kind}#wrong`, label: '오답' },
+      { href: `fire.html?kind=${kind}#stats`, label: '기록' },
     ],
     stats(S) {
-      const q = S.get('study.fire.q', {}) || {}; const ks = Object.keys(q);
+      const mine = (k) => k.split('/')[0].endsWith('_' + kind);
+      const q = S.get('study.fire.q', {}) || {}; const ks = Object.keys(q).filter(mine);
       const done = ks.filter((k) => q[k].t).length; const ok = ks.filter((k) => q[k].t && q[k].ok).length;
-      return [[done, '푼 문항'], [done ? Math.round((ok / done) * 100) + '%' : '-', '최근 정답률'], [ks.filter((k) => q[k].ok === false && !q[k].m).length, '틀린 문항'], [Object.keys(S.get('study.fire.flags', {}) || {}).length, '★ 헷갈림']];
+      return [[done, '푼 문항'], [done ? Math.round((ok / done) * 100) + '%' : '-', '최근 정답률'], [ks.filter((k) => q[k].ok === false && !q[k].m).length, '틀린 문항'], [Object.keys(S.get('study.fire.flags', {}) || {}).filter(mine).length, '★ 헷갈림']];
     },
     ready: true,
-  },
+  })),
 ];
 
 window.examById = function (id) {

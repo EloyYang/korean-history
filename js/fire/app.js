@@ -25,25 +25,25 @@
   const imgOf = (k) => { const p = parse(k); return `fire/img/${p.e}/${p.s}/${String(p.n).padStart(2, '0')}.webp`; };
   const labelOf = (k) => { const p = parse(k); return `${EX[p.e].short} ${SUBN[p.s]} ${p.n}번`; };
   const isOk = (k, pick) => ansOf(k) === 0 || (pick != null && pick === ansOf(k)); // 0 = 전원 정답 처리
-  // 채용 구분: 공개경쟁(open) · 경력경쟁(car) · 전체(all) — 화면마다 같은 선택을 쓴다
-  let curKind = S.get(K('kind'), 'open') || 'open';
-  const KIND = { open: '공개경쟁채용', car: '경력경쟁채용', all: '전체' };
+  // 채용 구분: 공개경쟁(open) · 경력경쟁(car) 은 따로 준비하는 별개 시험 — 주소의 ?kind= 로 정한다 (없으면 공개경쟁)
+  const KIND = { open: '공개경쟁채용', car: '경력경쟁채용' };
+  const curKind = KIND[new URLSearchParams(location.search).get('kind')] ? new URLSearchParams(location.search).get('kind') : 'open';
   const kindOf = (k) => EX[parse(k).e].kind;
-  const inKind = (k) => curKind === 'all' || kindOf(k) === curKind;
-  const kindChips = (attr) => FILTER.modes(attr, ['open', 'car', 'all'].map((x) => [x, KIND[x]]), curKind);
-  const setKind = (x) => { curKind = x; S.set(K('kind'), x); };
+  const inKind = (k) => kindOf(k) === curKind;
+  const kindChips = () => '';
   const ALL = D.exams.flatMap((e) => e.subjects.flatMap((s) => Array.from({ length: s.count }, (_, i) => keyOf(e.id, s.id, i + 1))));
 
   // ── 기록 ──
   const Q = () => S.get(K('q'), {}) || {};
   const FL = () => S.get(K('flags'), {}) || {};
-  const logs = () => S.get(K('log'), []) || [];
-  const draftOf = () => S.get(K('draft'), null);
+  // 기록은 채용 구분별로 보여 준다 (구분이 없는 옛 기록은 제목의 공채·경채로 가른다)
+  const logs = () => (S.get(K('log'), []) || []).filter((l) => (l.kind || (/경채|경력/.test(l.title) ? 'car' : 'open')) === curKind);
+  const draftOf = () => S.get(K('draft.' + curKind), null);
 
   // ── 시작 ──
   function start(title, keys, extra) {
     const dr = Object.assign({ title, keys, picks: {}, idx: 0, used: 0, t0: Date.now(), instant: S.get(K('instant'), false) === true }, extra || {});
-    S.set(K('draft'), dr); location.hash = '#quiz';
+    S.set(K('draft.' + curKind), dr); location.hash = '#quiz';
   }
 
   // ── 화면 이동 ──
@@ -57,6 +57,10 @@
     ({ home, quiz, result, wrong, stats })[t]();
     window.scrollTo(0, 0);
   }
+  // 머리말을 현재 채용 구분에 맞춘다
+  document.title = `소방공무원 ${KIND[curKind]} 필기 기출`;
+  document.querySelector('.brand h1').textContent = `소방공무원 ${KIND[curKind]}`;
+  document.querySelector('.brand-sub').textContent = `2022~2026년 ${KIND[curKind]} 필기시험 문제와 정답 (소방청 공개 자료)`;
   document.querySelector('.gt-tabs').innerHTML = TABS.map(([t, l]) => `<a href="#${t}" data-t="${t}">${l}</a>`).join('');
 
   // ── 별(헷갈려요) ──
@@ -97,10 +101,10 @@
         <div class="gt-bar"><button type="button" class="gt-btn main" id="fr-build">${SUBN[bSubj]} ${bCount}문제 풀기</button><span class="gt-muted" id="fr-bnote"></span></div>
       </div>
       <h2 class="r-h">시험별 풀기 <small>과목을 누르면 그 시험의 문제를 번호 순서대로 풀어요</small></h2>
-      <div class="fr-exams">${D.exams.filter((e) => curKind === 'all' || e.kind === curKind).map(card).join('')}</div>
+      <div class="fr-exams">${D.exams.filter((e) => e.kind === curKind).map(card).join('')}</div>
       <div class="ad-slot" data-ad="list"></div>`;
     const dres = $('#fr-resume'); if (dres) dres.addEventListener('click', () => { location.hash = '#quiz'; });
-    const ddrop = $('#fr-drop'); if (ddrop) ddrop.addEventListener('click', () => { if (confirm('풀던 시험을 지울까요?')) { S.set(K('draft'), null); home(); } });
+    const ddrop = $('#fr-drop'); if (ddrop) ddrop.addEventListener('click', () => { if (confirm('풀던 시험을 지울까요?')) { S.set(K('draft.' + curKind), null); home(); } });
     root.querySelectorAll('[data-go]').forEach((b) => b.addEventListener('click', () => {
       const [e, s] = b.dataset.go.split('/'); const ex = EX[e];
       const subs = s === '*' ? ex.subjects : ex.subjects.filter((x) => x.id === s);
@@ -108,7 +112,6 @@
       if (dr && !confirm('풀던 시험이 있어요. 지우고 새로 시작할까요?')) return;
       start(`${ex.label} · ${s === '*' ? '전 과목' : SUBN[s]}`, keys);
     }));
-    FILTER.bind(root, 'data-kind', (v) => { setKind(v); home(); });
     FILTER.bind(root, 'data-bs', (v) => { bSubj = v; home(); });
     FILTER.bind(root, 'data-bc', (v) => { bCount = +v; home(); });
     FILTER.bind(root, 'data-bm', (v) => { bSrc = v; home(); });
@@ -131,7 +134,7 @@
   function quiz() {
     const dr = draftOf(); if (!dr) { location.hash = '#home'; return; }
     const keys = dr.keys; const total = keys.length; let idx = Math.min(dr.idx || 0, total - 1);
-    const t0 = Date.now(); const save = () => { dr.used = (dr.used || 0) + (Date.now() - (dr._t || t0)); dr._t = Date.now(); S.set(K('draft'), dr); };
+    const t0 = Date.now(); const save = () => { dr.used = (dr.used || 0) + (Date.now() - (dr._t || t0)); dr._t = Date.now(); S.set(K('draft.' + curKind), dr); };
     dr._t = t0;
     const view = () => {
       const k = keys[idx]; const pick = dr.picks[k]; const locked = dr.instant && pick != null;
@@ -161,7 +164,7 @@
       $('#fr-next').addEventListener('click', () => go(idx + 1));
       $('#fr-clear').addEventListener('click', () => { delete dr.picks[k]; save(); view(); });
       $('#fr-inst').addEventListener('change', (e) => { dr.instant = e.target.checked; S.set(K('instant'), dr.instant); save(); view(); });
-      $('#fr-quit').addEventListener('click', () => { if (!confirm('풀던 시험을 그만둘까요? (푼 답은 저장되지 않아요)')) return; S.set(K('draft'), null); location.hash = '#home'; });
+      $('#fr-quit').addEventListener('click', () => { if (!confirm('풀던 시험을 그만둘까요? (푼 답은 저장되지 않아요)')) return; S.set(K('draft.' + curKind), null); location.hash = '#home'; });
       $('#fr-submit').addEventListener('click', () => {
         const left = total - Object.keys(dr.picks).length;
         if (!confirm(left ? `${left}문항을 안 풀었어요. 채점할까요? (안 푼 문항은 틀린 것으로 셈해요)` : '채점할까요?')) return;
@@ -189,15 +192,15 @@
     });
     S.set(K('q'), q);
     const res = { title: dr.title, keys, picks: dr.picks, correct, total: keys.length, date: today(), min: Math.round(dr.used / 60000) };
-    S.set(K('last'), res);
-    S.set(K('log'), logs().concat([{ title: dr.title, date: res.date, correct, total: res.total, score: Math.round((correct / res.total) * 1000) / 10, min: res.min }]).slice(-80));
-    S.set(K('draft'), null); location.hash = '#result';
+    S.set(K('last.' + curKind), res);
+    S.set(K('log'), S.get(K('log'), []).concat([{ kind: curKind, title: dr.title, date: res.date, correct, total: res.total, score: Math.round((correct / res.total) * 1000) / 10, min: res.min }]).slice(-80));
+    S.set(K('draft.' + curKind), null); location.hash = '#result';
   }
 
   // ───────── 채점 결과 ─────────
   let resFilter = 'wrong';
   function result() {
-    const r = S.get(K('last'), null); if (!r) { location.hash = '#home'; return; }
+    const r = S.get(K('last.' + curKind), null); if (!r) { location.hash = '#home'; return; }
     const score = Math.round((r.correct / r.total) * 1000) / 10;
     const bySub = {};
     r.keys.forEach((k) => { const s = parse(k).s; bySub[s] = bySub[s] || [0, 0]; bySub[s][1]++; if (isOk(k, r.picks[k])) bySub[s][0]++; });
@@ -251,7 +254,6 @@
       <div class="gt-bar"><button type="button" class="gt-btn main" id="w-redo"${list.length ? '' : ' disabled'}>이 목록 다시 풀기 (${Math.min(list.length, 60)}문제)</button><span class="gt-muted">다시 맞히면 오답에서 빠져요. 외웠으면 '해결 ✓'를 눌러 지울 수도 있어요.</span></div>
       <div class="fr-list">${list.length ? list.slice(0, wMore).map((k) => itemHtml(k, q[k] ? q[k].last : null, `<button type="button" class="gt-btn fr-solve" data-solve="${k}">해결 ✓</button>`)).join('') : '<p class="gt-muted">아직 틀린 문제가 없어요. 기출을 풀어 보세요.</p>'}</div>
       ${list.length > wMore ? `<div class="gt-bar center"><button type="button" class="gt-btn" id="w-more">더 보기 (${list.length - wMore}문항 남음)</button></div>` : ''}`;
-    FILTER.bind(root, 'data-wk', (v) => { setKind(v); wCat = 'all'; wMore = 15; wrong(); });
     FILTER.bind(root, 'data-wm', (v) => { wFlagOnly = v === '1'; wMore = 15; wrong(); });
     FILTER.bind(root, 'data-wc', (v) => { wCat = v; wMore = 15; wrong(); });
     const mb = $('#w-more'); if (mb) mb.addEventListener('click', () => { wMore += 15; wrong(); });
@@ -272,12 +274,18 @@
     };
     const lg = logs().slice().reverse();
     root.innerHTML = `
-      <h2 class="r-h">기록 <small>푼 횟수와 정답률</small></h2>
-      ${table('open')}${table('car')}
+      <h2 class="r-h">${KIND[curKind]} 기록 <small>푼 횟수와 정답률</small></h2>
+      ${table(curKind)}
       <h3 class="gt-sh">최근 푼 기록 <small>${lg.length}건</small></h3>
       ${lg.length ? `<table class="gt-tbl"><thead><tr><th>날짜</th><th>시험·과목</th><th>정답</th><th>점수</th><th>시간</th></tr></thead><tbody>${lg.slice(0, 30).map((l) => `<tr><td>${esc(l.date)}</td><td>${esc(l.title)}</td><td>${l.correct}/${l.total}</td><td><b>${l.score}</b></td><td>${l.min ? l.min + '분' : '-'}</td></tr>`).join('')}</tbody></table>` : '<p class="gt-muted">아직 푼 기록이 없어요.</p>'}
-      <div class="gt-bar"><button type="button" class="gt-btn" id="st-reset">기록 모두 지우기</button></div>`;
-    $('#st-reset').addEventListener('click', () => { if (!confirm('푼 기록·오답·★ 표시를 모두 지울까요? 되돌릴 수 없어요.')) return; ['q', 'flags', 'log', 'draft', 'last'].forEach((n) => S.set(K(n), n === 'log' ? [] : n === 'q' || n === 'flags' ? {} : null)); stats(); });
+      <div class="gt-bar"><button type="button" class="gt-btn" id="st-reset">${KIND[curKind]} 기록 모두 지우기</button></div>`;
+    $('#st-reset').addEventListener('click', () => {
+      if (!confirm(`${KIND[curKind]}의 푼 기록·오답·★ 표시를 모두 지울까요? 되돌릴 수 없어요.`)) return;
+      const keep = (o) => Object.fromEntries(Object.entries(o || {}).filter(([k]) => !inKind(k)));
+      S.set(K('q'), keep(Q())); S.set(K('flags'), keep(FL()));
+      S.set(K('log'), (S.get(K('log'), []) || []).filter((l) => !logs().includes(l)));
+      S.set(K('draft.' + curKind), null); S.set(K('last.' + curKind), null); stats();
+    });
   }
 
   window.addEventListener('hashchange', render);
