@@ -18,7 +18,7 @@ window.EXAMS = [
     desc: '시대별 영토 지도와 기출 포인트, 기출 70~79회 풀기와 오답 노트',
     img: 'quiz/{r}/{n}.webp',
     round: '제{r}회',
-    pages: [{ href: 'history.html', label: '지도 노트', note: '시대별 영토·왕·기출 포인트' }],
+    pages: [{ href: 'history.html', label: '지도 노트', note: '시대별 영토·왕·기출 포인트' }, { href: 'typing.html', label: '타자 연습', note: '유물 사진 → 시대, 사건 → 왕을 쳐서 외우기' }],
     ready: true,
   },
   {
