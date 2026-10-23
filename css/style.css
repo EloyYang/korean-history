@@ -1612,18 +1612,6 @@ body.pw-on { overflow: hidden; }
 .ty-acts { display: flex; justify-content: center; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
 .ty-stage .gt-btn:not(.main) { background: var(--ty-key); border-color: var(--ty-line); color: var(--ty-fg); }
 .ty-stage .gt-link { color: #9aa6ba; }
-.ty-kb { display: flex; flex-direction: column; gap: 4px; max-width: 640px; margin: 0 auto 14px; padding: 10px; border-radius: 12px; background: var(--ty-bg); }
-.ty-kb > div { display: flex; gap: 4px; }
-.ty-kb .k { position: relative; flex: 1 1 0; height: 40px; border-radius: 6px; background: var(--ty-key); color: #c6cfdd; display: flex; align-items: center; justify-content: center; font-size: 14px; transition: background .25s, color .25s; }
-.ty-kb .k b { font-weight: 700; }
-.ty-kb .k i { position: absolute; top: 2px; left: 5px; font-style: normal; font-size: 10px; color: #7d8aa1; }
-.ty-kb .k small { position: absolute; bottom: 1px; right: 5px; font-size: 9.5px; color: #66728a; }
-.ty-kb .k.w { flex-grow: 1.4; } .ty-kb .k.w2 { flex-grow: 1.8; } .ty-kb .k.w3 { flex-grow: 2.3; } .ty-kb .k.sp { flex-grow: 8; }
-.ty-kb .k:is(.w, .w2, .w3) small, .ty-kb .k[data-k="lang"] small { position: static; font-size: 11px; color: #8d99ae; }
-.ty-kb .k.next { background: #f2f4f8; color: #1b2433; box-shadow: 0 0 0 2px #7fb8ff; }
-.ty-kb .k.next small, .ty-kb .k.next i { color: #4a5568; }
-.ty-kb .k.hit { animation: ty-hit .3s ease-out; }
-@keyframes ty-hit { from { background: #7fb8ff; color: #10161f; } to { background: var(--ty-key); } }
 .ty-sum h2 { margin: 6px 0 10px; }
 .ty-sum h3 { margin: 18px 0 6px; font-size: 15px; color: #b7c0cf; }
 .ty-nums { list-style: none; padding: 0; margin: 0 auto; display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; max-width: 560px; }
@@ -1635,7 +1623,7 @@ body.pw-on { overflow: hidden; }
 .ty-wrong img { width: 56px; height: 56px; object-fit: contain; background: #fff; border-radius: 6px; flex: none; }
 .ty-wrong b { color: #ffcfbf; } .ty-wrong p { margin: 2px 0 0; font-size: 13.5px; color: #c6cfdd; }
 @media (max-width: 640px) {
-  .ty-kb, .ty-side { display: none; }
+  .ty-side { display: none; }
   .ty-media { grid-template-columns: 1fr; }
   .ty-main { max-height: 240px; }
   .ty-line { font-size: 32px; min-height: 48px; }

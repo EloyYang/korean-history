@@ -5,7 +5,6 @@
  *          문장↔왕·나라 연결은 js/typing/kings.js (TY_SENT, tools/typing_kings.js 로 생성), 문장이 나온 문항은 ex-where.js
  *          '기출 오답' 범위 = 기출 풀기에서 틀린 문항(khmap.quizLog·setLog, '외웠어요' 표시한 것 제외)에 나온 문장만
  *   방식 : 맞히기(답을 가리고 Enter 로 채점, 틀리면 정답을 한 번 따라 쳐야 넘어감) · 보고 치기(정답이 보이고 다 치면 끝)
- *   화면 키보드는 두벌식 자판 — 보고 치기에서는 다음에 누를 키를 밝혀 준다
  *   기록은 study.typing.* (UserStore → 로그인하면 계정에 동기화)
  *     rec  : { 문제 id: { t: 푼 횟수, w: 틀린 횟수, ok: 마지막 결과 } }
  *     opt  : 화면 선택 (탭별 방식·범위 등)
@@ -21,7 +20,7 @@
   const reEsc = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
   // ── 한글 → 두벌식 키 ──
-  // 키 하나 = 소문자(그냥) · 대문자(Shift) · 숫자 · ' '(스페이스) · 그 밖의 글자(화면 키보드에 없음)
+  // 키 하나 = 소문자(그냥) · 대문자(Shift) · 숫자 · ' '(스페이스) · 그 밖의 글자
   const KEY = { ㅂ: 'q', ㅈ: 'w', ㄷ: 'e', ㄱ: 'r', ㅅ: 't', ㅛ: 'y', ㅕ: 'u', ㅑ: 'i', ㅐ: 'o', ㅔ: 'p', ㅁ: 'a', ㄴ: 's', ㅇ: 'd', ㄹ: 'f', ㅎ: 'g', ㅗ: 'h', ㅓ: 'j', ㅏ: 'k', ㅣ: 'l', ㅋ: 'z', ㅌ: 'x', ㅊ: 'c', ㅍ: 'v', ㅠ: 'b', ㅜ: 'n', ㅡ: 'm', ㅃ: 'Q', ㅉ: 'W', ㄸ: 'E', ㄲ: 'R', ㅆ: 'T', ㅒ: 'O', ㅖ: 'P' };
   const CHO = 'ㄱㄲㄴㄷㄸㄹㅁㅂㅃㅅㅆㅇㅈㅉㅊㅋㅌㅍㅎ';
   const JUNG = 'ㅏㅐㅑㅒㅓㅔㅕㅖㅗㅘㅙㅚㅛㅜㅝㅞㅟㅠㅡㅢㅣ';
@@ -135,7 +134,7 @@
       return;
     }
     if (st.i >= st.items.length) { MAIN.innerHTML = bar + summary(); return; }
-    MAIN.innerHTML = bar + stage() + keyboard();
+    MAIN.innerHTML = bar + stage();
     paint();
     const inp = document.getElementById('ty-in'); if (inp && matchMedia('(hover: hover)').matches) inp.focus();
   }
@@ -170,14 +169,10 @@
   function paint() {
     const it = cur(); const line = document.getElementById('ty-line'); const inp = document.getElementById('ty-in');
     if (!line || !inp) return;
-    const nextKey = (k) => document.querySelectorAll('.ty-kb [data-k]').forEach((el) => {
-      const on = k != null && (el.dataset.k === k.toLowerCase() || (el.dataset.k === 'shift' && k !== k.toLowerCase()));
-      el.classList.toggle('next', on);
-    });
-    if (st.phase === 'done') { line.innerHTML = `<span class="done">${esc(it.answer)}</span>`; nextKey(null); return; }
+    if (st.phase === 'done') { line.innerHTML = `<span class="done">${esc(it.answer)}</span>`; return; }
     if (!showTarget()) {
       line.innerHTML = st.hint ? `<span class="hint">${esc(chosung(it.answer))}</span>` : '<span class="hint">?</span>';
-      nextKey(null); return;
+      return;
     }
     const tk = keysOf(it.answer); const ik = keysOf(inp.value);
     let m = 0; while (m < ik.length && m < tk.length && ik[m] === tk[m]) m++;
@@ -189,21 +184,6 @@
       return `<span class="${cls}">${c === ' ' ? '&nbsp;' : esc(c)}</span>`;
     }).join('');
     line.classList.toggle('err', bad);
-    nextKey(bad ? null : tk[m]);
-  }
-
-  function keyboard() {
-    const L = 'qwertyuiop|asdfghjkl|zxcvbnm'.split('|');
-    const inv = Object.fromEntries(Object.entries(KEY).map(([j, k]) => [k, j]));
-    const key = (k) => `<span class="k" data-k="${k}"><b>${inv[k] || ''}</b><i>${inv[k.toUpperCase()] ? inv[k.toUpperCase()] : ''}</i><small>${k.toUpperCase()}</small></span>`;
-    const num = '1234567890'.split('').map((d) => `<span class="k" data-k="${d}"><b>${d}</b></span>`).join('');
-    return `<section class="ty-kb" aria-hidden="true">
-      <div><span class="k w" data-k="\`"><small>\`</small></span>${num}<span class="k" data-k="-"><b>-</b></span><span class="k" data-k="="><b>=</b></span><span class="k w2" data-k="backspace"><small>⌫</small></span></div>
-      <div><span class="k w" data-k="tab"><small>Tab</small></span>${L[0].split('').map(key).join('')}<span class="k" data-k="["><b>[</b></span><span class="k" data-k="]"><b>]</b></span><span class="k w" data-k="\\"><b>\\</b></span></div>
-      <div><span class="k w2" data-k="caps"><small>Caps</small></span>${L[1].split('').map(key).join('')}<span class="k" data-k=";"><b>;</b></span><span class="k" data-k="'"><b>'</b></span><span class="k w2" data-k="enter"><small>Enter</small></span></div>
-      <div><span class="k w3" data-k="shift"><small>Shift</small></span>${L[2].split('').map(key).join('')}<span class="k" data-k=","><b>,</b></span><span class="k" data-k="."><b>.</b></span><span class="k" data-k="/"><b>/</b></span><span class="k w3" data-k="shift"><small>Shift</small></span></div>
-      <div><span class="k w2" data-k="lang"><small>한/영</small></span><span class="k sp" data-k=" "></span></div>
-    </section>`;
   }
 
   function summary() {
@@ -253,7 +233,6 @@
   let lastEnter = 0;
   MAIN.addEventListener('keydown', (e) => {
     if (e.target.id !== 'ty-in') return;
-    flash(e.code);
     if (e.key === 'Enter' || e.code === 'Enter') {
       e.preventDefault();
       // 한글 조합 중 Enter 는 브라우저마다 두 번 오기도 해서, 조합이 끝난 뒤 한 번만 처리한다
@@ -270,11 +249,6 @@
     // 보고 치기: 다 치면 바로 끝 (마지막 글자 조합은 blur 로 마무리)
     if (showTarget() && norm(e.target.value) === norm(cur().answer)) { e.target.blur(); finish(true, e.target.value); }
   });
-  function flash(code) {
-    const k = code === 'Space' ? ' ' : /^Key/.test(code) ? code.slice(3).toLowerCase() : /^Digit/.test(code) ? code.slice(5) : /^Shift/.test(code) ? 'shift' : code === 'Backspace' ? 'backspace' : code === 'Enter' ? 'enter' : null;
-    if (k == null) return;
-    document.querySelectorAll(`.ty-kb [data-k="${CSS.escape(k)}"]`).forEach((el) => { el.classList.remove('hit'); void el.offsetWidth; el.classList.add('hit'); });
-  }
   // 끝난 화면(입력칸 없음)에서도 Enter 로 넘어가기
   document.addEventListener('keydown', (e) => {
     if (e.key !== 'Enter' || (e.target && e.target.id === 'ty-in')) return;
