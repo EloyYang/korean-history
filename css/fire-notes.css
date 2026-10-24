@@ -1,0 +1,5 @@
+/* 소방 기출 — 해설 / 개념 */
+.fr-ex{margin:8px 0 0;border:1px solid var(--line,#ddd);border-radius:10px;background:var(--card,#fff)}
+.fr-ex summary{cursor:pointer;padding:9px 12px;font-weight:700;font-size:.92rem}
+.fr-ex p{margin:0;padding:0 12px 12px;line-height:1.75;font-size:.94rem;word-break:keep-all}
+.fr-ex.none{padding:8px 12px;font-size:.85rem;color:var(--muted,#888);border-style:dashed}

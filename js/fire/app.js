@@ -71,6 +71,9 @@
     document.querySelectorAll(`[data-fl="${k}"]`).forEach((x) => { x.classList.toggle('on', on); x.textContent = on ? '★ 헷갈려요' : '☆ 헷갈려요'; });
     const g = document.querySelector(`.fr-gn[data-k="${k}"]`); if (g) g.classList.toggle('fl', on);
   });
+  // 해설: FIRE_EX[key] 문자열, '=키' 이면 같은 문제의 다른 회차 해설을 가리킨다
+  const exText = (k) => { const m = window.FIRE_EX || {}; let v = m[k]; if (v && v[0] === '=') v = m[v.slice(1)]; return v || ''; };
+  const exHtml = (k, open) => { const t = exText(k); return t ? `<details class="fr-ex"${open ? ' open' : ''}><summary>해설 보기</summary><p>${esc(t)}</p></details>` : '<p class="fr-ex none">이 문항은 해설이 아직 없어요.</p>'; };
   const flagBtn = (k) => `<button type="button" class="gt-flag${FL()[k] ? ' on' : ''}" data-fl="${k}">${FL()[k] ? '★ 헷갈려요' : '☆ 헷갈려요'}</button>`;
 
   // ───────── 풀기 (홈) ─────────
@@ -151,7 +154,7 @@
           <div class="fr-qlabel"><b>${i1(idx)} / ${total}</b> <span class="gt-muted">${esc(labelOf(k))}</span>${flagBtn(k)}</div>
           <img class="fr-img" src="${imgOf(k)}" alt="${esc(labelOf(k))} 문제" decoding="async">
           <div class="fr-ans">${NUM.map((n, i) => `<button type="button" data-p="${i + 1}" class="${pick === i + 1 ? 'pick' : ''}${locked ? (a === 0 || i + 1 === a ? ' right' : pick === i + 1 ? ' wrong' : '') : ''}"${locked ? ' disabled' : ''}>${n}</button>`).join('')}</div>
-          ${locked ? `<div class="fr-fb ${isOk(k, pick) ? 'g' : 'r'}">${isOk(k, pick) ? '정답이에요!' : `틀렸어요. 정답은 ${NUM[a - 1]}`}${a === 0 ? ' · 이 문항은 전원 정답 처리됐어요' : ''}</div>` : ''}
+          ${locked ? `<div class="fr-fb ${isOk(k, pick) ? 'g' : 'r'}">${isOk(k, pick) ? '정답이에요!' : `틀렸어요. 정답은 ${NUM[a - 1]}`}${a === 0 ? ' · 이 문항은 전원 정답 처리됐어요' : ''}</div>${exHtml(k, true)}` : ''}
           <div class="gt-bar center"><button type="button" class="gt-btn" id="fr-prev"${idx ? '' : ' disabled'}>← 이전</button><button type="button" class="gt-btn" id="fr-clear"${pick != null && !locked ? '' : ' disabled'}>선택 취소</button><button type="button" class="gt-btn main" id="fr-next">${idx < total - 1 ? '다음 →' : '마지막 문제'}</button></div>
         </div>`;
       const go = (i) => { idx = Math.max(0, Math.min(total - 1, i)); dr.idx = idx; save(); view(); window.scrollTo(0, 0); };
@@ -233,7 +236,7 @@
     return `<article class="fr-item ${ok ? 'ok' : 'no'}" data-k="${k}">
       <div class="fr-qlabel"><b>${esc(labelOf(k))}</b>${flagBtn(k)}${extra || ''}</div>
       <img class="fr-img" src="${imgOf(k)}" loading="lazy" alt="${esc(labelOf(k))} 문제">
-      <div class="fr-fb ${ok ? 'g' : 'r'}">${pick == null ? '<b>안 풂</b>' : `내 답 <b>${NUM[pick - 1]}</b>`} · 정답 <b>${a === 0 ? '전원 정답 처리' : NUM[a - 1]}</b> ${ok ? '✓' : '✗'}</div></article>`;
+      <div class="fr-fb ${ok ? 'g' : 'r'}">${pick == null ? '<b>안 풂</b>' : `내 답 <b>${NUM[pick - 1]}</b>`} · 정답 <b>${a === 0 ? '전원 정답 처리' : NUM[a - 1]}</b> ${ok ? '✓' : '✗'}</div>${exHtml(k)}</article>`;
   };
 
   // ───────── 오답 ─────────
