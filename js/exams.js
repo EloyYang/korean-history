@@ -53,9 +53,10 @@ window.EXAMS = [
     level: '필기',
     mark: '消',
     color,
-    desc: desc + ': 시험별·과목별 풀기, 오답·★ 헷갈림 다시 풀기',
+    desc: desc + ': 문제 풀기·해설, 유형별 개념 정리, 오답·★ 헷갈림 다시 풀기',
     links: [
       { href: `fire.html?kind=${kind}`, label: '기출 풀기', main: true },
+      { href: `fire.html?kind=${kind}#notes`, label: '개념' },
       { href: `fire.html?kind=${kind}#wrong`, label: '오답' },
       { href: `fire.html?kind=${kind}#stats`, label: '기록' },
     ],

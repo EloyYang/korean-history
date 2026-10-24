@@ -47,14 +47,14 @@
   }
 
   // ── 화면 이동 ──
-  const TABS = [['home', '풀기'], ['wrong', '오답'], ['stats', '기록']];
+  const TABS = [['home', '풀기'], ['notes', '개념'], ['wrong', '오답'], ['stats', '기록']];
   let timer = null;
-  const route = () => { const t = location.hash.replace(/^#/, '').split('/')[0]; return ['home', 'quiz', 'result', 'wrong', 'stats'].includes(t) ? t : 'home'; };
+  const route = () => { const t = location.hash.replace(/^#/, '').split('/')[0]; return ['home', 'quiz', 'result', 'wrong', 'stats', 'notes'].includes(t) ? t : 'home'; };
   function render() {
     clearInterval(timer); root = MAIN;
     const t = route();
     document.querySelectorAll('.gt-tabs a').forEach((a) => a.classList.toggle('on', a.dataset.t === (t === 'quiz' || t === 'result' ? 'home' : t)));
-    ({ home, quiz, result, wrong, stats })[t]();
+    ({ home, quiz, result, wrong, stats, notes })[t]();
     window.scrollTo(0, 0);
   }
   // 머리말을 현재 채용 구분에 맞춘다
@@ -74,6 +74,11 @@
   // 해설: FIRE_EX[key] 문자열, '=키' 이면 같은 문제의 다른 회차 해설을 가리킨다
   const exText = (k) => { const m = window.FIRE_EX || {}; let v = m[k]; if (v && v[0] === '=') v = m[v.slice(1)]; return v || ''; };
   const exHtml = (k, open) => { const t = exText(k); return t ? `<details class="fr-ex"${open ? ' open' : ''}><summary>해설 보기</summary><p>${esc(t)}</p></details>` : '<p class="fr-ex none">이 문항은 해설이 아직 없어요.</p>'; };
+  const topicTag = (k) => { const n = window.FIRE_TOPIC ? window.FIRE_TOPIC.name(k) : ''; return n ? `<span class="fr-topic">유형 · ${esc(n)}</span>` : ''; };
+  function notes() {
+    if (!window.FIRE_NOTES) { root.innerHTML = '<p class="gt-muted">개념 정리를 불러오지 못했어요.</p>'; return; }
+    window.FIRE_NOTES.render({ root, D, SUBN, curKind, esc, rnd, start, hasDraft: () => !!draftOf() });
+  }
   const flagBtn = (k) => `<button type="button" class="gt-flag${FL()[k] ? ' on' : ''}" data-fl="${k}">${FL()[k] ? '★ 헷갈려요' : '☆ 헷갈려요'}</button>`;
 
   // ───────── 풀기 (홈) ─────────
@@ -154,7 +159,7 @@
           <div class="fr-qlabel"><b>${i1(idx)} / ${total}</b> <span class="gt-muted">${esc(labelOf(k))}</span>${flagBtn(k)}</div>
           <img class="fr-img" src="${imgOf(k)}" alt="${esc(labelOf(k))} 문제" decoding="async">
           <div class="fr-ans">${NUM.map((n, i) => `<button type="button" data-p="${i + 1}" class="${pick === i + 1 ? 'pick' : ''}${locked ? (a === 0 || i + 1 === a ? ' right' : pick === i + 1 ? ' wrong' : '') : ''}"${locked ? ' disabled' : ''}>${n}</button>`).join('')}</div>
-          ${locked ? `<div class="fr-fb ${isOk(k, pick) ? 'g' : 'r'}">${isOk(k, pick) ? '정답이에요!' : `틀렸어요. 정답은 ${NUM[a - 1]}`}${a === 0 ? ' · 이 문항은 전원 정답 처리됐어요' : ''}</div>${exHtml(k, true)}` : ''}
+          ${locked ? `<div class="fr-fb ${isOk(k, pick) ? 'g' : 'r'}">${isOk(k, pick) ? '정답이에요!' : `틀렸어요. 정답은 ${NUM[a - 1]}`}${a === 0 ? ' · 이 문항은 전원 정답 처리됐어요' : ''}</div>${exHtml(k, true)}${topicTag(k)}` : ''}
           <div class="gt-bar center"><button type="button" class="gt-btn" id="fr-prev"${idx ? '' : ' disabled'}>← 이전</button><button type="button" class="gt-btn" id="fr-clear"${pick != null && !locked ? '' : ' disabled'}>선택 취소</button><button type="button" class="gt-btn main" id="fr-next">${idx < total - 1 ? '다음 →' : '마지막 문제'}</button></div>
         </div>`;
       const go = (i) => { idx = Math.max(0, Math.min(total - 1, i)); dr.idx = idx; save(); view(); window.scrollTo(0, 0); };
@@ -236,7 +241,7 @@
     return `<article class="fr-item ${ok ? 'ok' : 'no'}" data-k="${k}">
       <div class="fr-qlabel"><b>${esc(labelOf(k))}</b>${flagBtn(k)}${extra || ''}</div>
       <img class="fr-img" src="${imgOf(k)}" loading="lazy" alt="${esc(labelOf(k))} 문제">
-      <div class="fr-fb ${ok ? 'g' : 'r'}">${pick == null ? '<b>안 풂</b>' : `내 답 <b>${NUM[pick - 1]}</b>`} · 정답 <b>${a === 0 ? '전원 정답 처리' : NUM[a - 1]}</b> ${ok ? '✓' : '✗'}</div>${exHtml(k)}</article>`;
+      <div class="fr-fb ${ok ? 'g' : 'r'}">${pick == null ? '<b>안 풂</b>' : `내 답 <b>${NUM[pick - 1]}</b>`} · 정답 <b>${a === 0 ? '전원 정답 처리' : NUM[a - 1]}</b> ${ok ? '✓' : '✗'}</div>${exHtml(k)}${topicTag(k)}</article>`;
   };
 
   // ───────── 오답 ─────────
