@@ -54,7 +54,7 @@
     const ok = pick === a;
     const fl = !!flags()[key];
     return `<div class="gt-q${graded ? (ok ? ' ok' : ' no') : ''}" data-k="${key}"><button type="button" class="gt-flag${fl ? ' on' : ''}" data-flag title="헷갈리는 문제로 표시 — '틀린+★ 다시 풀기'에 함께 나와요">${fl ? '★ 헷갈려요' : '☆ 헷갈려요'}</button>
-      <div class="gt-qt"><b>${num}.</b> ${q}</div>
+      <div class="gt-qt"><b>${num}.</b> <span class="gt-qtext">${q}</span></div>
       <ol class="gt-opts">${p.map((o, i) => {
         const cls = [pick === o ? 'pick' : '', graded && o === a ? 'ans' : '', graded && pick === o && o !== a ? 'miss' : ''].filter(Boolean).join(' ');
         return `<li><button type="button" class="${cls}" data-o="${o}"${graded ? ' disabled' : ''}><i>(${ABC[i]})</i> ${opts[o]}</button></li>`;
@@ -121,16 +121,20 @@
   // 실제 시험 양식: 지시문 → 문제 먼저 듣기(문제 읽어 주는 음성) → 대화·발표 듣기
   const QA = new Set(window.GT_QAUDIO || []);
   const readQ = () => S.get(K('qread'), true) !== false;
+  // 실제 시험처럼 청취 문제는 화면에 보기만 보이고 문제는 소리로만 나온다. '문제 글자 보기'를 켜면 연습용으로 볼 수 있다 (채점한 뒤에는 항상 보인다)
+  const showQ = () => S.get(K('showq'), false) === true;
+  const lqCls = () => ' lq' + (showQ() ? '' : ' hideq');
   const instHtml = (part, a, b) => {
     const conv = part === 1 || part === 3; const noun = conv ? 'conversation' : 'talk';
-    return `<div class="gt-inst"><span class="gt-snd">🎧<small>SOUND</small></span><p><b>PART ${part}.</b> You will hear ${conv ? 'a conversation between two people' : 'a talk by one person'}. First listen to questions ${a} through ${b}. Then you will hear the ${noun}. Choose the best answer to each question in the time provided.</p></div>`;
+    return `<div class="gt-inst"><span class="gt-snd">🎧<small>SOUND</small></span><p><b>PART ${part}.</b> You will hear ${conv ? 'a conversation between two people' : 'a talk by one person'}. First listen to questions ${a} through ${b}. Then you will hear the ${noun}. Choose the best answer to each question in the time provided.</p><p class="gt-inst-note">실제 시험처럼 <b>문제는 화면에 나오지 않고 소리로만</b> 나와요. 순서는 <b>문제 → 본문 → 문제 다시 한 번</b>이고, 화면에는 보기만 보여요. (연습용으로 보려면 ‘문제 글자 보기’)</p></div>`;
   };
   let playTok = 0;
   function playerHtml(id, lines, opt) {
     opt = opt || {};
     return `<div class="gt-player" data-pl="${id}">
       ${TTS.ok || AUDIO[id] ? `<button type="button" class="gt-btn main" data-act="play">▶ 듣기</button><button type="button" class="gt-btn" data-act="stop">■ 멈춤</button>
-      ${QA.has(id) ? `<label class="gt-rate"><input type="checkbox" data-act="qread"${readQ() ? ' checked' : ''}> 문제 먼저 듣기</label>` : ''}
+      ${QA.has(id) ? `<label class="gt-rate"><input type="checkbox" data-act="qread"${readQ() ? ' checked' : ''}> 문제 읽어 주기 (본문 전·후)</label>` : ''}
+      <label class="gt-rate"><input type="checkbox" data-act="showq"${showQ() ? ' checked' : ''}> 문제 글자 보기(연습용)</label>
       <label class="gt-rate">속도 <select data-act="rate">${[0.8, 0.9, 0.95, 1, 1.1].map((r) => `<option value="${r}"${r === rate() ? ' selected' : ''}>${r}×</option>`).join('')}</select></label>
       ${opt.count != null ? `<span class="gt-muted">들은 횟수 ${opt.count}${opt.limit ? ` / 실제 시험은 ${opt.limit}번` : ''}</span>` : ''}`
         : '<span class="gt-muted">이 브라우저는 음성 읽기를 지원하지 않아요. 스크립트를 펼쳐 읽어 보세요.</span>'}
@@ -188,7 +192,10 @@
               AUD.src = `gtelp/audio/${pid}.m4a`; AUD.playbackRate = rate();
               let last = -1;
               AUD.ontimeupdate = () => { let i = 0; while (i + 1 < t.length && t[i + 1] <= AUD.currentTime) i++; if (i !== last) { last = i; cur(i); } };
-              AUD.onended = end; now.textContent = '불러오는 중…';
+              AUD.onended = () => {
+                if (QA.has(pid) && readQ()) { now.textContent = '문제를 다시 읽어 줘요…'; AUD.src = `gtelp/audio/${pid}_r.m4a`; AUD.playbackRate = 1; AUD.ontimeupdate = null; AUD.onended = end; AUD.play().catch(end); } else end();
+              };
+              now.textContent = '불러오는 중…';
               AUD.play().catch(failMsg);
             };
             if (QA.has(pid) && readQ()) {
@@ -199,6 +206,7 @@
         }
         if (b.dataset.act === 'stop') { playTok++; TTS.stop(); now.textContent = '멈춤'; }
       });
+      const sq = pl.querySelector('input[data-act="showq"]'); if (sq) sq.addEventListener('change', () => { S.set(K('showq'), sq.checked); document.querySelectorAll('.gt-qs.lq').forEach((e) => e.classList.toggle('hideq', !sq.checked)); document.querySelectorAll('input[data-act="showq"]').forEach((x) => { x.checked = sq.checked; }); });
       const qr = pl.querySelector('input[data-act="qread"]'); if (qr) qr.addEventListener('change', () => S.set(K('qread'), qr.checked));
       const sel = pl.querySelector('select[data-act="rate"]');
       if (sel) sel.addEventListener('change', () => { S.set(K('rate'), +sel.value); AUD.playbackRate = +sel.value; });
@@ -473,7 +481,7 @@
       <div class="gt-work ${kind}">
         ${body}
         <div class="gt-side">
-          <div class="gt-qs${done && !retrying && showKo ? '' : ' no-ex'}${kind === 'listening' ? ' two rad' : ''}">${cur.qs.map((q, i) => qHtml(`${cur.id}-${i}`, i + 1, q[0], q[1].map(esc), q[2], q[3], picks[i], !isOpen(i))).join('')}</div>
+          <div class="gt-qs${done && !retrying && showKo ? '' : ' no-ex'}${kind === 'listening' ? ' two rad' + lqCls() : ''}">${cur.qs.map((q, i) => qHtml(`${cur.id}-${i}`, i + 1, q[0], q[1].map(esc), q[2], q[3], picks[i], !isOpen(i))).join('')}</div>
           <div class="gt-bar">${done && !retrying ? (() => {
               const wrongI = cur.qs.map((q, i) => i).filter((i) => done.picks[i] !== cur.qs[i][2]);
               const flagI = cur.qs.map((q, i) => i).filter((i) => flags()[`${cur.id}-${i}`]);
@@ -755,7 +763,7 @@
         const left_ = d.sec === 'l'
           ? `${instHtml(p.part, qs[0].n, qs[qs.length - 1].n)}<article class="gt-passage">${playerHtml(p.id, p.lines, { count: d.plays[p.id] || 0, limit: 1 })}<p class="gt-muted">스크립트는 채점 뒤에 볼 수 있어요</p></article>`
           : `<article class="gt-passage"><h3><small>Part ${p.part} · ${p.kind}</small><br>${esc(p.title)}</h3>${parasHtml(p.paras, null, p.qs)}</article>`;
-        return `<div class="gt-work ${d.sec === 'l' ? 'listening' : 'reading'}" data-part="${p.id}">${left_}<div class="gt-side"><div class="gt-qs${d.sec === 'l' ? ' two rad' : ''}">${qs.map((x) => qHtml(x.key, x.n, x.q, x.opts, x.a, '', d.picks[x.n], false)).join('')}</div></div></div>`;
+        return `<div class="gt-work ${d.sec === 'l' ? 'listening' : 'reading'}" data-part="${p.id}">${left_}<div class="gt-side"><div class="gt-qs${d.sec === 'l' ? ' two rad' + lqCls() : ''}">${qs.map((x) => qHtml(x.key, x.n, x.q, x.opts, x.a, '', d.picks[x.n], false)).join('')}</div></div></div>`;
       }).join('');
     }
     if (d.paused) body = `<div class="gt-pause"><b>⏸ 일시정지 중</b><p>시간이 멈췄어요. 문제는 가려 두었어요. 준비되면 계속하기를 눌러 주세요.</p><button type="button" class="gt-btn main" id="mk-resume">▶ 계속하기</button></div>`;
@@ -827,7 +835,7 @@
         const ko = showKo && !retrying ? koOf(p) : null;
         const left_ = s === 'l' ? `${instHtml(p.part, qs[0].n, qs[qs.length - 1].n)}<article class="gt-passage">${playerHtml(p.id, p.lines)}${scriptHtml(p.lines, !retrying, ko)}</article>`
           : `<article class="gt-passage"><h3><small>Part ${p.part} · ${p.kind}</small><br>${esc(p.title)}</h3>${parasHtml(p.paras, ko, p.qs)}</article>`;
-        blocks.push(`<div class="gt-work ${s === 'l' ? 'listening' : 'reading'}" data-part="${p.id}">${left_}<div class="gt-side"><div class="gt-qs${exCls}${s === 'l' ? ' two rad' : ''}">${qs.map((x) => qHtml(x.key, x.n, x.q, x.opts, x.a, x.ex, picks[x.n], !isOpen(x))).join('')}</div></div></div>`);
+        blocks.push(`<div class="gt-work ${s === 'l' ? 'listening' : 'reading'}" data-part="${p.id}">${left_}<div class="gt-side"><div class="gt-qs${exCls}${s === 'l' ? ' two rad' + lqCls() : ''}">${qs.map((x) => qHtml(x.key, x.n, x.q, x.opts, x.a, x.ex, picks[x.n], !isOpen(x))).join('')}</div></div></div>`);
       });
     });
     const cor = (s) => its.filter((x) => x.sec === s && picks[x.n] === x.a).length;

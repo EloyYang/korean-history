@@ -1,0 +1,4 @@
+/* 청취: 실제 시험처럼 보기만 보인다 (문제는 소리로만). 채점한 문제(.ok/.no)는 문제 글자도 보여 준다 */
+.gt-qs.lq.hideq .gt-q:not(.ok):not(.no) .gt-qtext{display:none}
+.gt-qs.lq.hideq .gt-q:not(.ok):not(.no) .gt-qt{margin-bottom:4px}
+.gt-inst .gt-inst-note{margin:6px 0 0;font-size:.86rem;color:var(--muted)}
