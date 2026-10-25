@@ -80,19 +80,28 @@
   };
   // 관련 법령 (js/fire/laws.js): 문제 본문에 나온 법령 + 유형별 관련 법령. 국가법령정보센터로 연결
   const lawUrl = (name, art) => {
-    if (/･/.test(name)) return 'https://www.law.go.kr/lsSc.do?query=' + encodeURIComponent(name); // 옛 법령명은 검색으로
+    const kind = (window.FIRE_LAWKIND || {})[name]; if (!kind) return '';
+    const n = encodeURIComponent(name.replace(/[･·]/g, 'ㆍ').replace(/\s/g, ''));
+    if (kind === 'adm') return 'https://www.law.go.kr/행정규칙/' + n;
     const m = /^제\d+조(?:의\d+)?/.exec(art || '');
-    return 'https://www.law.go.kr/법령/' + encodeURIComponent(name.replace(/\s/g, '')) + (m ? '/' + encodeURIComponent(m[0]) : '');
+    return 'https://www.law.go.kr/법령/' + n + (m && ((window.FIRE_LAWTEXT || {})[name] || {})[m[0]] ? '/' + encodeURIComponent(m[0]) : ''); // 조문을 확인한 경우에만 조문 주소로
   };
-  const lawLink = (name, label) => `<a href="${lawUrl(name, label)}" target="_blank" rel="noopener">${esc(name)}</a>`;
+  const lawLink = (name, art) => { const u = lawUrl(name, art); return u ? `<a href="${u}" target="_blank" rel="noopener">${esc(name)}</a>` : esc(name); };
+  // 조문 하나: 제목은 보이고 본문은 눌러서 펼친다 (현행 조문)
+  const artHtml = (name, art) => {
+    const m = /^(제\d+조(?:의\d+)?)/.exec(art || ''); const info = m && ((window.FIRE_LAWTEXT || {})[name] || {})[m[1]];
+    if (!info) return esc(art || '');
+    const label = art.includes('(') ? art : `${m[1]}(${info.t})`;
+    return `<details class="fr-art"><summary>${esc(label)}</summary><p>${esc(info.c)}</p></details>`;
+  };
   window.FIRE_LAWHTML = (subj, tid) => {
     const L = ((window.FIRE_TLAWS || {})[subj] || {})[tid]; if (!L || !L.length) return '';
-    return `<div class="fr-law"><b>📖 관련 법령</b><ul>${L.map(([n, arts]) => `<li>${lawLink(n)}${arts.length ? ' · ' + arts.map(esc).join(', ') : ''}</li>`).join('')}</ul><small>법령은 개정될 수 있어요. 시험 당시와 다를 수 있으니 국가법령정보센터에서 최신 조문을 확인하세요.</small></div>`;
+    return `<div class="fr-law"><b>📖 관련 법령 · 조문</b><ul>${L.map(([n, arts]) => `<li>${lawLink(n)}${arts.length ? `<div class="fr-arts">${arts.map((a) => artHtml(n, a)).join('')}</div>` : ''}</li>`).join('')}</ul><small>조문은 현행 법령 기준이에요. 시험 당시와 다를 수 있으니 국가법령정보센터에서 최신 조문을 확인하세요.</small></div>`;
   };
   const lawHtml = (k) => {
     const Q = (window.FIRE_QLAWS || {})[k] || []; const tid = window.FIRE_TOPIC ? window.FIRE_TOPIC.id(k) : '';
     let h = '';
-    if (Q.length) h += `<div class="fr-law"><b>📖 문제에 나온 법령</b><ul>${Q.map(([n, a]) => `<li>${lawLink(n, a)}${a ? ' ' + esc(a) : ''}</li>`).join('')}</ul></div>`;
+    if (Q.length) h += `<div class="fr-law"><b>📖 문제에 나온 법령</b><ul>${Q.map(([n, a]) => `<li>${lawLink(n, a)}${a ? (/^제/.test(a) ? `<div class="fr-arts">${artHtml(n, a)}</div>` : ' ' + esc(a)) : ''}</li>`).join('')}</ul><small>법령명을 누르면 국가법령정보센터로 가요. 조문은 현행 기준이라 시험 당시와 다를 수 있어요.</small></div>`;
     return h + (tid ? window.FIRE_LAWHTML(parse(k).s, tid) : '');
   };
   const exHtml = (k, open) => { const t = exText(k); return t ? `<details class="fr-ex"${open ? ' open' : ''}><summary>해설 보기</summary><p>${esc(t)}</p>${caseHtml(k)}${lawHtml(k)}</details>` : '<p class="fr-ex none">이 문항은 해설이 아직 없어요.</p>'; };

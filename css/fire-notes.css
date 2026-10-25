@@ -36,3 +36,8 @@
 .fr-law li{margin:0 0 4px}
 .fr-law a{color:var(--accent);font-weight:700}
 .fr-law small{color:var(--muted)}
+
+.fr-arts{margin:3px 0 0 4px}
+.fr-art{margin:2px 0;border:0;background:none}
+.fr-art summary{cursor:pointer;font-weight:400;padding:2px 0;color:var(--text)}
+.fr-art p{margin:2px 0 6px;padding:8px 10px;border-left:3px solid var(--accent);background:var(--surface);white-space:pre-line;font-size:.84rem;line-height:1.6;color:var(--muted)}
