@@ -73,7 +73,12 @@
   });
   // 해설: FIRE_EX[key] 문자열, '=키' 이면 같은 문제의 다른 회차 해설을 가리킨다
   const exText = (k) => { const m = window.FIRE_EX || {}; let v = m[k]; if (v && v[0] === '=') v = m[v.slice(1)]; return v || ''; };
-  const exHtml = (k, open) => { const t = exText(k); return t ? `<details class="fr-ex"${open ? ' open' : ''}><summary>해설 보기</summary><p>${esc(t)}</p></details>` : '<p class="fr-ex none">이 문항은 해설이 아직 없어요.</p>'; };
+  // 관련 대법원 판례 (js/fire/cases.js): FIRE_CASEMAP[key] = [판례 id], FIRE_CASES[id] = { date, no, sum }
+  const caseHtml = (k) => {
+    const ids = (window.FIRE_CASEMAP || {})[k]; if (!ids) return '';
+    return `<div class="fr-case"><b>⚖ 관련 대법원 판례</b><ul>${ids.map((i) => { const c = window.FIRE_CASES[i]; return `<li><span>대법원 ${c.date} 선고 ${esc(c.no)} 판결</span> ${esc(c.sum)}</li>`; }).join('')}</ul><small>요지는 시험 대비용으로 줄인 것이에요. 원문은 대법원 종합법률정보에서 사건번호로 확인하세요.</small></div>`;
+  };
+  const exHtml = (k, open) => { const t = exText(k); return t ? `<details class="fr-ex"${open ? ' open' : ''}><summary>해설 보기</summary><p>${esc(t)}</p>${caseHtml(k)}</details>` : '<p class="fr-ex none">이 문항은 해설이 아직 없어요.</p>'; };
   const topicTag = (k) => { const n = window.FIRE_TOPIC ? window.FIRE_TOPIC.name(k) : ''; return n ? `<span class="fr-topic">유형 · ${esc(n)}</span>` : ''; };
   function notes() {
     if (!window.FIRE_NOTES) { root.innerHTML = '<p class="gt-muted">개념 정리를 불러오지 못했어요.</p>'; return; }
