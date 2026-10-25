@@ -78,7 +78,24 @@
     const ids = (window.FIRE_CASEMAP || {})[k]; if (!ids) return '';
     return `<div class="fr-case"><b>⚖ 관련 대법원 판례</b><ul>${ids.map((i) => { const c = window.FIRE_CASES[i]; return `<li><span>대법원 ${c.date} 선고 ${esc(c.no)} 판결</span> ${esc(c.sum)}</li>`; }).join('')}</ul><small>요지는 시험 대비용으로 줄인 것이에요. 원문은 대법원 종합법률정보에서 사건번호로 확인하세요.</small></div>`;
   };
-  const exHtml = (k, open) => { const t = exText(k); return t ? `<details class="fr-ex"${open ? ' open' : ''}><summary>해설 보기</summary><p>${esc(t)}</p>${caseHtml(k)}</details>` : '<p class="fr-ex none">이 문항은 해설이 아직 없어요.</p>'; };
+  // 관련 법령 (js/fire/laws.js): 문제 본문에 나온 법령 + 유형별 관련 법령. 국가법령정보센터로 연결
+  const lawUrl = (name, art) => {
+    if (/･/.test(name)) return 'https://www.law.go.kr/lsSc.do?query=' + encodeURIComponent(name); // 옛 법령명은 검색으로
+    const m = /^제\d+조(?:의\d+)?/.exec(art || '');
+    return 'https://www.law.go.kr/법령/' + encodeURIComponent(name.replace(/\s/g, '')) + (m ? '/' + encodeURIComponent(m[0]) : '');
+  };
+  const lawLink = (name, label) => `<a href="${lawUrl(name, label)}" target="_blank" rel="noopener">${esc(name)}</a>`;
+  window.FIRE_LAWHTML = (subj, tid) => {
+    const L = ((window.FIRE_TLAWS || {})[subj] || {})[tid]; if (!L || !L.length) return '';
+    return `<div class="fr-law"><b>📖 관련 법령</b><ul>${L.map(([n, arts]) => `<li>${lawLink(n)}${arts.length ? ' · ' + arts.map(esc).join(', ') : ''}</li>`).join('')}</ul><small>법령은 개정될 수 있어요. 시험 당시와 다를 수 있으니 국가법령정보센터에서 최신 조문을 확인하세요.</small></div>`;
+  };
+  const lawHtml = (k) => {
+    const Q = (window.FIRE_QLAWS || {})[k] || []; const tid = window.FIRE_TOPIC ? window.FIRE_TOPIC.id(k) : '';
+    let h = '';
+    if (Q.length) h += `<div class="fr-law"><b>📖 문제에 나온 법령</b><ul>${Q.map(([n, a]) => `<li>${lawLink(n, a)}${a ? ' ' + esc(a) : ''}</li>`).join('')}</ul></div>`;
+    return h + (tid ? window.FIRE_LAWHTML(parse(k).s, tid) : '');
+  };
+  const exHtml = (k, open) => { const t = exText(k); return t ? `<details class="fr-ex"${open ? ' open' : ''}><summary>해설 보기</summary><p>${esc(t)}</p>${caseHtml(k)}${lawHtml(k)}</details>` : '<p class="fr-ex none">이 문항은 해설이 아직 없어요.</p>'; };
   const topicTag = (k) => { const n = window.FIRE_TOPIC ? window.FIRE_TOPIC.name(k) : ''; return n ? `<span class="fr-topic">유형 · ${esc(n)}</span>` : ''; };
   function notes() {
     if (!window.FIRE_NOTES) { root.innerHTML = '<p class="gt-muted">개념 정리를 불러오지 못했어요.</p>'; return; }

@@ -29,3 +29,10 @@
 .fr-case li{margin:0 0 6px}
 .fr-case li span{display:block;font-weight:700;color:var(--accent)}
 .fr-case small{color:var(--muted)}
+
+.fr-law{margin:0 12px 12px;padding:10px 12px;border-radius:8px;background:var(--surface-2);font-size:.88rem;line-height:1.65;color:var(--text)}
+.fn-body .fr-law{margin:0 0 10px}
+.fr-law ul{margin:6px 0;padding-left:18px}
+.fr-law li{margin:0 0 4px}
+.fr-law a{color:var(--accent);font-weight:700}
+.fr-law small{color:var(--muted)}

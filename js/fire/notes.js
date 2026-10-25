@@ -10,6 +10,10 @@
 
   // 문항의 유형 이름 (해설 아래에 붙이는 태그용)
   window.FIRE_TOPIC = {
+    id(k) {
+      const [e, s, n] = k.split('/'); const arr = TAGS[`${e}/${s}`]; const t = TOP[s];
+      if (!arr || !t) return ''; const i = arr[+n - 1]; return i >= 0 && t[i] ? t[i].id : '';
+    },
     name(k) {
       const [e, s, n] = k.split('/'); const arr = TAGS[`${e}/${s}`]; const t = TOP[s];
       if (!arr || !t) return ''; const i = arr[+n - 1]; return i >= 0 && t[i] ? t[i].name : '';
@@ -40,7 +44,7 @@
       const open = starOnly || openId === t.id;
       return `<article class="fn-card${open ? ' open' : ''}" data-id="${t.id}">
         <header data-toggle="${t.id}"><h3>${esc(t.name)}</h3><span class="fn-cnt"><b>${t.n}</b>문항 · ${Math.round((t.n / total) * 100)}%</span><i style="--w:${Math.round((t.n / maxN) * 100)}%"></i></header>
-        <div class="fn-body"><p class="fn-years">연도별 출제: ${years(t)}</p><ul class="fn-notes">${notes.map(bullet).join('')}</ul>
+        <div class="fn-body"><p class="fn-years">연도별 출제: ${years(t)}</p><ul class="fn-notes">${notes.map(bullet).join('')}</ul>${window.FIRE_LAWHTML ? window.FIRE_LAWHTML(curSubj, t.id) : ''}
         <div class="gt-bar"><button type="button" class="gt-btn main" data-prac="${t.id}">이 유형 문제 풀기 (${Math.min(t.n, 30)}문항)</button></div></div></article>`;
     };
     const warn = curSubj === 'law' ? '<p class="fn-warn">법령 수치는 시험 당시 기준이에요. 개정으로 달라질 수 있으니 최신 법령도 꼭 확인하세요.</p>' : (curSubj === 'admin' ? '<p class="fn-warn">판례·법령은 출제 시점 기준으로 정리했어요.</p>' : '');
