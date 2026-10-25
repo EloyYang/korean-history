@@ -33,7 +33,7 @@
     ['exemplify', '예시하다, 잘 보여 주다', 'illustrate', 'Her success exemplifies the value of hard work.'],
     ['feasible', '적당한', 'reasonable'],
     ['flawed', '결함 있는', 'imperfect', 'The flawed design caused several accidents.'],
-    ['flee', '달아나다, 도망치다', 'escape', 'Many residents fled the city before the storm.'],
+    ['flee', '달아나다, 도망치다', 'escape', 'Many residents tried to flee the city before the storm.'],
     ['flourish', '번성하다, 성공하다', 'thrive', 'Small businesses flourished in the growing town.'],
     ['formulate', '고안하다, 만들어 내다', 'invent', 'Scientists formulated a new treatment plan.'],
     ['fragile', '연약한', 'delicate'],
